@@ -1494,7 +1494,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   </div> */}
                       <div className="map-buttons">
                         <button
-                          style={{ "border": "10px solid red" }}
+
                           // The className still changes, making the button blue or white
                           className={`map-button ${mapMode === 'map' ? 'active' : 'outline'}`}
                           // The onClick handler still toggles the view
