@@ -748,24 +748,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
           <header className="header">
             <div className="header-content">
               <div className="header-logo-section">
-                <div style={{
-                  height: '55px',
-                  width: '35%',
-                  marginLeft: '23px',
-                  background: '#251351eb',
-                  padding: '10px',
-                  borderRadius: '25px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
+                <div className="header-logo-container">
                   <img
                     src="/SmartTruck_tracker.svg"
                     alt="logo"
-                    style={{
-                      height: '100%',
-                      width: '100%',
-                      objectFit: 'contain'
-                    }}
+                    className="header-logo-img"
                   />
                 </div>
                 {/* <div className="logo-icon-wrapper tooltip"> */}
@@ -785,7 +772,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                   <div>
                     <div className="customer-name">
-                      {lastDelivery?.location?.name || 'N/A'}
+                      {toTitleCase(lastDelivery?.location?.name) || 'N/A'}
                       {/* Tata steel */}
                     </div>
                     <div className="customer-role">Customer</div>
@@ -1002,216 +989,6 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
 
           <div className="main-content">
-            {/* KPI Strip */}
-            <div className="kpi-strip">
-              {/* <div className="kpi-card early  tooltip" onClick={() => handleKpiClick("eta-delta")}> */}
-              <div
-                className={`kpi-card early tooltip ${openTooltipId === "eta-delta" ? "tooltip-open" : ""}`}
-                onClick={() => handleKpiClick("eta-delta")}
-              >
-                <div className="kpi-icon-badge"><Clock className="kpi-icon" /></div>
-                {apiData?.latest_status == "CPTD" ? (
-                  <div className="kpi-value"> {etaDelta.isLate ? (
-                    `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
-                  ) : (
-                    `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`
-                  )}</div>) : (<div className="kpi-value">{shipmentStatus}</div>)}
-
-                <div className="kpi-label"> {apiData?.latest_status == "CPTD" ? 'Delivered' : ''}</div>
-                <div className="kpi-label">{finalDestination?.finished_at ? formatTimestamp(finalDestination?.finished_at) : `ETA: ${formatTimestamp(apiData?.delivery_date)}`}</div>
-
-
-                {finalDestination?.finished_at ? (
-                  <div className="tooltip-content tooltip-lg">
-                    <div className="tooltip-title">ETA Delta</div>
-
-                    <div className="tooltip-row">
-                      <span className="tooltip-key">Planned delivery:</span>
-                      <span className="tooltip-val">{formatEta(apiData?.delivery_date)}</span>
-                    </div>
-
-                    <div className="tooltip-row">
-                      <span className="tooltip-key">Actual delivery:</span>
-                      <span className="tooltip-val">{formatEta(finalDestination?.finished_at)}</span>
-                    </div>
-
-                    <div className="tooltip-row">
-                      <span className="tooltip-key">Delta:</span>
-                      <span className="tooltip-val">{etaDelta.isLate ? (
-                        `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
-                      ) : (
-                        `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`
-                      )}</span>
-                    </div>
-                  </div>) : <></>}
-
-              </div>
-              {/* 
-          <div className="kpi-card distance tooltip" onClick={() => handleKpiClick("distance-metrics")}> */}
-              <div
-                className={`kpi-card distance tooltip ${openTooltipId === "distance-metrics" ? "tooltip-open" : ""}`}
-                onClick={() => handleKpiClick("distance-metrics")}
-              >
-                <div className="kpi-icon-badge"><Ruler className="kpi-icon" /></div>
-                <div className="kpi-distance-metrics">
-                  <div className="distance-grid">
-                    <div className="distance-item">
-                      <div className="distance-value">{totalDistanceKm}</div>
-                      <div className="distance-label">Total (km)</div>
-                    </div>
-                    <div className="distance-item">
-                      <div className="distance-value traveled">{travelledDistanceKm}</div>
-                      <div className="distance-label">Travelled (km)</div>
-                    </div>
-                    <div className="distance-item">
-                      <div className="distance-value remaining">{remainingDistanceKm}</div>
-                      <div className="distance-label">Remaining (km)</div>
-                    </div>
-                  </div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-bar-fill"
-                      style={{
-                        width: `${Math.min(progressPercentage, 100)}%`,
-                        transition: 'width 0.8s ease-in-out',
-                        background: progressPercentage > 0 ? 'linear-gradient(90deg, #22c55e 0%, #16a34a 50%, #15803d 100%)' : '#e5e7eb',
-                        boxShadow: progressPercentage > 0 ? '0 0 10px rgba(34, 197, 94, 0.3)' : 'none',
-                        animation: progressPercentage > 0 ? 'progressPulse 2s ease-in-out infinite alternate' : 'none'
-                      }}
-                    ></div>
-                  </div>
-                </div>
-                <div className="kpi-label">{apiData?.latest_status == "ITNS" ? (<>Distance Metrics ({progressPercentage.toFixed(0)}%)</>) : ("")}</div>
-                {/* <span className="tooltip-content">Total journey: 1450km completed</span> */}
-                <div className="tooltip-content tooltip-lg">
-                  <div className="tooltip-title">Distance Metrics</div>
-
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">Total Distance:</span>
-                    <span className="tooltip-val">{totalDistanceKm} km</span>
-                  </div>
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">Travelled:</span>
-                    <span className="tooltip-val">{travelledDistanceKm} km</span>
-                  </div>
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">Remaining:</span>
-                    <span className="tooltip-val">{remainingDistanceKm} km</span>
-                  </div>
-
-
-                </div>
-
-              </div>
-
-              {/* <div className="kpi-card on-time tooltip"> */}
-              <div
-                className={`kpi-card on-time tooltip ${openTooltipId === "on-time" ? "tooltip-open" : ""}`}
-                onClick={() => handleKpiClick("on-time")}
-              >
-                <div className="kpi-icon-badge"><BadgeCheck className="kpi-icon" /></div>
-                <div className="kpi-value">{onTimePercentage.onTimePercentage}</div>
-                <div className="kpi-label">On-Time%</div>
-                {/* <span className="tooltip-content">{onTimePercentage.context}</span> */}
-                <div className="tooltip-content tooltip-lg">
-
-                  <div className="tooltip-title">On-Time%</div>
-
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">On-time Prediction:</span>
-                    <span className="tooltip-val">{onTimePercentage.onTimePercentage} %</span>
-                  </div>
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">SLA deadline:</span>
-                    <span className="tooltip-val">{formatTimestamp(apiData?.delivery_date)}</span>
-                  </div>
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">Status:</span>
-                    <span className="tooltip-val">{onTimePercentage.context}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className={`kpi-card stoppages tooltip ${openTooltipId === "long-alerts" ? "tooltip-open" : ""}`}
-                onClick={() => handleKpiClick("halt-alerts")}
-              >
-                <div className="kpi-icon-badge"><PauseCircle className="kpi-icon" /></div>
-                <div className="kpi-value">{totalStoppagesCount || 0}</div>
-                <div className="kpi-label">Stoppages  {parseInt(totalHaltDurationText, 10) > 9 && (
-                  <span> (&gt;9 hrs)</span>)}</div>
-                {/* <span className="tooltip-content">3 extended stops during journey</span> */}
-                <div className="tooltip-content tooltip-lg">
-                  <div className="tooltip-title">Halt Alerts</div>
-
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">Total Stoppages:</span>
-                    <span className="tooltip-val">{totalStoppagesCount}</span>
-                  </div>
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">Duration:</span>
-                    <span className="tooltip-val">{totalHaltDurationText}</span>
-                  </div>
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">Longest:</span>
-                    <span className="tooltip-val tooltip-ellipsis">{longestHaltText}</span>
-                  </div>
-
-
-                </div>
-              </div>
-
-
-              {/* <div className="kpi-card deviations tooltip" onClick={() => handleKpiClick("route-deviations")}> */}
-              <div
-                className={`kpi-card deviations tooltip ${openTooltipId === "route-deviations" ? "tooltip-open" : ""}`}
-                onClick={() => handleKpiClick("route-deviations")}
-              >
-                <div className="kpi-icon-badge"><GitBranch className="kpi-icon" /></div>
-                <div className="kpi-value">{deviationCount}</div>
-                <div className="kpi-label">Route deviations</div>
-                <div className="tooltip-content tooltip-lg">
-                  <div className="tooltip-title">Route Deviations</div>
-
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">Total deviations:</span>
-                    <span className="tooltip-val">{deviationCount}</span>
-                  </div>
-                  <div className="tooltip-row">
-                    <span className="tooltip-key">Distance off-route:</span>
-                    <span className="tooltip-val">{totalDeviationDistance.toFixed(1)}km</span>
-                  </div>
-
-
-                </div>
-                {/* <span className="tooltip-content">2 deviations from planned route</span> */}
-              </div>
-              <div className="kpi-card halt-alert tooltip" onClick={() => handleKpiClick("route-deviations")}>
-                <div className="kpi-icon-badge"><AlertOctagon className="kpi-icon" /></div>
-                <div className="kpi-value">{apiData?.trip_tracker?.no_of_overspeeding || 0}</div>
-                <div className="kpi-label">Over Speed</div>
-                {/* <span className="tooltip-content">3 extended stops during journey</span> */}
-                {/* <div className="tooltip-content tooltip-lg">
-      <div className="tooltip-title">Halt Alerts</div>
-
-      <div className="tooltip-row">
-        <span className="tooltip-key">Total Stoppages:</span>
-        <span className="tooltip-val">3</span>
-      </div>
-      <div className="tooltip-row">
-        <span className="tooltip-key">Duration:</span>
-        <span className="tooltip-val">2h 45min total</span>
-      </div>
-      <div className="tooltip-row">
-        <span className="tooltip-key">Longest:</span>
-        <span className="tooltip-val">1h 30min at Nashik</span>
-      </div>
-
-
-    </div> */}
-              </div>
-            </div>
-
             <div className="main-grid">
               {/* Left Sidebar */}
               <div className="sidebar-left">
@@ -1252,7 +1029,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         <div className="vehicle-driver-details">
                           <div className="detail-item">
                             <span className="detail-label">Name</span>
-                            <span className="detail-value">{apiData?.driver?.name || 'N/A'}</span>
+                            <span className="detail-value">{toTitleCase(apiData?.driver?.name) || 'N/A'}</span>
                           </div>
                           <div className="detail-item">
                             <span className="detail-label">Mobile No</span>
@@ -1283,7 +1060,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           <div className="detail-item">
                             <div className="detail-label">Customer</div>
 
-                            <div className="detail-value">{lastDelivery?.location?.name || 'N/A'}</div>
+                            <div className="detail-value">{toTitleCase(lastDelivery?.location?.name) || 'N/A'}</div>
                           </div>
                           <div className="detail-item">
                             <div className="detail-label">Shipper</div>
@@ -1356,7 +1133,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
 
                           </div>
-                          <div className="location-name">{originLocation?.location?.name || 'N/A'}</div>
+                          <div className="location-name">{toTitleCase(originLocation?.location?.name || 'N/A')}</div>
 
                           {/* Gate In Time */}
                           {pickGateInTime && (
@@ -1395,7 +1172,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 </div>
                                 <div className="location-details">
                                   <div className="location-type">Origin</div>
-                                  <div className="location-name">{s.name}</div>
+                                  <div className="location-name">{toTitleCase(s.name)}</div>
                                   <div className="location-time">
                                     <Clock className="time-icon" />
                                     <span>{s.date}</span>
@@ -1423,7 +1200,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 </div>
                                 <div className="location-details">
                                   <div className="location-type">Destination</div>
-                                  <div className="location-name">{d.name}</div>
+                                  <div className="location-name">{toTitleCase(d.name)}</div>
                                   <div className="location-time">
                                     <Clock className="time-icon" />
                                     <span>{d.date}</span>
@@ -1467,7 +1244,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 </button>
                               )}
                             </div>
-                            <div className="location-name">{finalDestination?.location?.name || 'N/A'}</div>
+                            <div className="location-name">{toTitleCase(finalDestination?.location?.name) || 'N/A'}</div>
                             <div className="location-time">
                               <Clock className="time-icon" />
                               <span>{formatTimestamp(finalDestination?.finished_at)}</span>
@@ -1489,6 +1266,215 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
               </div>
               {/* Center Section */}
               <div className="center-section">
+
+                <div className="kpi-strip">
+                  {/* <div className="kpi-card early  tooltip" onClick={() => handleKpiClick("eta-delta")}> */}
+                  <div
+                    className={`kpi-card early tooltip ${openTooltipId === "eta-delta" ? "tooltip-open" : ""}`}
+                    onClick={() => handleKpiClick("eta-delta")}
+                  >
+                    <div className="kpi-icon-badge"><Clock className="kpi-icon" /></div>
+                    {apiData?.latest_status == "CPTD" ? (
+                      <div className="kpi-value" style={{ fontSize: '14px' }}> {etaDelta.isLate ? (
+                        `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
+                      ) : (
+                        `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`
+                      )}</div>) : (<div className="kpi-value" style={{ fontSize: '14px' }}>{shipmentStatus}</div>)}
+
+                    <div className="kpi-label"> {apiData?.latest_status == "CPTD" ? 'Delivered' : ''}</div>
+                    <div className="kpi-label">{finalDestination?.finished_at ? formatTimestamp(finalDestination?.finished_at) : `ETA: ${formatTimestamp(apiData?.delivery_date)}`}</div>
+
+
+                    {finalDestination?.finished_at ? (
+                      <div className="tooltip-content tooltip-lg">
+                        <div className="tooltip-title">ETA Delta</div>
+
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Planned delivery:</span>
+                          <span className="tooltip-val">{formatEta(apiData?.delivery_date)}</span>
+                        </div>
+
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Actual delivery:</span>
+                          <span className="tooltip-val">{formatEta(finalDestination?.finished_at)}</span>
+                        </div>
+
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Delta:</span>
+                          <span className="tooltip-val">{etaDelta.isLate ? (
+                            `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
+                          ) : (
+                            `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`
+                          )}</span>
+                        </div>
+                      </div>) : <></>}
+
+                  </div>
+                  {/* 
+          <div className="kpi-card distance tooltip" onClick={() => handleKpiClick("distance-metrics")}> */}
+                  <div
+                    className={`kpi-card distance tooltip ${openTooltipId === "distance-metrics" ? "tooltip-open" : ""}`}
+                    onClick={() => handleKpiClick("distance-metrics")}
+                  >
+                    <div className="kpi-icon-badge"><Ruler className="kpi-icon" /></div>
+                    <div className="kpi-distance-metrics">
+                      <div className="distance-grid">
+                        <div className="distance-item">
+                          <div className="distance-value">{totalDistanceKm}</div>
+                          <div className="distance-label">Total (km)</div>
+                        </div>
+                        <div className="distance-item">
+                          <div className="distance-value traveled">{travelledDistanceKm}</div>
+                          <div className="distance-label">Travelled (km)</div>
+                        </div>
+                        <div className="distance-item">
+                          <div className="distance-value remaining">{remainingDistanceKm}</div>
+                          <div className="distance-label">Remaining (km)</div>
+                        </div>
+                      </div>
+                      <div className="progress-bar">
+                        <div
+                          className="progress-bar-fill"
+                          style={{
+                            width: `${Math.min(progressPercentage, 100)}%`,
+                            transition: 'width 0.8s ease-in-out',
+                            background: progressPercentage > 0 ? 'linear-gradient(90deg, #22c55e 0%, #16a34a 50%, #15803d 100%)' : '#e5e7eb',
+                            boxShadow: progressPercentage > 0 ? '0 0 10px rgba(34, 197, 94, 0.3)' : 'none',
+                            animation: progressPercentage > 0 ? 'progressPulse 2s ease-in-out infinite alternate' : 'none'
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="kpi-label">{apiData?.latest_status == "ITNS" ? (<>Distance Metrics ({progressPercentage.toFixed(0)}%)</>) : ("")}</div>
+                    {/* <span className="tooltip-content">Total journey: 1450km completed</span> */}
+                    <div className="tooltip-content tooltip-lg">
+                      <div className="tooltip-title">Distance Metrics</div>
+
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">Total Distance:</span>
+                        <span className="tooltip-val">{totalDistanceKm} km</span>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">Travelled:</span>
+                        <span className="tooltip-val">{travelledDistanceKm} km</span>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">Remaining:</span>
+                        <span className="tooltip-val">{remainingDistanceKm} km</span>
+                      </div>
+
+
+                    </div>
+
+                  </div>
+
+                  {/* <div className="kpi-card on-time tooltip"> */}
+                  <div
+                    className={`kpi-card on-time tooltip ${openTooltipId === "on-time" ? "tooltip-open" : ""}`}
+                    onClick={() => handleKpiClick("on-time")}
+                  >
+                    <div className="kpi-icon-badge"><BadgeCheck className="kpi-icon" /></div>
+                    <div className="kpi-value">{onTimePercentage.onTimePercentage}</div>
+                    <div className="kpi-label">On-Time%</div>
+                    {/* <span className="tooltip-content">{onTimePercentage.context}</span> */}
+                    <div className="tooltip-content tooltip-lg">
+
+                      <div className="tooltip-title">On-Time%</div>
+
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">On-time Prediction:</span>
+                        <span className="tooltip-val">{onTimePercentage.onTimePercentage} %</span>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">SLA deadline:</span>
+                        <span className="tooltip-val">{formatTimestamp(apiData?.delivery_date)}</span>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">Status:</span>
+                        <span className="tooltip-val">{onTimePercentage.context}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`kpi-card stoppages tooltip ${openTooltipId === "long-alerts" ? "tooltip-open" : ""}`}
+                    onClick={() => handleKpiClick("halt-alerts")}
+                  >
+                    <div className="kpi-icon-badge"><PauseCircle className="kpi-icon" /></div>
+                    <div className="kpi-value">{totalStoppagesCount || 0}</div>
+                    <div className="kpi-label">Stoppages  {parseInt(totalHaltDurationText, 10) > 9 && (
+                      <span> (&gt;9 hrs)</span>)}</div>
+                    {/* <span className="tooltip-content">3 extended stops during journey</span> */}
+                    <div className="tooltip-content tooltip-lg">
+                      <div className="tooltip-title">Halt Alerts</div>
+
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">Total Stoppages:</span>
+                        <span className="tooltip-val">{totalStoppagesCount}</span>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">Duration:</span>
+                        <span className="tooltip-val">{totalHaltDurationText}</span>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">Longest:</span>
+                        <span className="tooltip-val tooltip-ellipsis">{longestHaltText}</span>
+                      </div>
+
+
+                    </div>
+                  </div>
+
+
+                  {/* <div className="kpi-card deviations tooltip" onClick={() => handleKpiClick("route-deviations")}> */}
+                  <div
+                    className={`kpi-card deviations tooltip ${openTooltipId === "route-deviations" ? "tooltip-open" : ""}`}
+                    onClick={() => handleKpiClick("route-deviations")}
+                  >
+                    <div className="kpi-icon-badge"><GitBranch className="kpi-icon" /></div>
+                    <div className="kpi-value">{deviationCount}</div>
+                    <div className="kpi-label">Route deviations</div>
+                    <div className="tooltip-content tooltip-lg">
+                      <div className="tooltip-title">Route Deviations</div>
+
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">Total deviations:</span>
+                        <span className="tooltip-val">{deviationCount}</span>
+                      </div>
+                      <div className="tooltip-row">
+                        <span className="tooltip-key">Distance off-route:</span>
+                        <span className="tooltip-val">{totalDeviationDistance.toFixed(1)}km</span>
+                      </div>
+
+
+                    </div>
+                    {/* <span className="tooltip-content">2 deviations from planned route</span> */}
+                  </div>
+                  <div className="kpi-card halt-alert tooltip" onClick={() => handleKpiClick("route-deviations")}>
+                    <div className="kpi-icon-badge"><AlertOctagon className="kpi-icon" /></div>
+                    <div className="kpi-value">{apiData?.trip_tracker?.no_of_overspeeding || 0}</div>
+                    <div className="kpi-label">Over Speed</div>
+                    {/* <span className="tooltip-content">3 extended stops during journey</span> */}
+                    {/* <div className="tooltip-content tooltip-lg">
+      <div className="tooltip-title">Halt Alerts</div>
+
+      <div className="tooltip-row">
+        <span className="tooltip-key">Total Stoppages:</span>
+        <span className="tooltip-val">3</span>
+      </div>
+      <div className="tooltip-row">
+        <span className="tooltip-key">Duration:</span>
+        <span className="tooltip-val">2h 45min total</span>
+      </div>
+      <div className="tooltip-row">
+        <span className="tooltip-key">Longest:</span>
+        <span className="tooltip-val">1h 30min at Nashik</span>
+      </div>
+
+
+    </div> */}
+                  </div>
+                </div>
 
                 <div className={`card map-card ${collapsedSections.liveTracking ? "collapsed" : ""}`}>
                   <div className="card-header">

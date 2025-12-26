@@ -15,6 +15,7 @@ import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 import { useMap, useMapEvents } from "react-leaflet";
 import polyline from "@mapbox/polyline";
 import { DateTime } from 'luxon';
+import { toTitleCase } from "@/utils/stringUtils";
 
 
 
@@ -3101,7 +3102,7 @@ export default function KeplerMap({
               </div>
               <div className={styles.statusItem}>
                 <span className={`${styles.dot} ${styles.dotPurple}`}></span>
-                <span>Driver: {shipmentData.driver?.name || "N/A"}</span>
+                <span>Driver: {toTitleCase(shipmentData.driver?.name) || "N/A"}</span>
               </div>
             </div>
           </div>
