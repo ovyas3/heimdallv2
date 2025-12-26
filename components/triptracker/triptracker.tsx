@@ -38,6 +38,8 @@ import TollGateIcon from '@/assets/toll_gate_icon_passed.svg';
 import Mapmark from '@/assets/mapMarker.svg';
 import fullLogo from '@/assets/SmartTruck_tracker.svg'
 
+import { toTitleCase } from '@/utils/stringUtils';
+
 // import type { ViewState } from "react-map-gl";
 // import type { MapRef } from "react-map-gl";
 
@@ -158,6 +160,10 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const [destinations, setDestinations] = useState<FormattedLocation[]>([]);
   const [deviationCount, setDeviationCount] = useState(0);
   const [totalDeviationDistance, setTotalDeviationDistance] = useState(0);
+
+  const [pickGateInTime, setPickGateInTime] = useState<string | null>(null);
+  const [pickGateOutTime, setPickGateOutTime] = useState<string | null>(null);
+
 
   const formatEta = (utcString: any) => {
     if (!utcString) return 'N/A';
@@ -345,6 +351,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         if (!shipmentResponse.ok) throw new Error(`Shipment API error! Status: ${shipmentResponse.status}`);
         const shipmentData = await shipmentResponse.json();
         setApiData(shipmentData.shipment);
+        setPickGateInTime(shipmentData.shipment.pick_arrived_at || null);
+        setPickGateOutTime(shipmentData.shipment.pick_finished_at || null);
         // Extract deviation count and total distance
         const deviations = shipmentData.shipment.deviation?.deviations || [];
         const deviationCountFromApi = deviations.length;
@@ -834,7 +842,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   {shipmentStatus}
                   {/* <span className="tooltip-content">Shipment Status</span> */}
                 </span>
-                <HelpModal shipmentId="UHR0002-8" driverPhone="9183526734">
+                <HelpModal shipmentId="UHR0002-8" driverPhone="8660578908">
                   <button className="help-button">
                     <MessageCircle className="help-icon" />
                     Get Help
@@ -1350,10 +1358,26 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           </div>
                           <div className="location-name">{originLocation?.location?.name || 'N/A'}</div>
 
-                          <div className="location-time">
+                          {/* Gate In Time */}
+                          {pickGateInTime && (
+                            <div className="location-time">
+                              <Clock className="time-icon" />
+                              <span>Gate In: {formatTimestamp(pickGateInTime)}</span>
+                            </div>
+                          )}
+
+                          {/* Gate Out Time */}
+                          {pickGateOutTime && (
+                            <div className="location-time">
+                              <Clock className="time-icon" />
+                              <span>Gate Out: {formatTimestamp(pickGateOutTime)}</span>
+                            </div>
+                          )}
+
+                          {/* <div className="location-time">
                             <Clock className="time-icon" />
                             <span>{formatTimestamp(originLocation?.finished_at)}</span>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
 

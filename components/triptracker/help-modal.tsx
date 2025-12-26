@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { Phone, MessageCircle, HelpCircle, X,Mail } from "lucide-react"
+import { Phone, MessageCircle, HelpCircle, X, Mail } from "lucide-react"
 import { createPortal } from "react-dom"
 
 import "./triptracker.css"
@@ -13,11 +13,11 @@ interface HelpModalProps {
   children: React.ReactNode
 }
 
-export function HelpModal({ shipmentId = "UHR0002-8", driverPhone = "9183526734", children }: HelpModalProps) {
+export function HelpModal({ shipmentId = "UHR0002-8", driverPhone = "8660578908", children }: HelpModalProps) {
   const [open, setOpen] = useState(false)
 
   const [copiedItem, setCopiedItem] = useState<string | null>(null)
-  
+
   const handleCopyEmail = async () => {
     const email = "support@smarttruck.com";
     try {
@@ -33,13 +33,13 @@ export function HelpModal({ shipmentId = "UHR0002-8", driverPhone = "9183526734"
       document.body.removeChild(textArea);
       setCopiedItem('email');
     }
-    
+
     // Clear the copied state after 2 seconds
     setTimeout(() => {
       setCopiedItem(null);
     }, 2000);
   }
-  
+
   const handleCopyPhone = async () => {
     try {
       await navigator.clipboard.writeText(driverPhone);
@@ -54,19 +54,19 @@ export function HelpModal({ shipmentId = "UHR0002-8", driverPhone = "9183526734"
       document.body.removeChild(textArea);
       setCopiedItem('phone');
     }
-    
+
     // Clear the copied state after 2 seconds
     setTimeout(() => {
       setCopiedItem(null);
     }, 2000);
   }
 
-  
 
 
-  
-  
-  
+
+
+
+
   const handleContactSupport = () => {
     window.open('https://ticket.instavans.com/', '_blank')  // Replace the email logic with the ticket URL
     setOpen(false)
@@ -104,9 +104,9 @@ export function HelpModal({ shipmentId = "UHR0002-8", driverPhone = "9183526734"
         createPortal(
           <div className="modal-backdrop" onClick={handleBackdropClick}  >
             <div className="modal-content" onClick={handleModalContentClick} style={{
-            maxWidth: '800px',  // Even wider
-             // Ensure it doesn't exceed viewport on small screens
-          }}>
+              maxWidth: '800px',  // Even wider
+              // Ensure it doesn't exceed viewport on small screens
+            }}>
               <div className="modal-header">
                 <h2 className="modal-title">
                   <HelpCircle className="modal-title-icon" />
@@ -118,63 +118,63 @@ export function HelpModal({ shipmentId = "UHR0002-8", driverPhone = "9183526734"
               </div>
               <p className="modal-description">Need assistance ? Choose an option below.</p>
               <div className="modal-buttons-container">
-              <button 
-  onClick={handleCopyEmail} 
-  className="modal-button"
-  style={{
-    whiteSpace: 'normal',
-    wordWrap: 'break-word',
-    textAlign: 'left',
-    minHeight: '60px',
-    padding: '12px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    minWidth: "230px",
-  }}
->
-<Mail  size={20} strokeWidth={2.5}  /> 
-  <span style={{ flex: 1, lineHeight: '1.4', }}>
-    {copiedItem === 'email' ? 'Email Copied!' : 'support@instavans.com'}
-  </span>
-</button>
-<button 
-  onClick={handleCopyPhone} 
-  className="modal-button"
-  style={{
-    whiteSpace: 'normal',
-    wordWrap: 'break-word',
-    textAlign: 'left',
-    minHeight: '60px',
-    padding: '12px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    minWidth: "230px",
-  }}
->
-  <Phone className="modal-button-icon" />
-  <span style={{ flex: 1, lineHeight: '1.4' }}>
-    {copiedItem === 'phone' ? 'Phone no Copied!' : driverPhone}
-  </span>
-</button>
-               
-                <button onClick={handleContactSupport} className="modal-button"   
-                //  style={{minWidth: "230px",minHeight: '60px'}}
-                 style={{
-                  whiteSpace: 'normal',
-                  wordWrap: 'break-word',
-                  textAlign: 'left',
-                  minHeight: '60px',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  minWidth: "230px",
-                }}>
+                <button
+                  onClick={handleCopyEmail}
+                  className="modal-button"
+                  style={{
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    textAlign: 'left',
+                    minHeight: '60px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    minWidth: "230px",
+                  }}
+                >
+                  <Mail size={20} strokeWidth={2.5} />
+                  <span style={{ flex: 1, lineHeight: '1.4', }}>
+                    {copiedItem === 'email' ? 'Email Copied!' : 'support@instavans.com'}
+                  </span>
+                </button>
+                <button
+                  onClick={handleCopyPhone}
+                  className="modal-button"
+                  style={{
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    textAlign: 'left',
+                    minHeight: '60px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    minWidth: "230px",
+                  }}
+                >
+                  <Phone className="modal-button-icon" />
+                  <span style={{ flex: 1, lineHeight: '1.4' }}>
+                    {copiedItem === 'phone' ? 'Phone no Copied!' : driverPhone}
+                  </span>
+                </button>
+
+                <button onClick={handleContactSupport} className="modal-button"
+                  //  style={{minWidth: "230px",minHeight: '60px'}}
+                  style={{
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    textAlign: 'left',
+                    minHeight: '60px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    minWidth: "230px",
+                  }}>
                   <MessageCircle className="modal-button-icon" />
                   <span style={{ flex: 1, lineHeight: '1.4' }}>
-                  Create Ticket
+                    Create Ticket
                   </span>
                 </button>
               </div>

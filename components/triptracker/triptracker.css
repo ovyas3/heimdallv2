@@ -17,7 +17,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Muli", sans-serif;
   margin: 0;
   padding: 0;
   background: linear-gradient(to bottom right, #f8fafc, #f1f5f9);
@@ -3395,5 +3395,91 @@ timeline-icon path {
   100% {
     opacity: 1;
     box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+  }
+}
+
+@media (max-width: 1023px) {
+  .main-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    padding: 0 1rem;
+  }
+
+  .sidebar-left,
+  .center-section,
+  .sidebar-right {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .kpi-strip {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 1rem !important;
+    padding-bottom: 0.5rem !important;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    margin: 0 -1rem 1.5rem -1rem !important;
+  }
+
+  .kpi-card {
+    min-width: 160px;
+    flex: 0 0 auto;
+  }
+
+  .kpi-card.distance {
+    min-width: 280px;
+  }
+
+  .header-content {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .header-logo-section {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .modal-content {
+    width: 95% !important;
+    padding: 1rem !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-buttons-container {
+    flex-direction: column !important;
+    gap: 0.75rem;
+  }
+
+  .modal-button {
+    width: 100% !important;
+  }
+
+  /* Tracking status grid mobile fix */
+  .tracking-status-grid {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    justify-content: flex-start !important;
+    padding-bottom: 0.5rem;
+  }
+
+  .tracking-status-item {
+    min-width: 160px;
+    flex: 0 0 auto;
+  }
+
+  /* Documentation grid */
+  .documents-grid {
+    grid-template-columns: 1fr !important;
   }
 }

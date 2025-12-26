@@ -77,6 +77,8 @@ interface KeplerMapProps {
     deliveries?: Array<{
       finished_at?: string;
     }>;
+    pick_arrived_at?: string;
+    pick_finished_at?: string;
   };
 
 }
@@ -1179,31 +1181,29 @@ export default function KeplerMap({
       setIsLoadingFence(false);
     }
   };
-
   useEffect(() => {
     // Wait until we have data before doing anything
-    if (shipmentPickups.length === 0 && shipmentDeliveries.length === 0) {
-      return;
-    }
-    const map = mapRef.current;
-    // Now, check if the map instance is ready.
-    // If mapRef.current exists, we can safely use it.
-    // if (mapRef.current) {
-    if (map && map.getContainer() && !isReplaying) {
+    if (shipmentPickups.length === 0 && shipmentDeliveries.length === 0) return;
 
-      const all = [
-        ...shipmentPickups.map(p => p.pos),
-        ...shipmentDeliveries.map(d => d.pos)
-      ];
-      if (currentLocation) {
-        all.push(currentLocation); // include live point
-      }
-      if (all.length > 0) {
-        console.log("Fitting map bounds now..."); // Add this log for confirmation
-        mapRef.current.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
+    const map = mapRef.current;
+
+    // FIXED: Only fit bounds on initial load, NOT when replay ends
+    // Check if we're NOT in replay mode AND haven't started replaying yet
+    if (mapRef.current && !isReplaying && replayProgress === 0) {
+      if (map && map.getContainer) {
+        const all = [
+          ...shipmentPickups.map((p) => p.pos),
+          ...shipmentDeliveries.map((d) => d.pos),
+        ];
+        if (currentLocation) all.push(currentLocation); // include live point
+        if (all.length > 0) {
+          console.log("Fitting map bounds on initial load...");
+          mapRef.current.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
+        }
       }
     }
-  }, [shipmentPickups, shipmentDeliveries, isReplaying]); // ✅ Only depend on the DATA// ✅ Add mapRef.current to the dependencies
+  }, [shipmentPickups, shipmentDeliveries, isReplaying, replayProgress]);
+
   useEffect(() => {
     console.log("--- DEBUGGING CURRENT LOCATION ---");
     // Check if the custom vehicle icon is loaded
@@ -2370,24 +2370,45 @@ export default function KeplerMap({
               position={pos}
               icon={makeChipicon("#22c55e", label)} // green chip
             >
-
-
               <Popup>
                 <div className={styles.popup}>
-                  <div className={`${styles.popupTitle} ${styles.titleGreen}`}>Pickup {label}</div>
-                  <hr className={styles.divider} ></hr>
+                  <div className={`${styles.popupTitle} ${styles.titleGreen}`}>
+                    Pickup {label}
+                  </div>
+                  <hr className={styles.divider}></hr>
 
-                  {meta?.location?.name && <div className={styles.popupBody}>{meta.location.name.trim()}</div>}
-                  {meta?.location?.locality && <div className={styles.popupBody}>{meta.location.locality}</div>}
-                  {meta?.location?.city && <div className={styles.popupBody}>City: {meta.location.city}</div>}
-                  {meta?.arrived_at && (
-                    <div className={styles.popupMeta}>Arrived at: {formatTimestamp(meta.finished_at)}</div>
+                  {meta?.location?.name && (
+                    <div className={styles.popupBody}>
+                      {meta.location.name.trim()}
+                    </div>
+                  )}
+                  {meta?.location?.locality && (
+                    <div className={styles.popupBody}>
+                      {meta.location.locality}
+                    </div>
+                  )}
+                  {meta?.location?.city && (
+                    <div className={styles.popupBody}>
+                      City: {meta.location.city}
+                    </div>
                   )}
 
+                  {shipmentData?.pick_arrived_at && i === 0 && (
+                    <div className={styles.popupMeta}>
+                      Gate In: {formatTimestamp(shipmentData.pick_arrived_at)}
+                    </div>
+                  )}
+
+                  {shipmentData?.pick_finished_at && i === 0 && (
+                    <div className={styles.popupMeta}>
+                      Gate Out: {formatTimestamp(shipmentData.pick_finished_at)}
+                    </div>
+                  )}
                 </div>
               </Popup>
             </Marker>
           ))}
+
 
 
           {/* Always render the vehicle marker and its popup */}
