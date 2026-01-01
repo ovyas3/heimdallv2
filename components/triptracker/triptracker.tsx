@@ -164,6 +164,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const [pickGateInTime, setPickGateInTime] = useState<string | null>(null);
   const [pickGateOutTime, setPickGateOutTime] = useState<string | null>(null);
 
+  const [dropGateInTime, setDropGateInTime] = useState<string | null>(null);
+  const [dropGateOutTime, setDropGateOutTime] = useState<string | null>(null);
+
 
   const formatEta = (utcString: any) => {
     if (!utcString) return 'N/A';
@@ -353,6 +356,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         setApiData(shipmentData.shipment);
         setPickGateInTime(shipmentData.shipment.pick_arrived_at || null);
         setPickGateOutTime(shipmentData.shipment.pick_finished_at || null);
+        setDropGateInTime(shipmentData.shipment.drop_arrived_at || null);
+        setDropGateOutTime(shipmentData.shipment.drop_finished_at || null);
         // Extract deviation count and total distance
         const deviations = shipmentData.shipment.deviation?.deviations || [];
         const deviationCountFromApi = deviations.length;
@@ -995,7 +1000,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             <div className="main-grid">
               {/* Left Sidebar */}
               <div className="sidebar-left">
-                <div className="card">
+                <div className={`card ${collapsedSections.info ? "collapsed" : ""}`}>
                   <div className="card-header">
 
                     {/* NEW — Tabs, same pattern as your timeline tabs */}
@@ -1092,7 +1097,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     </div>
                   )}
                 </div>
-                <div className="card">
+                <div className={`card ${collapsedSections.locations ? "collapsed" : ""}`}>
                   <div className="card-header">
                     <div className="card-title">
                       <MapPin className="card-icon" />
@@ -1248,10 +1253,21 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               )}
                             </div>
                             <div className="location-name">{toTitleCase(finalDestination?.location?.name) || 'N/A'}</div>
-                            <div className="location-time">
-                              <Clock className="time-icon" />
-                              <span>{formatTimestamp(finalDestination?.finished_at)}</span>
-                            </div>
+
+                            {dropGateInTime && (
+                              <div className="location-time">
+                                <Clock className="time-icon" />
+                                <span>Gate In: {formatTimestamp(dropGateInTime)}</span>
+                              </div>
+                            )}
+
+                            {/* Gate Out Time */}
+                            {dropGateOutTime && (
+                              <div className="location-time">
+                                <Clock className="time-icon" />
+                                <span>Gate Out: {formatTimestamp(dropGateOutTime)}</span>
+                              </div>
+                            )}
 
 
                           </div>
@@ -1790,7 +1806,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   </div>
                 )}
 
-                <div className="card timeline-card">
+                <div className={`card timeline-card ${collapsedSections.timeline ? "collapsed" : ""}`}>
                   <div className="card-header timeline-header">
                     <div className="tab-container">
                       <button

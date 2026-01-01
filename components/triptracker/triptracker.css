@@ -1195,7 +1195,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  height: 100%;
+  min-height: 0;
+  flex: 1;
   overflow: hidden;
 }
 
@@ -1519,13 +1520,16 @@ body {
 }
 
 .map-card {
-  min-height: 0;
-  flex: 1;
   display: flex;
   flex-direction: column;
   padding: 0;
   overflow: hidden;
   padding: 7px;
+}
+
+.map-card:not(.collapsed) {
+  min-height: 0;
+  flex: 1;
 }
 
 .map-card>div:last-child {
@@ -1651,6 +1655,7 @@ body {
   border-radius: 0.75rem;
   padding: 1.5rem;
   transition: all 0.2s ease;
+  flex: 1;
 }
 
 .current-location-box:hover {
@@ -1986,9 +1991,12 @@ body {
 }
 
 .timeline-card {
-  min-height: 100%;
-  display: flex !important;
+  display: flex;
   flex-direction: column;
+}
+
+.timeline-card:not(.collapsed) {
+  min-height: 100%;
   flex: 1 0 auto;
   height: auto;
 }
@@ -4349,7 +4357,7 @@ timeline-icon path {
   }
 }
 
-.map-card {
+.map-card:not(.collapsed) {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 !important;
