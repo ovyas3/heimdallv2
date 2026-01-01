@@ -523,7 +523,6 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     return `${hours}h ${minutes}m total`;
   };
 
-
   const findLongestHalt = (data: any[]) => {
     if (data.length === 0) return 'N/A';
     const longestHalt = data.reduce((longest, current) => {
@@ -539,11 +538,15 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     const durationText = `${durationHours}h ${remainingMinutes}m`;
     const address = longestHalt.address || 'Unknown location';
 
-    return `${durationText} at ${address.split(',')[0]}`;
+    return {
+      duration: durationText,
+      address: address.split(',')[0]
+    };
   };
+
   const totalStoppagesCount = haltData.length;
   const totalHaltDurationText = calculateTotalHaltDuration(haltData);
-  const longestHaltText = findLongestHalt(haltData);
+  const longestHaltData = findLongestHalt(haltData);
   const pickupLocations = apiData?.pickups || [];
   const deliveryLocations = apiData?.deliveries || [];
   const originLocation = pickupLocations?.[0];
@@ -1351,7 +1354,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       <div className="tooltip-title">Distance Metrics</div>
 
                       <div className="tooltip-row">
-                        <span className="tooltip-key">Total Distance:</span>
+                        <span className="tooltip-key">Total:</span>
                         <span className="tooltip-val">{totalDistanceKm} km</span>
                       </div>
                       <div className="tooltip-row">
@@ -1417,7 +1420,16 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       </div>
                       <div className="tooltip-row">
                         <span className="tooltip-key">Longest:</span>
-                        <span className="tooltip-val tooltip-ellipsis">{longestHaltText}</span>
+                        <div className="tooltip-col">
+                          {longestHaltData !== 'N/A' ? (
+                            <>
+                              <span className="tooltip-val">{longestHaltData.duration}</span>
+                              <span className="tooltip-sub-val tooltip-ellipsis">{toTitleCase(longestHaltData.address)}</span>
+                            </>
+                          ) : (
+                            <span className="tooltip-val">N/A</span>
+                          )}
+                        </div>
                       </div>
 
 
@@ -1442,7 +1454,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       </div>
                       <div className="tooltip-row">
                         <span className="tooltip-key">Distance off-route:</span>
-                        <span className="tooltip-val">{totalDeviationDistance.toFixed(1)}km</span>
+                        <span className="tooltip-val">{totalDeviationDistance.toFixed(1)} km</span>
                       </div>
 
 

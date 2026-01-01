@@ -2728,6 +2728,21 @@ timeline-icon path {
   font-weight: 500;
   font-size: 0.85rem;
   white-space: wrap;
+  text-align: right;
+}
+
+.tooltip-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.tooltip-sub-val {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  max-width: 200px;
+  line-height: 1.2;
 }
 
 /* Subtle footer line */
@@ -2748,6 +2763,17 @@ timeline-icon path {
 .tooltip .tooltip-content {
   z-index: 10000 !important;
 }
+
+.kpi-strip .kpi-card:first-child .tooltip-content {
+  left: 0;
+  transform: none;
+}
+
+.kpi-strip .kpi-card:first-child .tooltip-content::after {
+  left: 20%;
+  margin-left: 0;
+}
+
 
 .status-pill {
   padding: 2px 6px;
