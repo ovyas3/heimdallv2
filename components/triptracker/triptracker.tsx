@@ -1064,12 +1064,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           </div>
                           <div className="detail-item">
                             <div className="detail-label">Shipper</div>
-                            <div className="detail-value"> {`${apiData?.shipper?.parent_name} (${apiData?.shipper?.name})` || 'N/A'}</div>
+                            <div className="detail-value"> {`${apiData?.shipper?.parent_name} (${toTitleCase(apiData?.shipper?.name)})` || 'N/A'}</div>
                           </div>
                           <div className="detail-grid">
                             <div className="detail-item">
                               <div className="detail-label">Material</div>
-                              <div className="detail-value">{apiData?.materials?.[0]?.name || 'N/A'}</div>
+                              <div className="detail-value">{toTitleCase(apiData?.materials?.[0]?.name) || 'N/A'}</div>
                             </div>
                             <div className="detail-item">
                               <div className="detail-label">Weight</div>
