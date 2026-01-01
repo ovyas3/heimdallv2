@@ -1985,10 +1985,46 @@ body {
   color: var(--text-primary);
 }
 
+.timeline-card {
+  min-height: 100%;
+  display: flex !important;
+  flex-direction: column;
+  flex: 1 0 auto;
+  height: auto;
+}
+
+.timeline-content {
+  flex: 1;
+  display: flex !important;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: 0 !important;
+}
+
+.timeline-content .scrollable-container {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  max-height: none !important;
+  overflow-y: visible;
+  padding-bottom: 1rem;
+}
+
+
 .timeline-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bg-white);
+  backdrop-filter: blur(12px);
+  margin: -0.75rem -0.75rem 0.75rem -0.75rem;
+  padding: 0.75rem 0.75rem 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
 }
 
 .tab-container {
@@ -2570,10 +2606,16 @@ timeline-icon path {
 }
 
 .no-data-message {
-  /* keeps it in a single line */
-
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
   text-align: center;
-  /* ensure it doesn’t overflow container */
+  color: var(--text-secondary);
+  font-size: 1rem;
+  padding: 2rem;
+  grid-column: 1 / -1;
 }
 
 .doc-tile {

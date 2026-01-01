@@ -1816,10 +1816,10 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                       {activeTimelineTab === "timeline" && (
                         <div className="timeline-section scrollable-container">
-                          <div className="timeline-title-container">
+                          {/* <div className="timeline-title-container">
                             <h3>Timeline</h3>
-                            <p>Latest Events</p> {/* Updated subtitle as API has no 'planned' data */}
-                          </div>
+                            <p>Latest Events</p>
+                          </div> */}
 
                           {timelineData && timelineData.length > 0 ? (
                             timelineData.map((event: any, index: number) => (
@@ -1837,9 +1837,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                       {new Date(event.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                     {/* <div className="timeline-dot"></div> */}
-                                  </div>
-                                  <div className="timeline-date">
-                                    {new Date(event.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    <div className="timeline-date">
+                                      {new Date(event.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </div>
                                   </div>
                                   <div className="timeline-event">{event.comments}</div>
                                 </div>
@@ -1860,7 +1860,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             tollHistoryData.map((toll: any, index: number) => (
                               <div key={index} className="toll-history-item">
                                 <div className="toll-date">
-                                  <div>{new Date(toll?.time_stamp).toLocaleDateString()}</div>
+                                  <div>
+                                    {new Date(toll?.time_stamp).toLocaleDateString()}
+                                  </div>
                                   <div className="toll-time">{new Date(toll?.time_stamp).toLocaleTimeString()}</div>
                                 </div>
                                 <div className="toll-icon-container">
