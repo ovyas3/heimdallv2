@@ -1989,27 +1989,29 @@ export default function KeplerMap({
     // Only start if a route is active
     if (activeRoute.length > 0) {
       setIsReplaying(true);
-      // Reset the index to 0
-      replayIndexRef.current = 0;
-      // Set the initial position on the map
-      setCurrentReplayPosition(activeRoute[0]);
-      setCurrentReplayHaltIndex(-1);  // reset halts
-      setIsPausedAtHalt(false);
-      setCurrentReplayDeviationIndex(-1);  // reset deviations
-      setIsPausedAtDeviation(false);
 
-      // Show fence by default when replay starts
-      if (internalFencePathData.length > 0) {
-        setShowFence(true);
+      const isResuming = currentReplayPosition !== null && replayIndexRef.current < activeRoute.length - 1;
+
+      if (!isResuming) {
+        replayIndexRef.current = 0;
+        setCurrentReplayPosition(activeRoute[0]);
+        setCurrentReplayHaltIndex(-1);
+        setIsPausedAtHalt(false);
+        setCurrentReplayDeviationIndex(-1);
+        setIsPausedAtDeviation(false);
+        setReplayProgress(0);
+
+        if (mapRef.current && activeRoute.length > 0) {
+          try {
+            mapRef.current.setView(activeRoute[0], 16, { animate: true });
+          } catch (err) {
+            console.error("Failed to set view:", err);
+          }
+        }
       }
 
-      // Auto zoom to the starting point of the route
-      if (mapRef.current && activeRoute.length > 0) {
-        try {
-          mapRef.current.setView(activeRoute[0], 16, { animate: true });
-        } catch (err) {
-          console.error("Failed to set view:", err);
-        }
+      if (internalFencePathData.length > 0) {
+        setShowFence(true);
       }
 
       // Clean up any old timers
