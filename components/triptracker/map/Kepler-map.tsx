@@ -641,14 +641,17 @@ export default function KeplerMap({
   }
 
   useEffect(() => {
-
-    if (isPausedAtHalt && mapRef.current && currentReplayPosition) {
-      mapRef.current.panTo(currentReplayPosition, {
-        duration: 0.5,
-        easeLinearity: 0.25,
-      });
+    if (mapRef.current && currentReplayPosition) {
+      if (isReplaying) {
+        mapRef.current.setView(currentReplayPosition, mapRef.current.getZoom());
+      } else if (isPausedAtHalt) {
+        mapRef.current.panTo(currentReplayPosition, {
+          duration: 0.5,
+          easeLinearity: 0.25,
+        });
+      }
     }
-  }, [isPausedAtHalt, mapRef, currentReplayPosition]);
+  }, [isReplaying, isPausedAtHalt, mapRef, currentReplayPosition]);
 
 
   // Robust popup using Leaflet L.popup so we don't depend on react-leaflet child timing
@@ -2000,16 +2003,12 @@ export default function KeplerMap({
         setShowFence(true);
       }
 
-      // Auto zoom to route bounds
-      if (mapRef.current && activeRoute.length > 1) {
+      // Auto zoom to the starting point of the route
+      if (mapRef.current && activeRoute.length > 0) {
         try {
-          const bounds = L.latLngBounds(activeRoute);
-          mapRef.current.fitBounds(bounds, {
-            padding: [80, 80],
-            maxZoom: 15
-          });
+          mapRef.current.setView(activeRoute[0], 16, { animate: true });
         } catch (err) {
-          console.error("Failed to fit bounds:", err);
+          console.error("Failed to set view:", err);
         }
       }
 
