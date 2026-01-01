@@ -4280,3 +4280,30 @@ timeline-icon path {
     height: 14px;
   }
 }
+
+.map-card {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+}
+
+.map-card .card-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  height: 100%;
+}
+
+.map-host {
+  flex: 1 !important;
+  background: white;
+  height: auto !important;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mapWrapper {
+  flex: 1;
+  height: 100%;
+}
