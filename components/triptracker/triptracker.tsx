@@ -1068,20 +1068,20 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           </div>
                           <div className="detail-grid">
                             <div className="detail-item">
-                              <div className="detail-label">Cargo Type</div>
+                              <div className="detail-label">Material</div>
                               <div className="detail-value">{apiData?.materials?.[0]?.name || 'N/A'}</div>
                             </div>
                             <div className="detail-item">
                               <div className="detail-label">Weight</div>
                               <div className="detail-value"> {totalWeight !== null ? totalWeight.toFixed(2) : 'N/A'}
-                                {' tons'}
+                                {' MT'}
                               </div>
                             </div>
                           </div>
                           <div className="detail-item">
                             <div className="detail-label">Quantity</div>
                             <div className="detail-value">  {totalQuantity !== null ? totalQuantity : 'N/A'}
-                              {' units'}</div>
+                              {' MT'}</div>
                           </div>
 
                         </div>
@@ -1369,14 +1369,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   </div>
 
                   {/* <div className="kpi-card on-time tooltip"> */}
-                  <div
+                  {/* <div
                     className={`kpi-card on-time tooltip ${openTooltipId === "on-time" ? "tooltip-open" : ""}`}
                     onClick={() => handleKpiClick("on-time")}
                   >
                     <div className="kpi-icon-badge"><BadgeCheck className="kpi-icon" /></div>
                     <div className="kpi-value">{onTimePercentage.onTimePercentage}</div>
                     <div className="kpi-label">On-Time%</div>
-                    {/* <span className="tooltip-content">{onTimePercentage.context}</span> */}
                     <div className="tooltip-content tooltip-lg">
 
                       <div className="tooltip-title">On-Time%</div>
@@ -1394,7 +1393,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         <span className="tooltip-val">{onTimePercentage.context}</span>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   <div
                     className={`kpi-card stoppages tooltip ${openTooltipId === "long-alerts" ? "tooltip-open" : ""}`}
