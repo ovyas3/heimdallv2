@@ -229,24 +229,17 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const openConfirm = (kind: "deviation" | "stoppage") => setConfirm({ open: true, kind });
   const closeConfirm = () => setConfirm({ open: false });
 
-  useEffect(() => {
-    // This code runs every time showHaltPointsOnMap changes
-    console.log("The new state for showHaltPointsOnMap is:", showHaltPointsOnMap);
-  }, [showHaltPointsOnMap]);
   const confirmYes = () => {
     // Check the kind of confirmation to determine the action
     if (confirm.kind === "stoppage") {
 
       setMapState({ mode: 'map', showHalts: true, showDeviations: false });
-      // console.log("Confirming stoppage. The new mapState is:",MapState);
-      console.log("Confirming stoppage. showHaltPointsOnMap is now true.");
     } else if (confirm.kind === "deviation") {
       setMapState({ mode: 'map', showHalts: false, showDeviations: true });
       // Handle deviation confirmation
       setShowDeviationsOnMap(true);
       setShowHaltPointsOnMap(false);
       setShowStoppagesOnMap(false);
-      console.log("Confirming deviation. showDeviationsOnMap is now true.");
     }
     // Close the confirmation popup
     closeConfirm();
@@ -276,65 +269,51 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       case "PNDG":
         status = "Pending";
         statusClass = "pending";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
       case "ALC":
         status = "Allocated";
         statusClass = "allocated";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
       case "ACPT":
         status = "Accepted";
         statusClass = "accepted";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
       case "ASN":
         status = "Assigned";
         statusClass = "assigned";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
       case "ITNS":
         status = "In Transit";
         statusClass = "in-transit";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
       case "SP":
         status = "Towards Pickup";
         statusClass = "in-transit";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
       case "AP":
         status = "At Pickup";
         statusClass = "at-location";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
       case "ALD":
         status = "At Delivery";
         statusClass = "at-location";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
       case "ABTR":
         status = "About to Reach";
         statusClass = "in-transit";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
       case "CPTD":
         status = "Delivered";
         statusClass = "Delivered";
-        console.log("The statusClass for CPTD is:", statusClass);
-
-
         break;
       case "CNCL": // Assuming 'CNCL' for cancelled
         status = "Cancelled";
         statusClass = "cancelled";
-        console.log("The statusClass for CPTD is:", statusClass);
 
         break;
       default:
         status = statusCode || "Unknown"; // Fallback to the code itself or 'Unknown'
         statusClass = "unknown";
-        console.log("The statusClass for CPTD is:", statusClass);
         break;
     }
     return { status, disableRefresh, statusClass };
@@ -425,7 +404,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   useEffect(() => {
     const fetchTollHistory = async () => {
       try {
-        const tollResponse = await fetch(`https://live-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(uniqueCode ?? '')}`);
+        const tollResponse = await fetch(`http://live-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(uniqueCode ?? '')}`);
         if (!tollResponse.ok) throw new Error(`Toll API error! Status: ${tollResponse.status}`);
         const tollData = await tollResponse.json();
         setTollHistoryData(tollData.data);
@@ -440,7 +419,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   useEffect(() => {
     const fetchTrails = async () => {
       try {
-        const trailsResponse = await fetch(`https://live-api.instavans.com/api/raccoon/trails?unique_code=${encodeURIComponent(uniqueCode ?? '')}`);
+        const trailsResponse = await fetch(`http://live-api.instavans.com/api/raccoon/trails?unique_code=${encodeURIComponent(uniqueCode ?? '')}`);
         if (!trailsResponse.ok) throw new Error(`Trails API error! Status: ${trailsResponse.status}`);
         const trailsData = await trailsResponse.json();
 
@@ -456,7 +435,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   useEffect(() => {
     const fetchEpods = async () => {
       try {
-        const epodsResponse = await fetch(`https://live-api.instavans.com/api/raccoon/epods?unique_code=${encodeURIComponent(uniqueCode ?? '')}`);
+        const epodsResponse = await fetch(`http://live-api.instavans.com/api/raccoon/epods?unique_code=${encodeURIComponent(uniqueCode ?? '')}`);
         if (!epodsResponse.ok) throw new Error(`ePODs API error! Status: ${epodsResponse.status}`);
         const epodsData = await epodsResponse.json();
         const urls = epodsData.epods?.deliveries?.flatMap((delivery: any) => delivery.epods) || [];
@@ -472,7 +451,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   useEffect(() => {
     const fetchHaltData = async () => {
       try {
-        const haltResponse = await fetch(`https://live-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(uniqueCode ?? '')}`);
+        const haltResponse = await fetch(`http://live-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(uniqueCode ?? '')}`);
         if (!haltResponse.ok) throw new Error(`Halt API error! Status: ${haltResponse.status}`);
         const haltData = await haltResponse.json();
         setHaltData(haltData);
@@ -587,15 +566,6 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   //   return Math.round(percentage); // clean integer %
   // };
   const getOnTimePercentage = (shipmentData: any, actualDelivery?: string) => {
-    console.log({
-      pickup: shipmentData?.pickup_date,
-      delivery: shipmentData?.delivery_date,
-      actualDelivery,
-      traveled: shipmentData?.trip_tracker?.travelled_distance,
-      estimated: shipmentData?.estimated?.distance,
-      dayRunAvg: shipmentData?.dayRun?.avg_distance,
-      latestStatus: shipmentData?.latest_status,
-    });
 
     const start = new Date(shipmentData?.pickup_date);
     const etaDate = new Date(shipmentData?.delivery_date);
@@ -1117,7 +1087,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   {!collapsedSections.locations && (
                     <div className="card-content">
                       {/* ORIGIN (unchanged) */}
-                      <div className="location-item origin">
+                      <div className="location-item origin" style={{ position: 'relative' }}>
                         <div className="location-icon-wrapper">
                           <div className="location-icon origin-icon">
                             <div className="location-dot"></div>
@@ -1125,22 +1095,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                         </div>
                         <div className="location-details">
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-
-                            <div className="location-type">Origin</div>
-                            {intermediates.length > 0 && !showAllStops && (
-                              <button
-                                className="more-badge origin-badge"
-                                onClick={() => setShowAllStops(true)}
-                                aria-label={`Show ${intermediates.length} more stops`}
-                                title={`Show ${intermediates.length} more stops`}
-                              >
-                                {intermediates.length}+
-                              </button>
-                            )}
-
-
-                          </div>
+                          <div className="location-type">Origin</div>
                           <div className="location-name">{toTitleCase(originLocation?.location?.name || 'N/A')}</div>
 
                           {/* Gate In Time */}
@@ -1164,73 +1119,32 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <span>{formatTimestamp(originLocation?.finished_at)}</span>
                           </div> */}
                         </div>
+                        {intermediates.length > 0 && !showAllStops && (
+                          <button
+                            className="more-badge origin-badge"
+                            onClick={() => setShowAllStops(true)}
+                            aria-label={`Show ${intermediates.length} more stops`}
+                            title={`Show ${intermediates.length} more stops`}
+                            style={{ position: 'absolute', top: '12px', right: '12px' }}
+                          >
+                            {intermediates.length}+
+                          </button>
+                        )}
                       </div>
 
 
 
-                      {showAllStops && (
-                        <>
-                          <div className="stops-scroll">
-                            {intermediates.map((s) => (
-                              <div key={s.id} className="location-item origin">
-                                <div className="location-icon-wrapper">
-                                  <div className="location-icon origin-icon">
-                                    <div className="location-dot"></div>
-                                  </div>
-                                </div>
-                                <div className="location-details">
-                                  <div className="location-type">Origin</div>
-                                  <div className="location-name">{toTitleCase(s.name)}</div>
-                                  <div className="location-time">
-                                    <Clock className="time-icon" />
-                                    <span>{s.date}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          <button className="link-button stops-toggle" onClick={() => setShowAllStops(false)}>
-                            Hide Origin
-                          </button>
-                        </>
-                      )}
 
 
-                      {destinations.length > 0 && showAllDests && (
-                        <>
-                          <div className="dests-scroll"> {/* NEW */}
-                            {destinations.map((d) => (  // NEW: all but final
-                              <div key={d.id} className="location-item destination"> {/* NEW */}
-                                <div className="location-icon-wrapper">
-                                  <div className="location-icon destination-icon">{/* reuse red/pink theme for non-final dests */}
-                                    <div className="location-dot"></div>
-                                  </div>
-                                </div>
-                                <div className="location-details">
-                                  <div className="location-type">Destination</div>
-                                  <div className="location-name">{toTitleCase(d.name)}</div>
-                                  <div className="location-time">
-                                    <Clock className="time-icon" />
-                                    <span>{d.date}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          <button
-                            className="link-button stops-toggle"   // NEW
-                            onClick={() => setShowAllDests(false)} // NEW
-                          >
-                            Hide  destination {/* NEW */}
-                          </button>
-                        </>
-                      )}
+
+
+
 
                       {/* FINAL DESTINATION (always visible at bottom) */}
 
 
                       {finalDestination && (
-                        <div className="location-item destination">
+                        <div className="location-item destination" style={{ position: 'relative' }}>
                           <div className="location-icon-wrapper">
                             <div className="location-icon destination-icon">
                               <CheckCircle className="check-icon" />
@@ -1238,20 +1152,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                           </div>
                           <div className="location-details">
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <div className="location-type">Destination</div>
-
-                              {destinations.length > 0 && !showAllDests && (
-                                <button
-                                  className="more-badge dest-badge"
-                                  onClick={() => setShowAllDests(true)}
-                                  aria-label={`Show ${destinations.length}} more destination${destinations.length > 1 ? "s" : ""}`}
-                                  title={`Show ${destinations.length} more destination${destinations.length > 1 ? "s" : ""}`}
-                                >
-                                  {destinations.length}+
-                                </button>
-                              )}
-                            </div>
+                            <div className="location-type">Destination</div>
                             <div className="location-name">{toTitleCase(finalDestination?.location?.name) || 'N/A'}</div>
 
                             {dropGateInTime && (
@@ -1271,13 +1172,22 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
 
                           </div>
+                          {destinations.length > 0 && !showAllDests && (
+                            <button
+                              className="more-badge dest-badge"
+                              onClick={() => setShowAllDests(true)}
+                              aria-label={`Show ${destinations.length}} more destination${destinations.length > 1 ? "s" : ""}`}
+                              title={`Show ${destinations.length} more destination${destinations.length > 1 ? "s" : ""}`}
+                              style={{ position: 'absolute', top: '12px', right: '12px' }}
+                            >
+                              {destinations.length}+
+                            </button>
+                          )}
                         </div>
 
                       )}
 
                     </div>)}
-
-
 
 
                 </div>
@@ -1420,14 +1330,14 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   >
                     <div className="kpi-icon-badge"><PauseCircle className="kpi-icon" /></div>
                     <div className="kpi-value">{totalStoppagesCount || 0}</div>
-                    <div className="kpi-label">Stoppages  {parseInt(totalHaltDurationText, 10) > 9 && (
+                    <div className="kpi-label">Stoppage{totalStoppagesCount === 1 ? "" : "s"}  {parseInt(totalHaltDurationText, 10) > 9 && (
                       <span> (&gt;9 hrs)</span>)}</div>
                     {/* <span className="tooltip-content">3 extended stops during journey</span> */}
                     <div className="tooltip-content tooltip-lg">
                       <div className="tooltip-title">Halt Alerts</div>
 
                       <div className="tooltip-row">
-                        <span className="tooltip-key">Total Stoppages:</span>
+                        <span className="tooltip-key">Total Stoppage{totalStoppagesCount === 1 ? "" : "s"}:</span>
                         <span className="tooltip-val">{totalStoppagesCount}</span>
                       </div>
                       <div className="tooltip-row">
@@ -1460,12 +1370,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   >
                     <div className="kpi-icon-badge"><GitBranch className="kpi-icon" /></div>
                     <div className="kpi-value">{deviationCount}</div>
-                    <div className="kpi-label">Route deviations</div>
+                    <div className="kpi-label">Route deviation{deviationCount === 1 ? "" : "s"}</div>
                     <div className="tooltip-content tooltip-lg">
                       <div className="tooltip-title">Route Deviations</div>
 
                       <div className="tooltip-row">
-                        <span className="tooltip-key">Total deviations:</span>
+                        <span className="tooltip-key">Total deviation{deviationCount === 1 ? "" : "s"}:</span>
                         <span className="tooltip-val">{deviationCount}</span>
                       </div>
                       <div className="tooltip-row">
@@ -1949,8 +1859,64 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
               </div>
             </div>
           </div>
+          {(showAllStops || showAllDests) && (
+            <div className="side-panel-overlay" onClick={() => { setShowAllStops(false); setShowAllDests(false); }}>
+              <div className="side-panel" onClick={(e) => e.stopPropagation()}>
+                <div className="side-panel-header">
+                  <div className="side-panel-title">
+                    <MapPin className="card-icon" />
+                    {showAllStops ? "All Pickups" : "All Destinations"}
+                  </div>
+                  <button className="side-panel-close" onClick={() => { setShowAllStops(false); setShowAllDests(false); }}>
+                    <X size={20} />
+                  </button>
+                </div>
+                <div className="side-panel-body">
+                  {showAllStops && intermediates.map((s, index) => (
+                    <div key={s.id || `pickup-${index}`} className="location-item origin">
+                      <div className="location-icon-wrapper">
+                        <div className="location-icon origin-icon">
+                          <div className="location-dot"></div>
+                        </div>
+                      </div>
+                      <div className="location-details">
+                        {/* <div className="location-type">Origin</div> */}
+                        <div className="location-name">{toTitleCase(s.name)}</div>
+                        {s.date && s.date !== "N/A" && (
+                          <div className="location-time">
+                            <Clock className="time-icon" />
+                            <span>{s.date}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {showAllDests && destinations.map((d, index) => (
+                    <div key={d.id || `destination-${index}`} className="location-item destination">
+                      <div className="location-icon-wrapper">
+                        <div className="location-icon destination-icon">
+                          <div className="location-dot"></div>
+                        </div>
+                      </div>
+                      <div className="location-details">
+                        <div className="location-name">{toTitleCase(d.name)}</div>
+                        {d.date && d.date !== "N/A" && (
+                          <div className="location-time">
+                            <Clock className="time-icon" />
+                            <span>{d.date}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </>)
       }
+
     </div >
   )
 }

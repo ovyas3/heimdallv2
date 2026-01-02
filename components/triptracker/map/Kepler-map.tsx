@@ -8,9 +8,7 @@ import { MapPin } from "lucide-react";
 import { Play, Pause, RotateCcw, X, SkipForward, SkipBack, FastForward, Rewind, Shield } from "lucide-react";
 import styles from "./Kepler-map.module.css";
 import type { Icon as LeafletIcon, DivIcon as LeafletDivIcon, Map as LeafletMap } from "leaflet";
-import tollPendingUrl from "@/assets/toll_gate.svg";
 import Image from "next/image";
-import tollPassedUrl from "@/assets/toll_gate_icon_passed.svg";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 import { useMap, useMapEvents } from "react-leaflet";
 import polyline from "@mapbox/polyline";
@@ -280,13 +278,30 @@ export default function KeplerMap({
   const [is3DView, setIs3DView] = useState(false);
 
   const polylineColors = [
-    '#E67E22', // Orange for day 1
-    '#3498DB', // Blue for day 2
-    '#2ECC71', // Green for day 3
-    '#9B59B6', // Purple for day 4
-    '#F1C40F', // Yellow for day 5
-    // Add more colors if you expect more days
+    '#E67E22',
+    '#3498DB',
+    '#2ECC71',
+    '#9B59B6',
+    '#F1C40F',
+    '#E74C3C',
+    '#1ABC9C',
+    '#34495E',
   ];
+
+  const zoomToDayRun = useCallback((dayIndex: number) => {
+    if (!mapRef.current || !dayRunPolylines[dayIndex]) return;
+
+    const coords = dayRunPolylines[dayIndex];
+    if (coords.length > 0) {
+      const bounds = L.latLngBounds(coords as LatLngExpression[]);
+      mapRef.current.fitBounds(bounds, {
+        padding: [50, 50],
+        maxZoom: 15,
+        animate: true,
+        duration: 0.5
+      });
+    }
+  }, [dayRunPolylines]);
 
   const [magnifierSettings, setMagnifierSettings] = useState<MagnifierSettings>({
     positionX: 0.5,
@@ -327,7 +342,6 @@ export default function KeplerMap({
             type: "FeatureCollection",
             features: [indiaFeature]
           });
-          console.log("SUCCESS! India GeoJSON boundary loaded and set.");
 
         } else {
           console.warn("India feature not found in GeoJSON file. The filter failed.");
@@ -477,7 +491,6 @@ export default function KeplerMap({
     }
 
     const animationDelay = 50 / replaySpeed;
-    console.log("animateReplay is running. Is paused:", isPausedAtHalt);
     const animateReplay = () => {
       const candidateIndex = replayIndexRef.current + 1;
       if (candidateIndex >= activeRoute.length) {
@@ -561,7 +574,6 @@ export default function KeplerMap({
   // This new useEffect handles the pause duration and resume. It's cleaner and separates concerns.
   useEffect(() => {
     let timerId: NodeJS.Timeout | null = null;
-    console.log("Popup useEffect triggered. isPausedAtHalt =", isPausedAtHalt);
     if (isPausedAtHalt) {
       // If we're paused, set a timer to un-pause after 5 seconds.
       timerId = setTimeout(() => {
@@ -577,7 +589,6 @@ export default function KeplerMap({
   // useEffect to handle deviation pause duration and resume
   useEffect(() => {
     let timerId: NodeJS.Timeout | null = null;
-    console.log("Deviation popup useEffect triggered. isPausedAtDeviation =", isPausedAtDeviation);
     if (isPausedAtDeviation) {
       // If we're paused at deviation, set a timer to un-pause after 5 seconds.
       timerId = setTimeout(() => {
@@ -976,7 +987,6 @@ export default function KeplerMap({
     if (!isMagnifierEnabled) {
       // ...reset the map instance state back to null.
       setMagnifierMap(null);
-      console.log("Magnifier instance cleaned up.");
     }
   }, [isMagnifierEnabled]); // This effect runs only when isMagnifierEnabled changes
   // Fetch current location
@@ -988,7 +998,7 @@ export default function KeplerMap({
       try {
         const res = await fetch(
 
-          `https://live-api.instavans.com/api/raccoon/shipment?unique_code=${encodeURIComponent(unique_code ?? '')}`,
+          `http://live-api.instavans.com/api/raccoon/shipment?unique_code=${encodeURIComponent(unique_code ?? '')}`,
           { signal: ac.signal }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1034,12 +1044,6 @@ export default function KeplerMap({
           };
         });
         setDeviationData(processedDeviations);
-        // Assuming it's encoded
-        console.log("Decoded Day Run Polylines:", decodedDayRuns);
-        console.log("Day Run Details:", extractedDetails);
-        console.log("Show Day Run State:", showDayRun);
-        console.log("Deviation Data:", processedDeviations);
-        console.log("Deviation Count:", processedDeviations.length);
         // Update the state with the day run polylines
         setDayRunPolylines(decodedDayRuns);
 
@@ -1129,6 +1133,7 @@ export default function KeplerMap({
       setIsLoadingFence(true);
 
       // Use the passed geo_fence data instead of making API call
+      // Use the passed geo_fence data instead of making an API call
       let fenceUrl = '';
 
       // Check if URLs are in s3_locations nested object or at root level
@@ -1165,7 +1170,6 @@ export default function KeplerMap({
       let coordinates = null;
       const decodedPolylines: [number, number][] = decodePolyline(fetchedFenceData)
       if (decodedPolylines) {
-        console.log("Using fetchedFenceData.coordinates");
         coordinates = decodedPolylines;
       } else {
         console.warn("No coordinates found in fence data", fetchedFenceData);
@@ -1201,38 +1205,12 @@ export default function KeplerMap({
         ];
         if (currentLocation) all.push(currentLocation); // include live point
         if (all.length > 0) {
-          console.log("Fitting map bounds on initial load...");
           mapRef.current.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
         }
       }
     }
   }, [shipmentPickups, shipmentDeliveries, isReplaying, replayProgress]);
 
-  useEffect(() => {
-    console.log("--- DEBUGGING CURRENT LOCATION ---");
-    // Check if the custom vehicle icon is loaded
-    if (!customIcons.vehicle) {
-      console.log("STATUS: Vehicle icon is not yet loaded.");
-    } else {
-      console.log("STATUS: Vehicle icon is available.");
-    }
-
-    // Check the state of the current location
-    if (currentLocation === null) {
-      console.log("STATUS: currentLocation is null. Data is not yet fetched or API returned no coordinates.");
-    } else {
-      console.log("STATUS: currentLocation is valid:", currentLocation);
-    }
-
-    // Check if the live vehicle Marker should be visible
-    if (currentLocation && !isReplaying) {
-      console.log("STATUS: Live vehicle Marker SHOULD be visible.");
-    } else {
-      console.log("STATUS: Live vehicle Marker is NOT visible due to conditional logic.");
-      console.log("Reason: currentLocation is", currentLocation, "and isReplaying is", isReplaying);
-    }
-
-  }, [currentLocation, isReplaying, customIcons.vehicle]);
   useEffect(() => {
     const ac = new AbortController();
 
@@ -1290,12 +1268,6 @@ export default function KeplerMap({
     }
     return coordinates;
   }, []);
-  useEffect(() => {
-    if (activeMode === 'app') {
-      console.log('[APP] appPath len:', appPath.length, 'first3:', appPath.slice(0, 3));
-    }
-  }, [activeMode, appPath]);
-  console.log('typeof appPath[0]:', typeof appPath[0], 'value:', appPath[0]);
 
   // This useEffect is already correct and will now work properly
 
@@ -1303,7 +1275,7 @@ export default function KeplerMap({
   useEffect(() => {
     const fetchPathData = async () => {
       try {
-        const response = await fetch(`https://live-api.instavans.com/api/raccoon/path?unique_code=${encodeURIComponent(unique_code ?? '')}`);
+        const response = await fetch(`http://live-api.instavans.com/api/raccoon/path?unique_code=${encodeURIComponent(unique_code ?? '')}`);
         if (!response.ok) {
           throw new Error("Failed to fetch path data");
         }
@@ -1391,7 +1363,7 @@ export default function KeplerMap({
       setIsLoadingFastag(true);
       try {
         const res = await fetch(
-          `https://live-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(unique_code ?? '')}`,
+          `http://live-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(unique_code ?? '')}`,
           { method: "GET", signal: ac.signal }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1554,18 +1526,18 @@ export default function KeplerMap({
     return { status, statusClass };
   };
 
-  const [selectedMapStyle, setSelectedMapStyle] = useState("osm-light");
+  const [selectedMapStyle, setSelectedMapStyle] = useState("satellite");
   const [showMapStyleSelector, setShowMapStyleSelector] = useState(false);
   const mapStyles = [
     { id: "none", name: "No Basemap", url: "", color: "#000000" },
     { id: "dark", name: "DarkMatter", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png", color: "#2c3e50" },
     { id: "light", name: "Positron", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png", color: "#f8f9fa" },
     { id: "voyager", name: "Voyager", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png", color: "#e8f4f8" },
-    { id: "satellite", name: "Satellite With Streets", url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", color: "#4a5568" },
+    { id: "satellite", name: "Satellite With Streets", url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", color: "#4a5568" },
     { id: "osm-dark", name: "Dark", url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", color: "#1a202c" },
     { id: "osm-light", name: "Light", url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", color: "#ffffff" },
-    { id: "muted-light", name: "Muted Light", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_nolabels/{z}/{x}/{y}.png", color: "#f1f5f9" },
-    { id: "muted-night", name: "Muted Night", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png", color: "#374151" },
+    { id: "muted-light", name: "Muted Light", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png", color: "#f1f5f9" },
+    { id: "muted-night", name: "Muted Night", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png", color: "#374151" },
   ];
 
   const getCurrentMapUrl = () => {
@@ -1628,18 +1600,19 @@ export default function KeplerMap({
 
       // ✅ NEW: use image icons for FASTag tolls
       const tollPendingIcon = L.icon({
-        iconUrl: tollPendingUrl.src, // or: tollPendingUrl (Option B)
+        iconUrl: "/toll_gate.svg",
         iconSize: [28, 28],
         iconAnchor: [14, 14],
-        className: styles.tollIcon, // optional
+        className: styles.tollIcon,
       });
 
       const tollPassedIcon = L.icon({
-        iconUrl: tollPassedUrl.src, // or: tollPassedUrl (Option B)
+        iconUrl: "/toll_gate_icon_passed.svg",
         iconSize: [28, 28],
         iconAnchor: [14, 14],
-        className: styles.tollIcon, // optional
+        className: styles.tollIcon,
       });
+
 
       setCustomIcons({
         pickup: createCustomIcon("#22c55e", "P"),
@@ -1663,7 +1636,7 @@ export default function KeplerMap({
 
       try {
         const res = await fetch(
-          `https://live-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(unique_code ?? '')}`,
+          `http://live-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(unique_code ?? '')}`,
           { method: "GET", signal: ac.signal }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1739,7 +1712,7 @@ export default function KeplerMap({
     if (!isMagnifierEnabled || !isDraggingMagnifier || !mapContainerRef.current
       || !mapRef.current
     ) return;
-    console.log("💨 MOUSE MOVE while dragging...");
+
     const rect = mapContainerRef.current.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
@@ -1824,8 +1797,6 @@ export default function KeplerMap({
     // Set the new map center state
     setMagnifierCenter([newMagnifierCenter.lat, newMagnifierCenter.lng]);
 
-    console.log("Magnifier position updated from settings.");
-
   }, [
     isMagnifierEnabled,
     magnifierSettings.positionX,
@@ -1836,7 +1807,6 @@ export default function KeplerMap({
 
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    console.log("🖱️ MOUSE DOWN triggered.");
     const target = e.target as HTMLElement;
 
     // HIGHLIGHT: New check to ignore clicks on the magnifier panel
@@ -1866,7 +1836,6 @@ export default function KeplerMap({
 
   const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (isDraggingMagnifier) {
-      console.log("✋ MOUSE UP. Stopping drag.");
       e.preventDefault(); e.stopPropagation();
     }
     setIsDraggingMagnifier(false);
@@ -1894,8 +1863,6 @@ export default function KeplerMap({
       const magnifierMapInstance = magnifierMap;
       const mainMap = mapRef.current;
 
-      console.log("--- INITIALIZING MAGNIFIER MAP (Refs are ready!) ---");
-
       // Use a short timeout. This is a common trick to ensure the map's container
       // has finished rendering in the DOM before we ask the map to measure it.
       const timer = setTimeout(() => {
@@ -1908,7 +1875,6 @@ export default function KeplerMap({
           magnifierCenter,
           Math.min(mainMapZoom + magnifierSettings.zoom, 18)
         );
-        console.log("Magnifier initialized.");
       }, 50); // A 50ms delay is usually sufficient.
 
       // Cleanup function: if the component unmounts, clear the timeout.
@@ -1929,8 +1895,6 @@ export default function KeplerMap({
 
     // The 'magnifierMap' variable is already the map instance
     const mainMap = mapRef.current;
-
-    console.log("--- Updating Magnifier View to:", magnifierCenter);
 
     const mainMapZoom = mainMap.getZoom();
     magnifierMap.setView(
@@ -2343,28 +2307,38 @@ export default function KeplerMap({
           )}
 
           {showDayRun && dayRunPolylines.map((coords, i) => (
-            <Polyline
-              key={`dayrun-${i}`}
-              positions={coords}
-              pathOptions={{ color: polylineColors[i], weight: 3, opacity: 0.8, dashArray: "8, 8" }}
-            >
-              <Popup>
-                <div>
-                  <h4 style={{ color: "blue" }}>Day {i + 1} Run Details</h4>
-                  {/*
-          NOTE: Make sure dayRunDetails is an array that corresponds
-          to dayRunPolylines.
-        */}
-                  <p><strong>Start Time:</strong> {dayRunDetails[i].startTime}</p>
-                  <p><strong>Distance:</strong> {dayRunDetails[i].distance}</p>
-                  <p><strong>Time:</strong> {dayRunDetails[i].time}</p>
-                </div>
-              </Popup>
-            </Polyline>
+            <>
+              <Polyline
+                key={`dayrun-border-${i}`}
+                positions={coords}
+                pathOptions={{
+                  color: '#000000',
+                  weight: 8,
+                  opacity: 0.4
+                }}
+              />
+              <Polyline
+                key={`dayrun-${i}`}
+                positions={coords}
+                pathOptions={{
+                  color: polylineColors[i],
+                  weight: 4,
+                  opacity: 1
+                }}
+              >
+                <Popup>
+                  <div>
+                    <h4 style={{ color: "blue" }}>Day {i + 1} Run Details</h4>
+                    <p><strong>Start Time:</strong> {dayRunDetails[i].startTime}</p>
+                    <p><strong>Distance:</strong> {dayRunDetails[i].distance}</p>
+                    <p><strong>Time:</strong> {dayRunDetails[i].time}</p>
+                  </div>
+                </Popup>
+              </Polyline>
+            </>
           ))}
 
 
-          {/* === Shipment: Pickups (P1, P2, ...) === */}
           {shipmentPickups.map(({ pos, label, meta }, i) => (
             <Marker
               key={`ship-pickup-${i}`}
@@ -2547,15 +2521,6 @@ export default function KeplerMap({
 
             const pathToUse = fencePathData && fencePathData.length > 0 ? fencePathData : internalFencePathData;
 
-            console.log("Fence rendering check:", {
-              shouldShowFence,
-              showFencePath,
-              fencePathDataLength: fencePathData?.length || 0,
-              internalFencePathDataLength: internalFencePathData.length,
-              pathToUseLength: pathToUse?.length || 0
-            });
-            console.log("Fence Path Data:");
-            console.log(pathToUse.map(coord => [coord[1], coord[0]]));
             return shouldShowFence && (
               <Polyline
                 key="fence-path-polyline"
@@ -3401,6 +3366,7 @@ export default function KeplerMap({
                 <table className={styles.table}>
                   <thead>
                     <tr>
+                      <th>Color</th>
                       <th>Day</th>
                       <th>Start Time</th>
                       <th>Distance</th>
@@ -3409,7 +3375,25 @@ export default function KeplerMap({
                   </thead>
                   <tbody>
                     {dayRunDetails.map((run, index) => (
-                      <tr key={index}>
+                      <tr
+                        key={index}
+                        onClick={() => zoomToDayRun(index)}
+                        style={{ cursor: 'pointer' }}
+                        className={styles.dayRunRow}
+                      >
+                        <td>
+                          <div
+                            style={{
+                              width: '20px',
+                              height: '20px',
+                              backgroundColor: polylineColors[index] || '#999',
+                              borderRadius: '4px',
+                              margin: '0 auto',
+                              border: '2px solid #fff',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                            }}
+                          />
+                        </td>
                         <td>{index + 1}</td>
                         <td>{run.startTime}</td>
                         <td>{run.distance}</td>
