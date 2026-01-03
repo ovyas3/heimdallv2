@@ -1865,7 +1865,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                 <div className="side-panel-header">
                   <div className="side-panel-title">
                     <MapPin className="card-icon" />
-                    {showAllStops ? "All Pickups" : "All Destinations"}
+                    {showAllStops ? "Additional Pickups" : "Additional Destinations"}
                   </div>
                   <button className="side-panel-close" onClick={() => { setShowAllStops(false); setShowAllDests(false); }}>
                     <X size={20} />
@@ -1874,9 +1874,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                 <div className="side-panel-body">
                   {showAllStops && intermediates.map((s, index) => (
                     <div key={s.id || `pickup-${index}`} className="location-item origin">
-                      <div className="location-icon-wrapper">
-                        <div className="location-icon origin-icon">
-                          <div className="location-dot"></div>
+                      <div className="location-icon-wrapper1">
+                        <div className="location-icon origin-icon1">
+                          <div className="location-dot1"></div>
                         </div>
                       </div>
                       <div className="location-details">
@@ -1894,9 +1894,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                   {showAllDests && destinations.map((d, index) => (
                     <div key={d.id || `destination-${index}`} className="location-item destination">
-                      <div className="location-icon-wrapper">
-                        <div className="location-icon destination-icon">
-                          <div className="location-dot"></div>
+                      <div className="location-icon-wrapper1">
+                        <div className="location-icon destination-icon1">
+                          <div className="location-dot1"></div>
                         </div>
                       </div>
                       <div className="location-details">

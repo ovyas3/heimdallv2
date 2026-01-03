@@ -2231,6 +2231,8 @@ export default function KeplerMap({
                   onChange={(e) => setReplaySpeed(Number(e.target.value))}
                   title="Playback Speed"
                 >
+                  <option value={0.1}>0.1x</option>
+                  <option value={0.3}>0.3X</option>
                   <option value={0.5}>0.5x</option>
                   <option value={1}>1x</option>
                   <option value={2}>1.5x</option>
@@ -2704,6 +2706,8 @@ export default function KeplerMap({
                               onChange={(e) => setReplaySpeed(Number(e.target.value))}
                               className={styles.selectXs}
                             >
+                              <option value={0.1}>0.1x</option>
+                              <option value={0.3}>0.3X</option>
                               <option value={0.5}>0.5x</option>
                               <option value={1}>1x</option>
                               <option value={2}>2x</option>

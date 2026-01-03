@@ -842,7 +842,6 @@
   height: 100%;
 }
 
-/* Live status */
 .statusOverlay {
   width: 320px;
   position: absolute;
@@ -856,7 +855,18 @@
   box-shadow: 0 10px 15px rgba(0, 0, 0, .1);
   z-index: 1000;
   max-width: 320px;
-  transition: left .3s ease;
+  transition: left .3s ease, top .3s ease, width .3s ease;
+}
+
+@media (max-width: 640px) {
+
+  .statusOverlay,
+  .shipmentDetailsOverlay {
+    width: auto !important;
+    max-width: calc(100vw - 90px) !important;
+    font-size: 11px !important;
+    padding: 8px !important;
+  }
 }
 
 .statusOverlay.smallText .statusTitle {
@@ -1051,7 +1061,7 @@
 }
 
 .mapStyleHeader {
-  background: #111827;
+  background: #7d5bcc;
   color: #fff;
   border-radius: 10px 10px 0 0;
   padding: 10px 12px;
@@ -1430,10 +1440,10 @@
 
 .sideControlsFullscreen {
   /* Reposition to the top right */
-  top: 70px;
+  top: 250px;
   bottom: auto;
   /* Remove the bottom positioning */
-  right: 55px;
+  right: 12px;
   /* Stack the buttons vertically */
   flex-direction: column;
 
@@ -1483,19 +1493,23 @@
 }
 
 .sideControlsMobile {
-  top: auto;
-  bottom: 120px;
-  right: 85%;
-  transform: translateX(50%);
+  top: 270px;
+  bottom: auto;
+  right: 16px;
+  transform: none;
   flex-direction: column;
-  padding: 10px;
+  padding: 0;
+  gap: 8px;
+  border-radius: 0;
+  pointer-events: none;
+}
 
-  border-radius: 12px;
-
+.sideControlsMobile>* {
+  pointer-events: auto;
 }
 
 .sideControlsMobile .sideBtn {
-  padding: 8px 10px;
+  padding: 6px 8px;
 }
 
 /* Commented out - handled by sideControlsMobile
@@ -1609,7 +1623,7 @@
 }
 
 .iconBtnPlain {
-  background: none;
+  background: #f3f4f6;
   border: none;
   cursor: pointer;
   color: #6b7280;
@@ -1652,22 +1666,22 @@
     width: 320px;
   }
 
-  .topRightControls {
+  /* .topRightControls {
     top: 50px;
     right: 12px;
     gap: 6px;
-  }
+  } */
 
   .iconBtn {
     width: 38px;
     height: 38px;
   }
 
-  .sideControls {
+  /* .sideControls {
     top: 12px;
     right: 12px;
     gap: 6px;
-  }
+  } */
 
   .sideBtn {
     padding: 6px 8px;
@@ -1720,20 +1734,20 @@
     width: 280px;
   }
 
-  .topRightControls {
+  /* .topRightControls {
     top: 45px;
     right: 10px;
-  }
+  } */
 
   .iconBtn {
     width: 36px;
     height: 36px;
   }
 
-  .sideControls {
+  /* .sideControls {
     top: 10px;
     right: 10px;
-  }
+  } */
 
   .enhancedReplayPanel {
     min-width: 380px;
@@ -1818,22 +1832,22 @@
     max-height: 260px;
   }
 
-  .topRightControls {
+  /* .topRightControls {
     top: 40px;
     right: 8px;
     gap: 6px;
-  }
+  } */
 
   .iconBtn {
     width: 34px;
     height: 34px;
   }
 
-  .sideControls {
+  /* .sideControls {
     top: 8px;
     right: 8px;
     gap: 5px;
-  }
+  } */
 
   .sideBtn {
     padding: 5px 6px;
@@ -1960,10 +1974,12 @@
 
   .statusOverlay,
   .shipmentDetailsOverlay {
-    width: 200px;
-    max-width: 200px;
-    padding: 6px;
-    left: 4px;
+    width: auto !important;
+    max-width: calc(100vw - 100px) !important;
+    font-size: 11px !important;
+    padding: 8px !important;
+    right: 80px !important;
+    left: 10px !important;
   }
 
   .shipmentDetailsOverlay {
@@ -2070,22 +2086,23 @@
     max-height: 220px;
   }
 
+  /* 
   .topRightControls {
     top: 35px;
     right: 6px;
     gap: 4px;
-  }
+  } */
 
   .iconBtn {
     width: 32px;
     height: 32px;
   }
 
-  .sideControls {
+  /* .sideControls {
     top: 6px;
     right: 6px;
     gap: 4px;
-  }
+  } */
 
   .sideBtn {
     padding: 4px 5px;
@@ -2126,7 +2143,7 @@
   .iconBtn,
   .sideBtn,
   .replayControlBtn {
-    min-height: 44px;
+    min-height: 30px;
     min-width: 44px;
   }
 
