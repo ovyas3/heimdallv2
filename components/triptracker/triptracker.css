@@ -3173,13 +3173,9 @@ timeline-icon path {
 
 .map-confirm-popover {
   position: fixed;
-  top: 80px;
-  /* Adjust based on your header height */
-  right: 20px;
-  /* Position from right edge */
-  /* Remove these centering properties: */
-  /* inset: 0; */
-  /* margin: auto; */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 9999;
   background: #fff;
   border: 1px solid #e5e7eb;
@@ -3215,28 +3211,10 @@ timeline-icon path {
 /* On small screens, use almost full width */
 @media (max-width: 640px) {
   .map-confirm-popover {
-    /* position: fixed; */
-    /* top: 50%;
-        left: 50%; */
-    /* transform: translate(-50%, -50%); */
-
-    /* Set the desired width */
     min-width: 90% !important;
-    min-height: 400px;
-    /* Remove the conflicting properties */
-    /* inset: unset !important;
-        margin: unset !important; */
-
-    /* Maintain other styles */
-    /* padding: 20px; */
-    /* or a specific value *
- 
-    /* Use new centering method */
-
-    /* Set a maximum width to prevent it from getting too large on some phones */
-
-    /* Ensure it's centered if you're using `width` instead of `inset: 0; margin: auto;` */
-
+    width: 90%;
+    max-height: 80vh;
+    padding: 20px;
   }
 }
 
