@@ -2070,6 +2070,13 @@ body {
   padding-bottom: 1rem;
 }
 
+@media (max-width: 768px) {
+  .timeline-content .scrollable-container {
+    max-height: 400px !important;
+    overflow-y: auto !important;
+  }
+}
+
 
 .timeline-header {
   display: flex;
