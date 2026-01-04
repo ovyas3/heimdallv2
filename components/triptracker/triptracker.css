@@ -105,6 +105,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .header-logo-section {
@@ -216,6 +219,23 @@ body {
   }
 }
 
+@media (max-width: 1200px) {
+  .header-customer-info {
+    margin-left: 0.75rem;
+    padding-left: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .customer-icon-wrapper {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .customer-name {
+    font-size: 0.8rem;
+  }
+}
+
 .customer-icon-wrapper {
   width: 2rem;
   height: 2rem;
@@ -307,7 +327,11 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex: 1;
+  min-width: 0;
 }
 
 .refresh-button {
@@ -441,6 +465,56 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+@media (max-width: 1200px) {
+  .header-content {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .header-actions {
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .header-eta {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  .shipment-id {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  .refresh-button {
+    padding: 0.25rem;
+  }
+
+  .help-button {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .logo-icon-wrapper {
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .header-logo-container {
+    padding: 4px 10px;
+    height: 30px;
+  }
+}
+
 .help-button {
   padding: 0.5rem 0.75rem;
   font-size: 0.75rem;
@@ -457,18 +531,30 @@ body {
 
 @media (max-width: 768px) {
   .header {
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0.5rem;
   }
 
   .header-content {
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: stretch;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
   }
 
   .header-logo-section {
-    width: 100%;
-    justify-content: space-between;
+    flex: 0 0 auto;
+  }
+
+  .header-actions {
+    flex: 1 1 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-end;
+    align-items: center;
   }
 
   .header-logo-container {
@@ -481,53 +567,14 @@ body {
     max-width: 110px;
   }
 
-  .header-actions {
-    width: 100%;
-    justify-content: space-between;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-  }
-
-  .header-action-item {
-    order: -1;
-  }
-
-  .refresh-button {
-    padding: 0.35rem;
-  }
-
-  .refresh-icon {
-    height: 0.875rem;
-    width: 0.875rem;
-  }
-
-  .shipment-id {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
-    white-space: nowrap;
-  }
-
-  .status-badge {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.65rem;
-    white-space: nowrap;
-  }
-
-  .help-button {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.65rem;
-    gap: 0.25rem;
-    white-space: nowrap;
-  }
-
-  .help-icon {
-    height: 0.875rem;
-    width: 0.875rem;
+  .refresh-button-container {
+    display: none !important;
   }
 
   .tracking-icons {
     display: flex !important;
-    gap: 0.35rem;
+    gap: 0.25rem;
+    align-items: center;
   }
 
   .icon-wrapper {
@@ -535,83 +582,90 @@ body {
   }
 
   .icon {
-    height: 0.875rem;
-    width: 0.875rem;
+    height: 0.9rem;
+    width: 0.9rem;
   }
 }
+
+@media (max-width: 1161px) {
+  .desktop-only-help {
+    display: none !important;
+  }
+
+  .mobile-only-help {
+    display: block !important;
+  }
+}
+
+.mobile-only-help {
+  display: none;
+}
+
+@keyframes fabPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(128, 0, 128, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(128, 0, 128, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(128, 0, 128, 0);
+  }
+}
+
+.help-fab-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 2000;
+  width: auto;
+  height: auto;
+  border-radius: 50%;
+  padding: 12px 14px;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(128, 0, 128, 0.4);
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 8px;
+  background-color: #800080;
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: fabPulse 2s infinite;
+}
+
+.help-fab-button:active {
+  transform: scale(0.95);
+}
+
+.help-fab-icon {
+  width: 20px;
+  height: 20px;
+}
+
+
 
 @media (max-width: 640px) {
-  .header {
-    padding: 0.4rem 0.5rem;
-  }
-
-  .header-content {
-    gap: 0.5rem;
-  }
-
-  .header-logo-container {
-    height: 28px;
-    padding: 4px 10px;
-  }
-
-  .header-logo-img {
-    max-width: 100px;
-  }
-
-  .header-actions {
-    gap: 0.3rem;
-  }
-
-  .refresh-button {
-    padding: 0.3rem;
-  }
-
-  .shipment-id {
-    padding: 0.3rem 0.4rem;
-    font-size: 0.7rem;
-  }
-
-  .status-badge {
-    padding: 0.3rem 0.4rem;
-    font-size: 0.6rem;
-  }
-
-  .help-button {
-    padding: 0.3rem 0.4rem;
-    font-size: 0.6rem;
-    gap: 0.2rem;
-  }
-
-  .help-icon {
-    height: 0.75rem;
-    width: 0.75rem;
-  }
-
-  .tracking-icons {
-    gap: 0.25rem;
-  }
-
-  .icon-wrapper {
-    padding: 0.3rem;
-  }
-
-  .icon {
-    height: 0.75rem;
-    width: 0.75rem;
-  }
-}
-
-@media (max-width: 480px) {
   .header {
     padding: 0.35rem 0.4rem;
   }
 
   .header-content {
-    gap: 0.4rem;
+    gap: 0.3rem;
+    width: 100%;
+  }
+
+  .header-logo-section {
+    flex: 0 0 auto;
   }
 
   .header-logo-container {
-    height: 26px;
+    height: 28px;
     padding: 3px 8px;
   }
 
@@ -621,7 +675,59 @@ body {
 
   .header-actions {
     gap: 0.25rem;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+  }
+
+  .refresh-button {
+    padding: 0.25rem;
+  }
+
+  .shipment-id {
+    padding: 0.25rem 0.4rem;
     font-size: 0.65rem;
+    white-space: nowrap;
+  }
+
+  .status-badge {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.65rem;
+    white-space: nowrap;
+  }
+
+  .icon-wrapper {
+    padding: 0.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 0.35rem 0.4rem;
+  }
+
+  .header-content {
+    gap: 0.3rem;
+    width: 100%;
+  }
+
+  .header-logo-section {
+    flex: 0 0 auto;
+  }
+
+  .header-logo-container {
+    height: 26px;
+    padding: 3px 8px;
+  }
+
+  .header-logo-img {
+    max-width: 80px;
+  }
+
+  .header-actions {
+    gap: 0.25rem;
+    font-size: 0.65rem;
+    flex: 1 1 auto;
+    justify-content: flex-end;
   }
 
   .refresh-button {
@@ -635,12 +741,14 @@ body {
 
   .shipment-id {
     padding: 0.25rem 0.35rem;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
+    white-space: nowrap;
   }
 
   .status-badge {
     padding: 0.25rem 0.35rem;
     font-size: 0.55rem;
+    white-space: nowrap;
   }
 
   .help-button {
@@ -693,6 +801,7 @@ body {
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   flex-shrink: 0;
+  width: 100%;
 }
 
 /* @media (max-width: 640px) {
@@ -817,18 +926,9 @@ body {
 
 
   .kpi-strip {
-    overflow-x: auto;
+    /* overflow-x: auto; */
     padding-bottom: 0.5rem;
     margin: 1rem 0;
-  }
-
-  .kpi-card {
-    min-width: 140px;
-    flex-shrink: 0;
-  }
-
-  .kpi-card.distance {
-    min-width: 200px;
   }
 }
 
@@ -931,11 +1031,47 @@ body {
   visibility: visible;
 }
 
+/* Tablet and medium screens - 3 columns for better layout */
+@media (max-width: 1200px) and (min-width: 769px) {
+  .kpi-strip {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  /* Don't span the distance card - let it fit naturally in the 3-column grid */
+  .kpi-card.distance {
+    grid-column: auto;
+  }
+}
+
+/* Small tablets - 2 columns */
+@media (max-width: 768px) and (min-width: 641px) {
+  .kpi-strip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  /* Don't span the distance card - let it fit naturally in 2-column grid */
+  .kpi-card.distance {
+    grid-column: auto;
+  }
+
+  .kpi-value {
+    font-size: 1.2rem;
+  }
+
+  .kpi-label {
+    font-size: 0.72rem;
+  }
+}
+
+/* Mobile screens */
 @media (max-width: 640px) {
   .kpi-card {
     position: static;
     backdrop-filter: none;
-
+    min-height: 100px;
+    padding: 2rem 0.5rem 0.5rem 0.5rem;
   }
 
   .kpi-card:hover {
@@ -944,16 +1080,25 @@ body {
   }
 
   .kpi-strip {
-    display: grid;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
 
-    grid-template-columns: repeat(1, 1fr);
-    grid-auto-rows: 1fr;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+  .kpi-card.distance {
+    grid-column: auto;
+  }
+
+  .kpi-value {
+    font-size: 1.15rem;
+  }
+
+  .kpi-label {
+    font-size: 0.7rem;
   }
 
   .tooltip-content {
-
     position: fixed;
     top: 50%;
     left: 50%;
@@ -962,7 +1107,6 @@ body {
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease-in-out;
-
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(8px);
     box-shadow: var(--shadow-lg);
@@ -1660,6 +1804,12 @@ body {
   gap: 0.25rem;
 }
 
+.filter-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .filter-button.deviation {
   border: 1px solid #fecaca;
   color: #e11d48;
@@ -1669,6 +1819,12 @@ body {
   background-color: #fff1f2;
 }
 
+.filter-button.deviation:disabled {
+  border-color: #fecaca;
+  color: #e11d48;
+  background-color: transparent;
+}
+
 .filter-button.stoppage {
   border: 1px solid #fed7aa;
   color: #ea580c;
@@ -1676,6 +1832,12 @@ body {
 
 .filter-button.stoppage:hover {
   background-color: #fff7ed;
+}
+
+.filter-button.stoppage:disabled {
+  border-color: #fed7aa;
+  color: #ea580c;
+  background-color: transparent;
 }
 
 .filter-button.fence-path {
@@ -1850,70 +2012,50 @@ body {
 } */
 
 .tracking-status-grid {
-  display: flex;
-  /* put items in a row */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
-  overflow-x: auto;
-  /* This is the key line to enable horizontal scrolling */
-  gap: 16px;
-  /* Adjust the spacing between items as needed */
-  padding-bottom: 8px;
-  /* display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem; */
+  width: 100%;
 }
 
 @media (max-width: 640px) {
   .card.device-tracking-card {
     width: 100%;
     max-width: 100% !important;
-    /* cap it */
     overflow: hidden;
-    /* hide any child overflow */
     min-width: 0;
     flex: 1 1 auto;
   }
 
   .tracking-status-grid {
-    display: flex;
-    /* put items in a row */
-    gap: 1rem;
-
-    flex-wrap: wrap;
-    overflow-x: auto;
-    /* This is the key line to enable horizontal scrolling */
-    gap: 16px;
-    /* Adjust the spacing between items as needed */
-    padding-bottom: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
     width: 100%;
-    /* lock grid inside parent card */
-    max-width: 100%;
-    min-width: 0;
-
-    /* display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem; */
   }
 
   .tracking-status-item {
-
-
-    flex: 0 0 calc((100% - 16px) / 2);
-    /* 2 items per row */
-    max-width: calc((100% - 16px) / 2);
-    min-height: 200px;
-    /* min-width: 130px;
-  min-height: 200px;  */
+    flex: 1 1 100%;
+    min-width: 0;
+    min-height: 180px;
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
+  }
+}
 
+@media (max-width: 480px) {
+  .tracking-status-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
-
-
-
-
+  .tracking-status-item {
+    min-height: 160px;
+  }
 }
+
+
+
 
 
 
@@ -2066,16 +2208,17 @@ body {
   height: auto;
   min-height: 0;
   max-height: none !important;
-  overflow-y: visible;
+  overflow-y: auto !important;
   padding-bottom: 1rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .timeline-content .scrollable-container {
     max-height: 400px !important;
     overflow-y: auto !important;
   }
 }
+
 
 
 .timeline-header {
@@ -2098,8 +2241,49 @@ body {
   display: flex;
   background-color: #f1f5f9;
   border-radius: 0.75rem;
-  padding: 0.10rem;
-  width: 90%;
+  padding: 0.25rem;
+  flex: 1;
+  min-width: 0;
+  margin-right: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tab-container::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .tab-container {
+    margin-right: 0.25rem;
+  }
+
+  .tab-button {
+    padding: 0.25rem 0.25rem;
+    font-size: 0.65rem;
+    gap: 0.25rem;
+    justify-content: center;
+  }
+
+  .timeline-header {
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .tab-button {
+    flex: 0 0 auto !important;
+    padding: 0.35rem 0.75rem !important;
+    white-space: nowrap !important;
+  }
+
+  .tab-button span {
+    display: inline-block !important;
+    min-width: auto;
+    white-space: nowrap !important;
+  }
 }
 
 .tab-button {
@@ -2114,23 +2298,33 @@ body {
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.tab-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .tab-button.active {
   background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
   color: white;
-  width: 50%;
+  flex: 1;
 }
 
 .tab-button:not(.active) {
   color: var(--text-secondary);
-  width: 50%;
+  flex: 1;
 }
 
 .tab-button:not(.active):hover {
   background-color: var(--primary-lighter);
   color: var(--primary-color);
-
 }
 
 .tab-icon {
@@ -3907,23 +4101,65 @@ timeline-icon path {
   }
 
   .card {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+    padding: 0.65rem;
+  }
+
+  .card-header {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .card-title {
+    font-size: 0.9rem;
+  }
+
+  .card-icon {
+    height: 1.1rem;
+    width: 1.1rem;
   }
 
   .location-item {
-    padding: 0.875rem;
-    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0.65rem;
+    gap: 0.75rem;
+  }
+
+  .location-name {
+    font-size: 0.8rem;
+  }
+
+  .location-time {
+    font-size: 0.7rem;
   }
 
   /* Improve timeline readability */
   .timeline-item {
-    padding: 0.75rem;
+    padding: 0.65rem;
+    gap: 0.65rem;
   }
 
-  /* Better toll history layout */
+  .timeline-time {
+    font-size: 0.9rem;
+  }
+
+  .timeline-event {
+    font-size: 0.8rem;
+  }
+
   .toll-history-section .toll-history-item {
     grid-template-columns: 4.5rem 20px 1fr;
     gap: 10px;
+  }
+
+  .detail-item {
+    padding: 0.65rem 0.4rem;
+    gap: 1rem;
+  }
+
+  .detail-label,
+  .detail-value {
+    font-size: 0.8rem;
   }
 }
 

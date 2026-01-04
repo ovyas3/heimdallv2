@@ -3313,19 +3313,24 @@ export default function KeplerMap({
           )}
 
 
-          <button
-            onClick={() => setShowDeviations(!showDeviations)}
-            className={`${styles.sideBtn} ${showDeviations ? styles.sideBtnOrange : styles.sideBtnGray}`}
-          >
-            {/* <div className={styles.sideDotBox}></div> */}
-            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="6" x2="6" y1="3" y2="15"></line>
-              <circle cx="18" cy="6" r="3"></circle>
-              <path d="M18 9a9 9 0 0 1-9 9"></path>
-              <circle cx="6" cy="18" r="3"></circle>
-            </svg>
-            <span>Deviation</span>
-          </button>
+
+
+          {deviationRoutes.length > 0 && (
+            <button
+              onClick={() => setShowDeviations(!showDeviations)}
+              className={`${styles.sideBtn} ${showDeviations ? styles.sideBtnOrange : styles.sideBtnGray}`}
+            >
+              {/* <div className={styles.sideDotBox}></div> */}
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" x2="6" y1="3" y2="15"></line>
+                <circle cx="18" cy="6" r="3"></circle>
+                <path d="M18 9a9 9 0 0 1-9 9"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+              </svg>
+              <span>Deviation</span>
+            </button>
+          )}
+
 
 
           <button

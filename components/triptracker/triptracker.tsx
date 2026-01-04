@@ -241,10 +241,22 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       setShowHaltPointsOnMap(false);
       setShowStoppagesOnMap(false);
     }
-    // Close the confirmation popup
+
+    if (typeof window !== 'undefined' && window.innerWidth <= 640) {
+      setIsMapFull(true);
+    }
+
     closeConfirm();
   };
-  // document modal state
+
+  const handleExitFullScreen = () => {
+    setIsMapFull(false);
+
+    if (typeof window !== 'undefined' && window.innerWidth <= 640) {
+      setMapState({ mode: 'location', showHalts: false, showDeviations: false });
+    }
+  };
+
   const [docModal, setDocModal] = useState<{ open: boolean; doc?: { id: string; name: string; url: string } }>({ open: false })
 
   const toggleSection = (sectionKey: string) => {
@@ -760,7 +772,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                 </div>
               </div>
               <div className="header-actions">
-                <div className="header-action-item">
+                <div className="header-action-item refresh-button-container">
                   <button className="refresh-button tooltip" onClick={handleRefresh}>
                     <RefreshCw className="refresh-icon" />
                     {/* <span className="tooltip-content">Refresh Data</span> */}
@@ -807,12 +819,14 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   {shipmentStatus}
                   {/* <span className="tooltip-content">Shipment Status</span> */}
                 </span>
-                <HelpModal shipmentId="UHR0002-8" driverPhone="8660578908">
-                  <button className="help-button">
-                    <MessageCircle className="help-icon" />
-                    Get Help
-                  </button>
-                </HelpModal>
+                <div className="desktop-only-help">
+                  <HelpModal shipmentId="UHR0002-8" driverPhone="8660578908">
+                    <button className="help-button">
+                      <MessageCircle className="help-icon" />
+                      Get Help
+                    </button>
+                  </HelpModal>
+                </div>
               </div>
             </div>
           </header>
@@ -930,9 +944,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
           {isMapFull && (
             <>
-              <div className="mapfs-backdrop" onClick={() => setIsMapFull(false)} />
+              <div className="mapfs-backdrop" onClick={handleExitFullScreen} />
               <div className="mapfs-shell">
-                <button className="mapfs-exit-btn" onClick={() => setIsMapFull(false)}>
+                <button className="mapfs-exit-btn" onClick={handleExitFullScreen}>
                   <X size={16} /> {/* Using the X icon */}
                   Exit
                 </button>
@@ -1460,10 +1474,10 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       </div>
                       {mapState.mode === "location" && (
                         <div className="map-filter-buttons">
-                          <button className="filter-button deviation" onClick={() => openConfirm("deviation")}  >
+                          <button className="filter-button deviation" onClick={() => openConfirm("deviation")} disabled={deviationCount === 0}>
                             <Navigation className="filter-icon" />{deviationCount} deviations
                           </button>
-                          <button className="filter-button stoppage" onClick={() => openConfirm("stoppage")}  >
+                          <button className="filter-button stoppage" onClick={() => openConfirm("stoppage")} disabled={totalStoppagesCount === 0}>
                             <AlertTriangle className="filter-icon" />{totalStoppagesCount} Stoppages
                           </button>
                         </div>)}
@@ -1916,6 +1930,14 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
           )}
         </>)
       }
+
+      <div className="mobile-only-help">
+        <HelpModal shipmentId="UHR0002-8" driverPhone="8660578908">
+          <button className="help-fab-button">
+            <MessageCircle className="help-fab-icon" />
+          </button>
+        </HelpModal>
+      </div>
 
     </div >
   )
