@@ -2242,6 +2242,7 @@ body {
   background-color: #f1f5f9;
   border-radius: 0.75rem;
   padding: 0.25rem;
+  gap: 0.25rem;
   flex: 1;
   min-width: 0;
   margin-right: 0.75rem;
@@ -2257,12 +2258,13 @@ body {
 @media (max-width: 640px) {
   .tab-container {
     margin-right: 0.25rem;
+    gap: 0.15rem;
   }
 
   .tab-button {
-    padding: 0.25rem 0.25rem;
-    font-size: 0.65rem;
-    gap: 0.25rem;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.7rem;
+    gap: 0.3rem;
     justify-content: center;
   }
 
@@ -2300,15 +2302,12 @@ body {
   font-weight: 500;
   justify-content: center;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
+  flex: 1 1 0;
+  min-width: fit-content;
 }
 
 .tab-button span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
+  white-space: nowrap;
 }
 
 .tab-button.active {
