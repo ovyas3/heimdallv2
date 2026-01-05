@@ -5,28 +5,62 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import * as L from "leaflet";
 import { MapPin } from "lucide-react";
-import { Play, Pause, RotateCcw, X, SkipForward, SkipBack, FastForward, Rewind, Shield } from "lucide-react";
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  X,
+  SkipForward,
+  SkipBack,
+  FastForward,
+  Rewind,
+  Shield,
+} from "lucide-react";
 import styles from "./Kepler-map.module.css";
-import type { Icon as LeafletIcon, DivIcon as LeafletDivIcon, Map as LeafletMap } from "leaflet";
+import type {
+  Icon as LeafletIcon,
+  DivIcon as LeafletDivIcon,
+  Map as LeafletMap,
+} from "leaflet";
 import Image from "next/image";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 import { useMap, useMapEvents } from "react-leaflet";
 import polyline from "@mapbox/polyline";
-import { DateTime } from 'luxon';
+import { DateTime } from "luxon";
 import { toTitleCase } from "@/utils/stringUtils";
 
-
-
 // Dynamically import components
-const Pane = dynamic(() => import("react-leaflet").then((mod) => mod.Pane), { ssr: false });
-const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
-const Polyline = dynamic(() => import("react-leaflet").then((mod) => mod.Polyline), { ssr: false });
-const Polygon = dynamic(() => import("react-leaflet").then((mod) => mod.Polygon), { ssr: false });
-const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false });
+const Pane = dynamic(() => import("react-leaflet").then((mod) => mod.Pane), {
+  ssr: false,
+});
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const Polyline = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Polyline),
+  { ssr: false }
+);
+const Polygon = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Polygon),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
+  ssr: false,
+});
 // Add this line
-const GeoJSON = dynamic(() => import("react-leaflet").then((mod) => mod.GeoJSON), { ssr: false });
+const GeoJSON = dynamic(
+  () => import("react-leaflet").then((mod) => mod.GeoJSON),
+  { ssr: false }
+);
 
 interface KeplerMapProps {
   showGPSRoute?: boolean;
@@ -79,14 +113,13 @@ interface KeplerMapProps {
     pick_arrived_at?: string;
     pick_finished_at?: string;
   };
-
 }
 
 interface MagnifierSettings {
   positionX: number; // 0-1
   positionY: number; // 0-1
-  size: number;      // px
-  zoom: number;      // +levels
+  size: number; // px
+  zoom: number; // +levels
   borderWidth: number; // px
 }
 interface FastagPoint {
@@ -146,9 +179,12 @@ interface HaltPoint {
   restricted: boolean;
 }
 
-
 // This component connects your ref to the map instance.
-function MapController({ mapRef }: { mapRef: React.MutableRefObject<LeafletMap | null> }) {
+function MapController({
+  mapRef,
+}: {
+  mapRef: React.MutableRefObject<LeafletMap | null>;
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -161,7 +197,11 @@ function MapController({ mapRef }: { mapRef: React.MutableRefObject<LeafletMap |
 }
 // Place this function inside Kepler-map.tsx, outside the KeplerMap component
 
-function MagnifierMapController({ setMap }: { setMap: (map: LeafletMap) => void }) {
+function MagnifierMapController({
+  setMap,
+}: {
+  setMap: (map: LeafletMap) => void;
+}) {
   const map = useMap(); // Gets the map instance from the nearest <MapContainer>
 
   useEffect(() => {
@@ -204,11 +244,17 @@ export default function KeplerMap({
   const [appCoords, setAppCoords] = useState<[number, number][]>([]);
 
   // Saved (persisted) App coords
-  const [storedAppCoords, setStoredAppCoords] = useState<[number, number][]>([]);
+  const [storedAppCoords, setStoredAppCoords] = useState<[number, number][]>(
+    []
+  );
   const [showStoredApp, setShowStoredApp] = useState(false);
 
-  const [selectedDeviation, setSelectedDeviation] = useState<number | null>(null);
-  const [mainRouteFromApi, setMainRouteFromApi] = useState<[number, number][]>([]);
+  const [selectedDeviation, setSelectedDeviation] = useState<number | null>(
+    null
+  );
+  const [mainRouteFromApi, setMainRouteFromApi] = useState<[number, number][]>(
+    []
+  );
   const [fastagPoints, setFastagPoints] = useState<FastagPoint[]>([]);
   const [showReplayPanel, setShowReplayPanel] = useState(false);
   // Add this new state variable
@@ -218,18 +264,23 @@ export default function KeplerMap({
   const [eta, setEta] = useState("");
   const [isLoadingFastag, setIsLoadingFastag] = useState(true);
   // Add these new state variables at the top of your component
-  const [activeMode, setActiveMode] = useState<'sim' | 'app' | 'gps' | null>(null);
+  const [activeMode, setActiveMode] = useState<"sim" | "app" | "gps" | null>(
+    null
+  );
   const [activeRoute, setActiveRoute] = useState<[number, number][]>([]);
   const [isReplayings, setIsReplayings] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState(0);
   // Add these new state variables
-  const [dayRunPolylines, setDayRunPolylines] = useState<[number, number][][]>([]);
+  const [dayRunPolylines, setDayRunPolylines] = useState<[number, number][][]>(
+    []
+  );
   const [showDayRun, setShowDayRun] = useState(false);
   const [dayRunDetails, setDayRunDetails] = useState<any[]>([]);
   const [deviationData, setDeviationData] = useState<any[]>([]);
   const [indiaBoundary, setIndiaBoundary] = useState<any>(null);
   // 0 to 100
-  const [currentReplayPositions, setCurrentReplayPositions] = useState<number>(0);
+  const [currentReplayPositions, setCurrentReplayPositions] =
+    useState<number>(0);
 
   // const [haltPopupShown, setHaltPopupShown] = useState(false);
   // Add near other refs (e.g. next to vehicleMarkerRef)
@@ -243,14 +294,19 @@ export default function KeplerMap({
   // Keep these for the new replay system
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayProgress, setReplayProgress] = useState(0); // 0 to 100
-  const [currentReplayPosition, setCurrentReplayPosition] = useState<[number, number] | null>(null);
+  const [currentReplayPosition, setCurrentReplayPosition] = useState<
+    [number, number] | null
+  >(null);
   // const [currentReplayIndex, setCurrentReplayIndex] = useState(0);
   const replayIndexRef = useRef(0);
   const [isPausedAtHalt, setIsPausedAtHalt] = useState(false);
-  const [replayTimeoutId, setReplayTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [replayTimeoutId, setReplayTimeoutId] = useState<NodeJS.Timeout | null>(
+    null
+  );
   const [currentReplayHaltIndex, setCurrentReplayHaltIndex] = useState(-1);
   const [isPausedAtDeviation, setIsPausedAtDeviation] = useState(false);
-  const [currentReplayDeviationIndex, setCurrentReplayDeviationIndex] = useState(-1);
+  const [currentReplayDeviationIndex, setCurrentReplayDeviationIndex] =
+    useState(-1);
   const deviationPopupRef = useRef<L.Popup | null>(null);
   const deviationPopupTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [showMagnifierSettings, setShowMagnifierSettings] = useState(false);
@@ -261,55 +317,65 @@ export default function KeplerMap({
   const [fenceCache, setFenceCache] = useState<Record<string, any>>({});
   const [isMagnifierEnabled, setIsMagnifierEnabled] = useState(false);
   const [magnifierPosition, setMagnifierPosition] = useState({ x: 0, y: 0 });
-  const [magnifierCenter, setMagnifierCenter] = useState<[number, number]>([28.6139, 77.209]);
+  const [magnifierCenter, setMagnifierCenter] = useState<[number, number]>([
+    28.6139, 77.209,
+  ]);
   const [isDraggingMagnifier, setIsDraggingMagnifier] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [haltPoints, setHaltPoints] = useState<HaltPoint[]>([]);
 
   const [showHalt, setShowHalt] = useState(false);
   const shouldShowHaltMarkers = showHaltPoints || showHalt;
-  const [selectedDeviationForReplay, setSelectedDeviationForReplay] = useState<number | null>(null);
+  const [selectedDeviationForReplay, setSelectedDeviationForReplay] = useState<
+    number | null
+  >(null);
   const [replaySpeed, setReplaySpeed] = useState(1);
 
-  const [previousBounds, setPreviousBounds] = useState<LatLngBoundsExpression | null>(null); // ✅ Add this new state
+  const [previousBounds, setPreviousBounds] =
+    useState<LatLngBoundsExpression | null>(null); // ✅ Add this new state
   const [isDraggingPanel, setIsDraggingPanel] = useState(false);
   const [panelPosition, setPanelPosition] = useState({ x: 0, y: 0 });
   const [panelDragOffset, setPanelDragOffset] = useState({ x: 0, y: 0 });
   const [is3DView, setIs3DView] = useState(false);
 
   const polylineColors = [
-    '#E67E22',
-    '#3498DB',
-    '#2ECC71',
-    '#9B59B6',
-    '#F1C40F',
-    '#E74C3C',
-    '#1ABC9C',
-    '#34495E',
+    "#E67E22",
+    "#3498DB",
+    "#2ECC71",
+    "#9B59B6",
+    "#F1C40F",
+    "#E74C3C",
+    "#1ABC9C",
+    "#34495E",
   ];
 
-  const zoomToDayRun = useCallback((dayIndex: number) => {
-    if (!mapRef.current || !dayRunPolylines[dayIndex]) return;
+  const zoomToDayRun = useCallback(
+    (dayIndex: number) => {
+      if (!mapRef.current || !dayRunPolylines[dayIndex]) return;
 
-    const coords = dayRunPolylines[dayIndex];
-    if (coords.length > 0) {
-      const bounds = L.latLngBounds(coords as LatLngExpression[]);
-      mapRef.current.fitBounds(bounds, {
-        padding: [50, 50],
-        maxZoom: 15,
-        animate: true,
-        duration: 0.5
-      });
+      const coords = dayRunPolylines[dayIndex];
+      if (coords.length > 0) {
+        const bounds = L.latLngBounds(coords as LatLngExpression[]);
+        mapRef.current.fitBounds(bounds, {
+          padding: [50, 50],
+          maxZoom: 15,
+          animate: true,
+          duration: 0.5,
+        });
+      }
+    },
+    [dayRunPolylines]
+  );
+
+  const [magnifierSettings, setMagnifierSettings] = useState<MagnifierSettings>(
+    {
+      positionX: 0.5,
+      positionY: 0.5,
+      size: 200,
+      zoom: 4,
+      borderWidth: 4,
     }
-  }, [dayRunPolylines]);
-
-  const [magnifierSettings, setMagnifierSettings] = useState<MagnifierSettings>({
-    positionX: 0.5,
-    positionY: 0.5,
-    size: 200,
-    zoom: 4,
-    borderWidth: 4,
-  });
+  );
   // Add this at the top of your KeplerMap component function
   // const [pathData, setPathData] = useState({ sim: [], app: [], gps: [] });
   const [pathData, setPathData] = useState<PathState | null>(null);
@@ -320,11 +386,14 @@ export default function KeplerMap({
     const fetchBoundary = async () => {
       try {
         // NOTE: Using the same URL that returned your successful data structure
-        const geoJsonUrl = 'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
+        const geoJsonUrl =
+          "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
 
         const response = await fetch(geoJsonUrl);
         if (!response.ok) {
-          throw new Error(`Failed to fetch boundary data: HTTP ${response.status}`);
+          throw new Error(
+            `Failed to fetch boundary data: HTTP ${response.status}`
+          );
         }
 
         const data = await response.json();
@@ -333,20 +402,20 @@ export default function KeplerMap({
         // Use the exact property key found in your console log
         const indiaFeature = data.features.find((f: any) => {
           // Check for the most reliable identifier: the ISO 3-letter code 'IND'
-          return f.properties['ISO3166-1-Alpha-3'] === 'IND';
+          return f.properties["ISO3166-1-Alpha-3"] === "IND";
         });
         // ***************************************
 
         if (indiaFeature) {
           setIndiaBoundary({
             type: "FeatureCollection",
-            features: [indiaFeature]
+            features: [indiaFeature],
           });
-
         } else {
-          console.warn("India feature not found in GeoJSON file. The filter failed.");
+          console.warn(
+            "India feature not found in GeoJSON file. The filter failed."
+          );
         }
-
       } catch (error) {
         console.error("Error fetching India boundary GeoJSON:", error);
       }
@@ -365,11 +434,11 @@ export default function KeplerMap({
     checkIsMobile();
 
     // Add event listener for window resize
-    window.addEventListener('resize', checkIsMobile);
+    window.addEventListener("resize", checkIsMobile);
 
     // Clean up the event listener on component unmount
     return () => {
-      window.removeEventListener('resize', checkIsMobile);
+      window.removeEventListener("resize", checkIsMobile);
     };
   }, []); // Empty dependency array ensures this runs only once on mount
   // Close day run table when exiting fullscreen
@@ -383,9 +452,13 @@ export default function KeplerMap({
     if (!map || !activeMode) return;
 
     const path =
-      activeMode === 'app' ? appPath :
-        activeMode === 'sim' ? simPath :
-          activeMode === 'gps' ? gpsPath : [];
+      activeMode === "app"
+        ? appPath
+        : activeMode === "sim"
+        ? simPath
+        : activeMode === "gps"
+        ? gpsPath
+        : [];
 
     if (!path?.length) return;
 
@@ -396,12 +469,10 @@ export default function KeplerMap({
     }
   }, [activeMode, appPath, simPath, gpsPath]);
 
-
-
   const isTollPassed = (p: FastagPoint) => {
     const t = Date.parse(p.time_stamp);
     return Number.isFinite(t) && t <= Date.now();
-  }
+  };
   //   useEffect(() => {    // Stop the replay if the component unmounts or if replaying is disabled
   //     if (replayTimeoutId) {
   //         clearTimeout(replayTimeoutId);
@@ -410,7 +481,7 @@ export default function KeplerMap({
   //     if (!isReplaying || !activeRoute.length) {
   //         return;
   //     }
-  //     const animationDelay = 50 / replaySpeed; 
+  //     const animationDelay = 50 / replaySpeed;
   //     // Function to calculate the next position
   //     const animateReplay = () => {
   //         // Find the next halt point in the route
@@ -455,7 +526,6 @@ export default function KeplerMap({
   //         setCurrentReplayIndex(newIndex);
   //       setCurrentReplayPosition(activeRoute[newIndex]);
 
-
   //         // ✅ Add this line to update the progress bar
   //        const newProgress = ((newIndex) / (activeRoute.length - 1)) * 100;
   //         setReplayProgress(newProgress);
@@ -467,7 +537,6 @@ export default function KeplerMap({
   //    // Initial call to start the animation
   //        const timeoutId = setTimeout(animateReplay, animationDelay);
   //     setReplayTimeoutId(timeoutId);
-
 
   //      return () => {
   //      if (replayTimeoutId) {
@@ -509,18 +578,19 @@ export default function KeplerMap({
         if (idx <= currentReplayHaltIndex) return false; // only look for future halts
         const haltCoords: [number, number] = [
           h.geo_point.coordinates[1],
-          h.geo_point.coordinates[0]
+          h.geo_point.coordinates[0],
         ];
-        return L.latLng(nextPosition).distanceTo(L.latLng(haltCoords)) <= toleranceMeters;
+        return (
+          L.latLng(nextPosition).distanceTo(L.latLng(haltCoords)) <=
+          toleranceMeters
+        );
       });
 
       if (foundHaltIndex !== -1) {
         // Stop at the halt (do not advance further)
         replayIndexRef.current = candidateIndex;
         setCurrentReplayPosition(nextPosition);
-        setReplayProgress(
-          (candidateIndex / (activeRoute.length - 1)) * 100
-        );
+        setReplayProgress((candidateIndex / (activeRoute.length - 1)) * 100);
         setCurrentReplayHaltIndex(foundHaltIndex);
         setIsPausedAtHalt(true);
         // do not schedule the next timer here — the pause useEffect handles resume
@@ -531,18 +601,23 @@ export default function KeplerMap({
         if (idx <= currentReplayDeviationIndex) return false; // only look for future deviations
         // Check both start and end points of the deviation
         const startCoords: [number, number] = deviation.path[0]; // First point of deviation path
-        const endCoords: [number, number] = deviation.path[deviation.path.length - 1]; // Last point of deviation path
-        const distanceToStart = L.latLng(nextPosition).distanceTo(L.latLng(startCoords));
-        const distanceToEnd = L.latLng(nextPosition).distanceTo(L.latLng(endCoords));
-        return distanceToStart <= toleranceMeters || distanceToEnd <= toleranceMeters;
+        const endCoords: [number, number] =
+          deviation.path[deviation.path.length - 1]; // Last point of deviation path
+        const distanceToStart = L.latLng(nextPosition).distanceTo(
+          L.latLng(startCoords)
+        );
+        const distanceToEnd = L.latLng(nextPosition).distanceTo(
+          L.latLng(endCoords)
+        );
+        return (
+          distanceToStart <= toleranceMeters || distanceToEnd <= toleranceMeters
+        );
       });
       if (foundDeviationIndex !== -1) {
         // Stop at the deviation point
         replayIndexRef.current = candidateIndex;
         setCurrentReplayPosition(nextPosition);
-        setReplayProgress(
-          (candidateIndex / (activeRoute.length - 1)) * 100
-        );
+        setReplayProgress((candidateIndex / (activeRoute.length - 1)) * 100);
         setCurrentReplayDeviationIndex(foundDeviationIndex);
         setIsPausedAtDeviation(true);
         // do not schedule the next timer here — the pause useEffect handles resume
@@ -552,9 +627,7 @@ export default function KeplerMap({
       // Normal frame advance if no halt
       replayIndexRef.current = candidateIndex;
       setCurrentReplayPosition(nextPosition);
-      setReplayProgress(
-        (candidateIndex / (activeRoute.length - 1)) * 100
-      );
+      setReplayProgress((candidateIndex / (activeRoute.length - 1)) * 100);
       timerId = setTimeout(animateReplay, animationDelay);
     };
     // Start the animation loop if not paused
@@ -566,10 +639,17 @@ export default function KeplerMap({
     return () => {
       if (timerId) clearTimeout(timerId);
     };
-
-
-
-  }, [isReplaying, activeRoute, isPausedAtHalt, isPausedAtDeviation, haltPoints, currentReplayHaltIndex, currentReplayDeviationIndex, deviationData, replaySpeed]);
+  }, [
+    isReplaying,
+    activeRoute,
+    isPausedAtHalt,
+    isPausedAtDeviation,
+    haltPoints,
+    currentReplayHaltIndex,
+    currentReplayDeviationIndex,
+    deviationData,
+    replaySpeed,
+  ]);
 
   // This new useEffect handles the pause duration and resume. It's cleaner and separates concerns.
   useEffect(() => {
@@ -621,8 +701,9 @@ export default function KeplerMap({
     };
   }, [isPausedAtHalt]);
 
-  const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
-
+  const [currentLocation, setCurrentLocation] = useState<
+    [number, number] | null
+  >(null);
 
   // Remove this existing useEffect hook, which is not correctly managing the popup.
   // useEffect(() => {
@@ -643,12 +724,14 @@ export default function KeplerMap({
   //   }
   // }, [isPausedAtHalt,currentReplayHaltIndex, currentReplayPosition]);
 
-
-
   {
     currentReplayPosition && customIcons.vehicle && (
-      <Marker position={currentReplayPosition} icon={customIcons.vehicle} ref={vehicleMarkerRef} />
-    )
+      <Marker
+        position={currentReplayPosition}
+        icon={customIcons.vehicle}
+        ref={vehicleMarkerRef}
+      />
+    );
   }
 
   useEffect(() => {
@@ -664,7 +747,6 @@ export default function KeplerMap({
     }
   }, [isReplaying, isPausedAtHalt, mapRef, currentReplayPosition]);
 
-
   // Robust popup using Leaflet L.popup so we don't depend on react-leaflet child timing
   useEffect(() => {
     if (!mapRef.current) return;
@@ -678,12 +760,17 @@ export default function KeplerMap({
       if (haltPopupRef.current && mapRef.current) {
         try {
           mapRef.current.closePopup(haltPopupRef.current);
-        } catch { }
+        } catch {}
         haltPopupRef.current = null;
       }
     };
 
-    if (isPausedAtHalt && currentReplayHaltIndex > -1 && currentReplayPosition && haltPoints[currentReplayHaltIndex]) {
+    if (
+      isPausedAtHalt &&
+      currentReplayHaltIndex > -1 &&
+      currentReplayPosition &&
+      haltPoints[currentReplayHaltIndex]
+    ) {
       // Build a simple HTML string for the popup content
       const h = haltPoints[currentReplayHaltIndex];
       const durationHours = Math.floor(h.halt_duration / 60);
@@ -695,9 +782,15 @@ export default function KeplerMap({
       <div class="${styles.popup}">
         <div class="${styles.popupTitle} ${styles.titleRed}">Halt Info</div>
         <hr class="${styles.divider}" />
-        <div class="${styles.popupBody}">Duration: <strong>${durationHours > 0 ? durationHours + ' hour(s), ' : ''}${durationMins} minute(s)</strong></div>
-        <div class="${styles.popupBody}">Start: <strong>${new Date(h.start_time).toLocaleString()}</strong></div>
-        <div class="${styles.popupBody}">End: <strong>${new Date(h.end_time).toLocaleString()}</strong></div>
+        <div class="${styles.popupBody}">Duration: <strong>${
+        durationHours > 0 ? durationHours + " hour(s), " : ""
+      }${durationMins} minute(s)</strong></div>
+        <div class="${styles.popupBody}">Start: <strong>${new Date(
+        h.start_time
+      ).toLocaleString()}</strong></div>
+        <div class="${styles.popupBody}">End: <strong>${new Date(
+        h.end_time
+      ).toLocaleString()}</strong></div>
         <div class="${styles.popupBody}">
           <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 4px; background: #4285F4; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; margin-top: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -718,7 +811,7 @@ export default function KeplerMap({
         const popup = L.popup({
           closeOnClick: false,
           autoClose: false,
-          className: '' // optional: add custom class
+          className: "", // optional: add custom class
         })
           .setLatLng(currentReplayPosition)
           .setContent(content)
@@ -727,13 +820,18 @@ export default function KeplerMap({
 
         // Pan map slightly to show the popup
         try {
-          mapRef.current.panTo(currentReplayPosition, { animate: true, duration: 0.4 });
-        } catch { }
+          mapRef.current.panTo(currentReplayPosition, {
+            animate: true,
+            duration: 0.4,
+          });
+        } catch {}
 
         // set timer to close popup and resume replay
         haltPopupTimerRef.current = setTimeout(() => {
           if (haltPopupRef.current && mapRef.current) {
-            try { mapRef.current.closePopup(haltPopupRef.current); } catch { }
+            try {
+              mapRef.current.closePopup(haltPopupRef.current);
+            } catch {}
             haltPopupRef.current = null;
           }
           setIsPausedAtHalt(false);
@@ -753,11 +851,18 @@ export default function KeplerMap({
         haltPopupTimerRef.current = null;
       }
       if (haltPopupRef.current && mapRef.current) {
-        try { mapRef.current.closePopup(haltPopupRef.current); } catch { }
+        try {
+          mapRef.current.closePopup(haltPopupRef.current);
+        } catch {}
         haltPopupRef.current = null;
       }
     };
-  }, [isPausedAtHalt, currentReplayHaltIndex, currentReplayPosition, haltPoints]);
+  }, [
+    isPausedAtHalt,
+    currentReplayHaltIndex,
+    currentReplayPosition,
+    haltPoints,
+  ]);
 
   // Deviation popup useEffect - similar to halt popup but for deviations
   useEffect(() => {
@@ -771,17 +876,25 @@ export default function KeplerMap({
       if (deviationPopupRef.current && mapRef.current) {
         try {
           mapRef.current.closePopup(deviationPopupRef.current);
-        } catch { }
+        } catch {}
         deviationPopupRef.current = null;
       }
     };
-    if (isPausedAtDeviation && currentReplayDeviationIndex > -1 && currentReplayPosition && deviationData[currentReplayDeviationIndex]) {
+    if (
+      isPausedAtDeviation &&
+      currentReplayDeviationIndex > -1 &&
+      currentReplayPosition &&
+      deviationData[currentReplayDeviationIndex]
+    ) {
       // Build a simple HTML string for the deviation popup content
       const deviation = deviationData[currentReplayDeviationIndex];
       // const durationInMinutes = Math.floor(deviation.duration / 60); // Convert seconds to minutes
       const durationHours = Math.floor(deviation.duration / 60);
       const durationMins = deviation.duration % 60;
-      const formattedDuration = durationHours > 0 ? `${durationHours}h ${durationMins}m` : `${durationMins}m`;
+      const formattedDuration =
+        durationHours > 0
+          ? `${durationHours}h ${durationMins}m`
+          : `${durationMins}m`;
       const content = `
       <div class="${styles.popup}">
         <div class="${styles.popupTitle} ${styles.titleRed}">Deviation Info</div>
@@ -800,7 +913,7 @@ export default function KeplerMap({
         const popup = L.popup({
           closeOnClick: false,
           autoClose: false,
-          className: '' // optional: add custom class
+          className: "", // optional: add custom class
         })
           .setLatLng(currentReplayPosition)
           .setContent(content)
@@ -808,12 +921,17 @@ export default function KeplerMap({
         deviationPopupRef.current = popup;
         // Pan map slightly to show the popup
         try {
-          mapRef.current.panTo(currentReplayPosition, { animate: true, duration: 0.4 });
-        } catch { }
+          mapRef.current.panTo(currentReplayPosition, {
+            animate: true,
+            duration: 0.4,
+          });
+        } catch {}
         // set timer to close popup and resume replay
         deviationPopupTimerRef.current = setTimeout(() => {
           if (deviationPopupRef.current && mapRef.current) {
-            try { mapRef.current.closePopup(deviationPopupRef.current); } catch { }
+            try {
+              mapRef.current.closePopup(deviationPopupRef.current);
+            } catch {}
             deviationPopupRef.current = null;
           }
           setIsPausedAtDeviation(false);
@@ -832,11 +950,18 @@ export default function KeplerMap({
         deviationPopupTimerRef.current = null;
       }
       if (deviationPopupRef.current && mapRef.current) {
-        try { mapRef.current.closePopup(deviationPopupRef.current); } catch { }
+        try {
+          mapRef.current.closePopup(deviationPopupRef.current);
+        } catch {}
         deviationPopupRef.current = null;
       }
     };
-  }, [isPausedAtDeviation, currentReplayDeviationIndex, currentReplayPosition, deviationData]);
+  }, [
+    isPausedAtDeviation,
+    currentReplayDeviationIndex,
+    currentReplayPosition,
+    deviationData,
+  ]);
 
   type ShipPoint = {
     location: {
@@ -923,8 +1048,12 @@ export default function KeplerMap({
   const [shipmentDeliveries, setShipmentDeliveries] = useState<
     { pos: [number, number]; label: string; meta?: ShipPoint }[]
   >([]);
-  const [pickupPolylines, setPickupPolylines] = useState<[number, number][][]>([]);
-  const [deliveryPolylines, setDeliveryPolylines] = useState<[number, number][][]>([]);
+  const [pickupPolylines, setPickupPolylines] = useState<[number, number][][]>(
+    []
+  );
+  const [deliveryPolylines, setDeliveryPolylines] = useState<
+    [number, number][][]
+  >([]);
   const [isLoadingShipment, setIsLoadingShipment] = useState(true);
   // helper to build numbered chip icons like "P1", "D2"
   const makeChipIcon = useCallback(
@@ -950,7 +1079,7 @@ export default function KeplerMap({
   // Inside your KeplerMap component, add this new useEffect
   function convertUtcToIst24hr(utcDateString: string | undefined): string {
     if (!utcDateString) {
-      return 'N/A';
+      return "N/A";
     }
 
     const date = new Date(utcDateString);
@@ -958,24 +1087,24 @@ export default function KeplerMap({
     // Use Intl.DateTimeFormat to get date and time components in IST
     // This is the most reliable way to handle timezone conversions
     const options: Intl.DateTimeFormatOptions = {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false, // Ensure 24-hour format
-      timeZone: 'Asia/Kolkata' // Explicitly set the timezone to IST
+      timeZone: "Asia/Kolkata", // Explicitly set the timezone to IST
     };
 
     // Get the formatted date and time string
-    const formattedString = date.toLocaleString('en-IN', options);
+    const formattedString = date.toLocaleString("en-IN", options);
 
     // Extract the time part (e.g., "00:00:00")
-    const timePart = formattedString.split(', ')[1];
+    const timePart = formattedString.split(", ")[1];
 
     // If the time is midnight, reformat the hour to "24"
-    if (timePart && timePart.startsWith('00:00')) {
-      const datePart = formattedString.split(', ')[0];
-      const newTimePart = timePart
+    if (timePart && timePart.startsWith("00:00")) {
+      const datePart = formattedString.split(", ")[0];
+      const newTimePart = timePart;
       // .replace('00:', '24:');
       return `${datePart}, ${newTimePart}`;
     }
@@ -991,140 +1120,172 @@ export default function KeplerMap({
   }, [isMagnifierEnabled]); // This effect runs only when isMagnifierEnabled changes
   // Fetch current location
   // This useEffect ONLY fetches data and runs once on mount.
-  useEffect(() => {
-    const ac = new AbortController();
-    const loadShipment = async () => {
-      setIsLoadingShipment(true);
-      try {
-        const res = await fetch(
+  useEffect(
+    () => {
+      const ac = new AbortController();
+      const loadShipment = async () => {
+        setIsLoadingShipment(true);
+        try {
+          const res = await fetch(
+            `https://live-api.instavans.com/api/raccoon/shipment?unique_code=${encodeURIComponent(
+              unique_code ?? ""
+            )}`,
+            { signal: ac.signal }
+          );
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-          `http://live-api.instavans.com/api/raccoon/shipment?unique_code=${encodeURIComponent(unique_code ?? '')}`,
-          { signal: ac.signal }
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const payload: ShipmentResponse = await res.json();
+          const shipment = payload.shipment;
+          const totalDistanceKm = Math.round(
+            ((shipment?.trip_tracker?.travelled_distance || 0) +
+              (shipment?.trip_tracker?.remaining_distance || 0)) /
+              1000
+          );
+          const travelledDistanceKm = Math.round(
+            (shipment?.trip_tracker?.travelled_distance || 0) / 1000
+          );
+          const remainingDistanceKm = Math.round(
+            (shipment?.trip_tracker?.remaining_distance || 0) / 1000
+          );
+          const newProgress =
+            totalDistanceKm > 0
+              ? (travelledDistanceKm / totalDistanceKm) * 100
+              : 0;
+          setProgressPercentage(newProgress);
+          const dayRuns = shipment?.dayrun?.dayRuns || [];
+          const decodedDayRuns = dayRuns
+            .filter((run) => run.polyline)
+            .map((run) => decodePolyline(run.polyline));
 
-        const payload: ShipmentResponse = await res.json();
-        const shipment = payload.shipment;
-        const totalDistanceKm = Math.round(((shipment?.trip_tracker?.travelled_distance || 0) + (shipment?.trip_tracker?.remaining_distance || 0)) / 1000);
-        const travelledDistanceKm = Math.round((shipment?.trip_tracker?.travelled_distance || 0) / 1000);
-        const remainingDistanceKm = Math.round((shipment?.trip_tracker?.remaining_distance || 0) / 1000);
-        const newProgress = totalDistanceKm > 0 ? (travelledDistanceKm / totalDistanceKm) * 100 : 0;
-        setProgressPercentage(newProgress);
-        const dayRuns = shipment?.dayrun?.dayRuns || [];
-        const decodedDayRuns = dayRuns
-          .filter((run) => run.polyline)
-          .map((run) => decodePolyline(run.polyline));
+          const extractedDetails = dayRuns.map((run) => ({
+            startTime: convertUtcToIst24hr(run.start),
+            distance: run.distance ? `${run.distance.toFixed(2)} km` : "N/A", // Assuming distance is in meters
 
-        const extractedDetails = dayRuns.map(run => ({
-          startTime: convertUtcToIst24hr(run.start),
-          distance: run.distance ? `${(run.distance).toFixed(2)} km` : 'N/A', // Assuming distance is in meters
+            time: run.travel_time
+              ? `${Math.floor(run.travel_time / 3600)}h ${Math.floor(
+                  (run.travel_time % 3600) / 60
+                )}m`
+              : "N/A",
+            // Include any other details you want to display
+          }));
+          setDayRunDetails(extractedDetails);
+          // Process deviation data
+          const deviations = shipment?.deviation?.deviations || [];
+          const processedDeviations = deviations.map(
+            (deviation: any, index: number) => {
+              // const durationInMinutes = Math.floor(deviation.duration / 60);
+              const durationHours = Math.floor(deviation.duration / 60);
+              const durationMins = deviation.duration % 60;
+              const formattedDuration =
+                durationHours > 0
+                  ? `${durationHours}h ${durationMins}m`
+                  : `${durationMins}m`;
 
-          time: run.travel_time ? `${Math.floor(run.travel_time / 3600)}h ${Math.floor((run.travel_time % 3600) / 60)}m` : 'N/A',
-          // Include any other details you want to display
-        }));
-        setDayRunDetails(extractedDetails);
-        // Process deviation data
-        const deviations = shipment?.deviation?.deviations || [];
-        const processedDeviations = deviations.map((deviation: any, index: number) => {
-          // const durationInMinutes = Math.floor(deviation.duration / 60);
-          const durationHours = Math.floor(deviation.duration / 60);
-          const durationMins = deviation.duration % 60;
-          const formattedDuration = durationHours > 0 ? `${durationHours}h ${durationMins}m` : `${durationMins}m`;
+              return {
+                id: index + 1,
+                path: decodePolyline(deviation.polyline),
+                reason: "Route deviation detected",
+                location: `Deviation ${index + 1}`,
+                startTime: convertUtcToIst24hr(deviation.start_time),
+                endTime: convertUtcToIst24hr(deviation.end_time),
+                distance: `${deviation.distance?.toFixed(2)} km`,
+                duration: formattedDuration,
+                polyline: deviation.polyline,
+              };
+            }
+          );
+          setDeviationData(processedDeviations);
+          // Update the state with the day run polylines
+          setDayRunPolylines(decodedDayRuns);
 
-          return {
-            id: index + 1,
-            path: decodePolyline(deviation.polyline),
-            reason: "Route deviation detected",
-            location: `Deviation ${index + 1}`,
-            startTime: convertUtcToIst24hr(deviation.start_time),
-            endTime: convertUtcToIst24hr(deviation.end_time),
-            distance: `${deviation.distance?.toFixed(2)} km`,
-            duration: formattedDuration,
-            polyline: deviation.polyline
-          };
-        });
-        setDeviationData(processedDeviations);
-        // Update the state with the day run polylines
-        setDayRunPolylines(decodedDayRuns);
+          if (shipment && shipment.delivery_date) {
+            // Create a Date object from the ISO 8601 string
+            const deliveryDate = new Date(shipment.delivery_date);
 
-        if (shipment && shipment.delivery_date) {
-          // Create a Date object from the ISO 8601 string
-          const deliveryDate = new Date(shipment.delivery_date);
+            // Format the time to a locale-specific time string (e.g., "12:40 PM")
+            // const formattedTime = deliveryDate.toLocaleTimeString([], {
+            //   hour: "2-digit",
+            //   minute: "2-digit",
+            // });
+            const formattedTime = DateTime.fromJSDate(deliveryDate)
+              .setZone("Asia/Kolkata")
+              .toFormat("dd MMM yyyy, HH:mm");
 
-          // Format the time to a locale-specific time string (e.g., "12:40 PM")
-          // const formattedTime = deliveryDate.toLocaleTimeString([], {
-          //   hour: "2-digit",
-          //   minute: "2-digit",
-          // });
-          const formattedTime = DateTime.fromJSDate(deliveryDate).setZone('Asia/Kolkata').toFormat('dd MMM yyyy, HH:mm');
-
-          // Update the ETA state
-          setEta(formattedTime);
-        }
-
-        const pickups = payload.shipment?.pickups ?? [];
-        const deliveries = payload.shipment?.deliveries ?? [];
-        const wayData = payload?.shipment?.waypoints ?? [];
-        const wayCoordinates = wayData.map(waypoints => {
-          // The API returns [lng, lat], but Leaflet expects [lat, lng]
-          const [lng, lat] = waypoints?.location?.geo_point.coordinates;
-          return [lat, lng] as [number, number];
-        });
-
-        // Set the state with the extracted coordinates
-        setMainRouteFromApi(wayCoordinates);
-        const pickupMarkers = pickups
-          .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
-          .map((p, i) => {
-            const [lng, lat] = p.location.geo_point.coordinates;
-            return { pos: [lat, lng] as [number, number], label: `P${i + 1}`, meta: p };
-          });
-        const decodedPickupPolys: [number, number][][] = [];
-        for (const p of pickups) {
-          const enc = p.location.polylines || [];
-          for (const encStr of enc) {
-            const coords = decodePolyline(encStr);
-            if (coords.length > 0) decodedPickupPolys.push(coords);
+            // Update the ETA state
+            setEta(formattedTime);
           }
-        }
-        setPickupPolylines(decodedPickupPolys);
 
-        const deliveryMarkers = deliveries
-          .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
-          .map((d, i) => {
-            const [lng, lat] = d.location.geo_point.coordinates;
-            return { pos: [lat, lng] as [number, number], label: `D${i + 1}`, meta: d };
+          const pickups = payload.shipment?.pickups ?? [];
+          const deliveries = payload.shipment?.deliveries ?? [];
+          const wayData = payload?.shipment?.waypoints ?? [];
+          const wayCoordinates = wayData.map((waypoints) => {
+            // The API returns [lng, lat], but Leaflet expects [lat, lng]
+            const [lng, lat] = waypoints?.location?.geo_point.coordinates;
+            return [lat, lng] as [number, number];
           });
 
-        const decodedPolys: [number, number][][] = [];
-        for (const d of deliveries) {
-          const enc = d.location.polylines || [];
-          for (const encStr of enc) {
-            const coords = decodePolyline(encStr);
-            if (coords.length > 0) decodedPolys.push(coords);
+          // Set the state with the extracted coordinates
+          setMainRouteFromApi(wayCoordinates);
+          const pickupMarkers = pickups
+            .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
+            .map((p, i) => {
+              const [lng, lat] = p.location.geo_point.coordinates;
+              return {
+                pos: [lat, lng] as [number, number],
+                label: `P${i + 1}`,
+                meta: p,
+              };
+            });
+          const decodedPickupPolys: [number, number][][] = [];
+          for (const p of pickups) {
+            const enc = p.location.polylines || [];
+            for (const encStr of enc) {
+              const coords = decodePolyline(encStr);
+              if (coords.length > 0) decodedPickupPolys.push(coords);
+            }
           }
+          setPickupPolylines(decodedPickupPolys);
+
+          const deliveryMarkers = deliveries
+            .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
+            .map((d, i) => {
+              const [lng, lat] = d.location.geo_point.coordinates;
+              return {
+                pos: [lat, lng] as [number, number],
+                label: `D${i + 1}`,
+                meta: d,
+              };
+            });
+
+          const decodedPolys: [number, number][][] = [];
+          for (const d of deliveries) {
+            const enc = d.location.polylines || [];
+            for (const encStr of enc) {
+              const coords = decodePolyline(encStr);
+              if (coords.length > 0) decodedPolys.push(coords);
+            }
+          }
+
+          setShipmentPickups(pickupMarkers);
+          setShipmentDeliveries(deliveryMarkers);
+          setDeliveryPolylines(decodedPolys);
+        } catch (err) {
+          console.error("Shipment fetch failed:", err);
+        } finally {
+          setIsLoadingShipment(false);
         }
+      };
 
-        setShipmentPickups(pickupMarkers);
-        setShipmentDeliveries(deliveryMarkers);
-        setDeliveryPolylines(decodedPolys);
-
-      } catch (err) {
-        console.error("Shipment fetch failed:", err);
-      } finally {
-        setIsLoadingShipment(false);
-      }
-    };
-
-    loadShipment();
-    return () => ac.abort();
-  }, [
-    // decodePolyline
-  ]); // This dependency is correct
+      loadShipment();
+      return () => ac.abort();
+    },
+    [
+      // decodePolyline
+    ]
+  ); // This dependency is correct
 
   // Function to fetch fence path data using passed geo_fence data
   const fetchInternalFencePathData = async () => {
-
     if (!geoFenceData || !tripTrackerMethods.length) {
       return;
     }
@@ -1134,17 +1295,17 @@ export default function KeplerMap({
 
       // Use the passed geo_fence data instead of making API call
       // Use the passed geo_fence data instead of making an API call
-      let fenceUrl = '';
+      let fenceUrl = "";
 
       // Check if URLs are in s3_locations nested object or at root level
       const fenceUrls = geoFenceData.s3_locations || geoFenceData;
 
       if (tripTrackerMethods.includes("GPS")) {
-        fenceUrl = fenceUrls.app_fence || fenceUrls.path || '';
+        fenceUrl = fenceUrls.app_fence || fenceUrls.path || "";
       } else if (tripTrackerMethods.includes("SIM")) {
-        fenceUrl = fenceUrls.sim_fence || '';
+        fenceUrl = fenceUrls.sim_fence || "";
       } else if (tripTrackerMethods.includes("APP")) {
-        fenceUrl = fenceUrls.app_fence || '';
+        fenceUrl = fenceUrls.app_fence || "";
       }
 
       if (!fenceUrl) {
@@ -1161,14 +1322,18 @@ export default function KeplerMap({
       // Use our proxy API to fetch the fence path data and bypass CORS
       const proxyUrl = `/api/proxy-fence?url=${encodeURIComponent(fenceUrl)}`;
       const ac = new AbortController();
-      const fenceResponse = await fetch(proxyUrl, { signal: ac.signal, method: 'GET' });
-      if (!fenceResponse.ok) throw new Error(`Failed to fetch fence data: ${fenceResponse.status}`);
+      const fenceResponse = await fetch(proxyUrl, {
+        signal: ac.signal,
+        method: "GET",
+      });
+      if (!fenceResponse.ok)
+        throw new Error(`Failed to fetch fence data: ${fenceResponse.status}`);
       const fetchedFenceData = await fenceResponse.json();
-
 
       // Assuming the response is a LineString GeoJSON
       let coordinates = null;
-      const decodedPolylines: [number, number][] = decodePolyline(fetchedFenceData)
+      const decodedPolylines: [number, number][] =
+        decodePolyline(fetchedFenceData);
       if (decodedPolylines) {
         coordinates = decodedPolylines;
       } else {
@@ -1177,9 +1342,9 @@ export default function KeplerMap({
 
       if (coordinates) {
         // Cache the coordinates for future use
-        setFenceCache(prev => ({
+        setFenceCache((prev) => ({
           ...prev,
-          [fenceUrl]: coordinates.slice(0, coordinates.length - 1)
+          [fenceUrl]: coordinates.slice(0, coordinates.length - 1),
         }));
         setInternalFencePathData(coordinates);
       }
@@ -1217,7 +1382,9 @@ export default function KeplerMap({
     const fetchCurrentLocation = async () => {
       try {
         const res = await fetch(
-          `https://live-api.instavans.com/api/raccoon/currentLocation?unique_code=${encodeURIComponent(unique_code ?? '')}`,
+          `https://live-api.instavans.com/api/raccoon/currentLocation?unique_code=${encodeURIComponent(
+            unique_code ?? ""
+          )}`,
           { signal: ac.signal }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1248,18 +1415,22 @@ export default function KeplerMap({
   // function decodePolyline(encoded: string): [number, number][] {
   const decodePolyline = useCallback((encoded: string): [number, number][] => {
     if (!encoded) return [];
-    let index = 0, lat = 0, lng = 0;
+    let index = 0,
+      lat = 0,
+      lng = 0;
     const coordinates: [number, number][] = [];
 
     const shift5 = () => {
-      let result = 0, shift = 0, b: number;
+      let result = 0,
+        shift = 0,
+        b: number;
       do {
         b = encoded.charCodeAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
-      return (result & 1) ? ~(result >> 1) : (result >> 1);
-    }
+      return result & 1 ? ~(result >> 1) : result >> 1;
+    };
 
     while (index < encoded.length) {
       lat += shift5();
@@ -1275,7 +1446,11 @@ export default function KeplerMap({
   useEffect(() => {
     const fetchPathData = async () => {
       try {
-        const response = await fetch(`http://live-api.instavans.com/api/raccoon/path?unique_code=${encodeURIComponent(unique_code ?? '')}`);
+        const response = await fetch(
+          `https://live-api.instavans.com/api/raccoon/path?unique_code=${encodeURIComponent(
+            unique_code ?? ""
+          )}`
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch path data");
         }
@@ -1287,29 +1462,40 @@ export default function KeplerMap({
 
         if (data.sim && data.sim.length > 0) {
           // decodedPath = data.sim.map(point=> point.geo_point.coordinates);
-          const decodedSim = data.sim.map(p => [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [number, number]);
+          const decodedSim = data.sim.map(
+            (p) =>
+              [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
+                number,
+                number
+              ]
+          );
           // const decodedSim = data.sim.map(point => point.geo_point.coordinates);
           setSimPath(decodedSim);
           // setActiveMode('sim');
         }
         if (data.app && data.app.length > 0) {
-          const decodedApp = data.app.map(p => [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [number, number]);
+          const decodedApp = data.app.map(
+            (p) =>
+              [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
+                number,
+                number
+              ]
+          );
           // const decodedApp = data.app.map(point => point.geo_point.coordinates);
           setAppPath(decodedApp);
         }
 
         if (data.gps) {
           let decodedGps: [number, number][] = [];
-          if (typeof data.gps === 'string') {
+          if (typeof data.gps === "string") {
             // Decode the polyline string for GPS
             decodedGps = polyline.decode(data.gps);
           } else if (Array.isArray(data.gps) && data.gps.length > 0) {
             // Handle the case where GPS data is an array of points
-            decodedGps = data.gps.map(point => point.geo_point.coordinates);
+            decodedGps = data.gps.map((point) => point.geo_point.coordinates);
           }
           setGpsPath(decodedGps);
         }
-
       } catch (error) {
         console.error(error);
       } finally {
@@ -1319,7 +1505,6 @@ export default function KeplerMap({
 
     fetchPathData();
   }, []); // The empty array ensures this runs only once
-
 
   useEffect(() => {
     if (!pathData || !activeMode) {
@@ -1335,26 +1520,18 @@ export default function KeplerMap({
 
     let coordinates: [number, number][] = [];
 
-    if (typeof sourceData === 'string') {
-
+    if (typeof sourceData === "string") {
       coordinates = polyline.decode(sourceData);
-
-
-
     } else if (Array.isArray(sourceData)) {
       // This part of your code is correct, it reverses the [lng, lat] from the API.
       coordinates = (sourceData as PathPoint[]).map((point) => {
         const [lng, lat] = point.geo_point.coordinates;
         return [lat, lng];
       });
-
-
     }
 
     setActiveRoute(coordinates);
-
   }, [activeMode, pathData]);
-
 
   useEffect(() => {
     const ac = new AbortController();
@@ -1363,7 +1540,9 @@ export default function KeplerMap({
       setIsLoadingFastag(true);
       try {
         const res = await fetch(
-          `http://live-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(unique_code ?? '')}`,
+          `https://live-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(
+            unique_code ?? ""
+          )}`,
           { method: "GET", signal: ac.signal }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1377,7 +1556,10 @@ export default function KeplerMap({
         if (api?.fastagData?.polyline) {
           poly = decodePolyline(api.fastagData.polyline);
         } else if (api?.data?.length) {
-          poly = api.data.map((p) => [p.geo_point.coordinates[1], p.geo_point.coordinates[0]]);
+          poly = api.data.map((p) => [
+            p.geo_point.coordinates[1],
+            p.geo_point.coordinates[0],
+          ]);
         }
         setFastagPath(poly);
 
@@ -1404,20 +1586,23 @@ export default function KeplerMap({
   // ... (existing functions and callbacks)
 
   // NEW: Event handler to start dragging the panel
-  const handlePanelMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault(); // Prevents text selection during drag
-    e.stopPropagation();
+  const handlePanelMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      e.preventDefault(); // Prevents text selection during drag
+      e.stopPropagation();
 
-    const panelHeader = e.currentTarget as HTMLDivElement;
-    const rect = panelHeader.getBoundingClientRect();
+      const panelHeader = e.currentTarget as HTMLDivElement;
+      const rect = panelHeader.getBoundingClientRect();
 
-    // Calculate the offset from the top-left of the panel
-    const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
+      // Calculate the offset from the top-left of the panel
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
 
-    setPanelDragOffset({ x: offsetX, y: offsetY });
-    setIsDraggingPanel(true);
-  }, []);
+      setPanelDragOffset({ x: offsetX, y: offsetY });
+      setIsDraggingPanel(true);
+    },
+    []
+  );
 
   // NEW: Global mouse move handler to track panel drag
   useEffect(() => {
@@ -1436,19 +1621,15 @@ export default function KeplerMap({
     };
 
     if (isDraggingPanel) {
-      window.addEventListener('mousemove', handleGlobalMouseMove);
-      window.addEventListener('mouseup', handleGlobalMouseUp);
+      window.addEventListener("mousemove", handleGlobalMouseMove);
+      window.addEventListener("mouseup", handleGlobalMouseUp);
     }
 
     return () => {
-      window.removeEventListener('mousemove', handleGlobalMouseMove);
-      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener("mousemove", handleGlobalMouseMove);
+      window.removeEventListener("mouseup", handleGlobalMouseUp);
     };
   }, [isDraggingPanel, panelDragOffset]);
-
-
-
-
 
   useEffect(() => {
     if (!activeMode) {
@@ -1456,16 +1637,15 @@ export default function KeplerMap({
       return;
     }
 
-    if (activeMode === 'gps') {
+    if (activeMode === "gps") {
       setActiveRoute(gpsPath);
-    } else if (activeMode === 'sim') {
+    } else if (activeMode === "sim") {
       setActiveRoute(simPath);
-    } else if (activeMode === 'app') {
+    } else if (activeMode === "app") {
       setActiveRoute(appPath);
     } else {
       setActiveRoute([]);
     }
-
   }, [activeMode, gpsPath, simPath, appPath]);
 
   // Status conversion function - same as main triptracker
@@ -1530,20 +1710,65 @@ export default function KeplerMap({
   const [showMapStyleSelector, setShowMapStyleSelector] = useState(false);
   const mapStyles = [
     { id: "none", name: "No Basemap", url: "", color: "#000000" },
-    { id: "dark", name: "DarkMatter", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png", color: "#2c3e50" },
-    { id: "light", name: "Positron", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png", color: "#f8f9fa" },
-    { id: "voyager", name: "Voyager", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png", color: "#e8f4f8" },
-    { id: "satellite", name: "Satellite With Streets", url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", color: "#4a5568" },
-    { id: "osm-dark", name: "Dark", url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", color: "#1a202c" },
-    { id: "osm-light", name: "Light", url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", color: "#ffffff" },
-    { id: "muted-light", name: "Muted Light", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png", color: "#f1f5f9" },
-    { id: "muted-night", name: "Muted Night", url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png", color: "#374151" },
+    {
+      id: "dark",
+      name: "DarkMatter",
+      url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png",
+      color: "#2c3e50",
+    },
+    {
+      id: "light",
+      name: "Positron",
+      url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png",
+      color: "#f8f9fa",
+    },
+    {
+      id: "voyager",
+      name: "Voyager",
+      url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png",
+      color: "#e8f4f8",
+    },
+    {
+      id: "satellite",
+      name: "Satellite With Streets",
+      url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      color: "#4a5568",
+    },
+    {
+      id: "osm-dark",
+      name: "Dark",
+      url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+      color: "#1a202c",
+    },
+    {
+      id: "osm-light",
+      name: "Light",
+      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      color: "#ffffff",
+    },
+    {
+      id: "muted-light",
+      name: "Muted Light",
+      url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png",
+      color: "#f1f5f9",
+    },
+    {
+      id: "muted-night",
+      name: "Muted Night",
+      url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png",
+      color: "#374151",
+    },
   ];
 
   const getCurrentMapUrl = () => {
     if (selectedMapStyle === "none") return "";
-    if (isSatelliteView) return mapStyles.find((s) => s.id === "satellite")?.url || "";
-    return mapStyles.find((s) => s.id === selectedMapStyle)?.url || mapStyles.find((s) => s.id === "light")?.url || "";
+    if (isSatelliteView)
+      return mapStyles.find((s) => s.id === "satellite")?.url || "";
+    return (
+      mapStyles.find((s) => s.id === selectedMapStyle)?.url ||
+      mapStyles.find((s) => s.id === "light")?.url ||
+      ""
+    );
   };
 
   // Delhi
@@ -1569,9 +1794,12 @@ export default function KeplerMap({
     import("leaflet").then((L) => {
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-        iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+        iconRetinaUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+        iconUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
       });
 
       const createCustomIcon = (color: string, label: string) =>
@@ -1581,7 +1809,7 @@ export default function KeplerMap({
           iconSize: [30, 30],
           iconAnchor: [15, 15],
         });
-      const mapPinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-icon lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>`
+      const mapPinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-icon lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>`;
       const vehicleIcon = new L.DivIcon({
         html: mapPinSvg,
         className: styles.mapEmoji,
@@ -1613,7 +1841,6 @@ export default function KeplerMap({
         className: styles.tollIcon,
       });
 
-
       setCustomIcons({
         pickup: createCustomIcon("#22c55e", "P"),
         delivery: createCustomIcon("#ef4444", "D"),
@@ -1633,10 +1860,11 @@ export default function KeplerMap({
     const ac = new AbortController();
 
     const loadHalt = async () => {
-
       try {
         const res = await fetch(
-          `http://live-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(unique_code ?? '')}`,
+          `https://live-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(
+            unique_code ?? ""
+          )}`,
           { method: "GET", signal: ac.signal }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1647,7 +1875,6 @@ export default function KeplerMap({
           console.error("Halt fetch failed:", err);
         }
       } finally {
-
       }
     };
 
@@ -1655,9 +1882,10 @@ export default function KeplerMap({
     return () => ac.abort();
   }, []);
 
-
-
-  const createRouteBuffer = (route: [number, number][], bufferDistance = 0.003): [number, number][] => {
+  const createRouteBuffer = (
+    route: [number, number][],
+    bufferDistance = 0.003
+  ): [number, number][] => {
     const buffer: [number, number][] = [];
     for (let i = 0; i < route.length - 1; i++) {
       const [lat1, lng1] = route[i];
@@ -1680,76 +1908,130 @@ export default function KeplerMap({
   const deviationRoutes = deviationData.length > 0 ? deviationData : [];
 
   const geofenceAreas = [
-    { id: 1, center: [28.6139, 77.209] as [number, number], radius: 500, name: "Pickup Zone - Connaught Place", color: "#22c55e" },
-    { id: 2, center: [28.5355, 77.25] as [number, number], radius: 800, name: "Transit Zone - Nehru Place", color: "#3b82f6" },
-    { id: 3, center: [28.4089, 77.0478] as [number, number], radius: 600, name: "Delivery Zone - Gurgaon", color: "#ef4444" },
+    {
+      id: 1,
+      center: [28.6139, 77.209] as [number, number],
+      radius: 500,
+      name: "Pickup Zone - Connaught Place",
+      color: "#22c55e",
+    },
+    {
+      id: 2,
+      center: [28.5355, 77.25] as [number, number],
+      radius: 800,
+      name: "Transit Zone - Nehru Place",
+      color: "#3b82f6",
+    },
+    {
+      id: 3,
+      center: [28.4089, 77.0478] as [number, number],
+      radius: 600,
+      name: "Delivery Zone - Gurgaon",
+      color: "#ef4444",
+    },
   ];
 
   const vehiclePosition: [number, number] = [28.5562, 77.241];
 
-  const createCircle = (center: [number, number], radius: number): [number, number][] => {
+  const createCircle = (
+    center: [number, number],
+    radius: number
+  ): [number, number][] => {
     const points: [number, number][] = [];
     const earthRadius = 6371000;
     for (let i = 0; i <= 64; i++) {
       const angle = (i * 360) / 64;
       const angleRad = (angle * Math.PI) / 180;
-      const lat = center[0] + (radius / earthRadius) * (180 / Math.PI) * Math.cos(angleRad);
-      const lng = center[1] + ((radius / earthRadius) * (180 / Math.PI) * Math.sin(angleRad)) / Math.cos((center[0] * Math.PI) / 180);
+      const lat =
+        center[0] +
+        (radius / earthRadius) * (180 / Math.PI) * Math.cos(angleRad);
+      const lng =
+        center[1] +
+        ((radius / earthRadius) * (180 / Math.PI) * Math.sin(angleRad)) /
+          Math.cos((center[0] * Math.PI) / 180);
       points.push([lat, lng]);
     }
     return points;
   };
 
-  const calculateMagnifierPosition = useCallback((mouseX?: number, mouseY?: number) => {
-    if (!mapContainerRef.current) return { x: 0, y: 0 };
-    const rect = mapContainerRef.current.getBoundingClientRect();
-    const x = mouseX !== undefined ? mouseX : magnifierSettings.positionX * rect.width;
-    const y = mouseY !== undefined ? mouseY : magnifierSettings.positionY * rect.height;
-    return { x, y };
-  }, [magnifierSettings.positionX, magnifierSettings.positionY]);
+  const calculateMagnifierPosition = useCallback(
+    (mouseX?: number, mouseY?: number) => {
+      if (!mapContainerRef.current) return { x: 0, y: 0 };
+      const rect = mapContainerRef.current.getBoundingClientRect();
+      const x =
+        mouseX !== undefined
+          ? mouseX
+          : magnifierSettings.positionX * rect.width;
+      const y =
+        mouseY !== undefined
+          ? mouseY
+          : magnifierSettings.positionY * rect.height;
+      return { x, y };
+    },
+    [magnifierSettings.positionX, magnifierSettings.positionY]
+  );
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isMagnifierEnabled || !isDraggingMagnifier || !mapContainerRef.current
-      || !mapRef.current
-    ) return;
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (
+        !isMagnifierEnabled ||
+        !isDraggingMagnifier ||
+        !mapContainerRef.current ||
+        !mapRef.current
+      )
+        return;
 
-    const rect = mapContainerRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+      const rect = mapContainerRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
-    const x = mouseX - dragOffset.x;
-    const y = mouseY - dragOffset.y;
+      const x = mouseX - dragOffset.x;
+      const y = mouseY - dragOffset.y;
 
-    const constrainedX = Math.max(magnifierSettings.size / 2, Math.min(x, rect.width - magnifierSettings.size / 2));
-    const constrainedY = Math.max(magnifierSettings.size / 2, Math.min(y, rect.height - magnifierSettings.size / 2));
+      const constrainedX = Math.max(
+        magnifierSettings.size / 2,
+        Math.min(x, rect.width - magnifierSettings.size / 2)
+      );
+      const constrainedY = Math.max(
+        magnifierSettings.size / 2,
+        Math.min(y, rect.height - magnifierSettings.size / 2)
+      );
 
-    const position = { x: constrainedX, y: constrainedY };
-    setMagnifierPosition(position);
+      const position = { x: constrainedX, y: constrainedY };
+      setMagnifierPosition(position);
 
-    const map = mapRef.current;
-    if (map && map.containerPointToLatLng) {
-      try {
-        const latLng = map.containerPointToLatLng([position.x, position.y]);
-        setMagnifierCenter([latLng.lat, latLng.lng]);
-      } catch {
-        const bounds = map.getBounds();
-        if (bounds) {
-          const mapWidth = rect.width;
-          const mapHeight = rect.height;
-          const north = bounds.getNorth();
-          const south = bounds.getSouth();
-          const east = bounds.getEast();
-          const west = bounds.getWest();
-          const lat = north - (position.y / mapHeight) * (north - south);
-          const lng = west + (position.x / mapWidth) * (east - west);
-          setMagnifierCenter([lat, lng]);
+      const map = mapRef.current;
+      if (map && map.containerPointToLatLng) {
+        try {
+          const latLng = map.containerPointToLatLng([position.x, position.y]);
+          setMagnifierCenter([latLng.lat, latLng.lng]);
+        } catch {
+          const bounds = map.getBounds();
+          if (bounds) {
+            const mapWidth = rect.width;
+            const mapHeight = rect.height;
+            const north = bounds.getNorth();
+            const south = bounds.getSouth();
+            const east = bounds.getEast();
+            const west = bounds.getWest();
+            const lat = north - (position.y / mapHeight) * (north - south);
+            const lng = west + (position.x / mapWidth) * (east - west);
+            setMagnifierCenter([lat, lng]);
+          }
         }
       }
-    }
-  }, [isMagnifierEnabled, isDraggingMagnifier, dragOffset, magnifierSettings.size]);
+    },
+    [
+      isMagnifierEnabled,
+      isDraggingMagnifier,
+      dragOffset,
+      magnifierSettings.size,
+    ]
+  );
 
   const updateMagnifierScreenPosition = useCallback(() => {
-    if (!isMagnifierEnabled || !mapRef.current || !mapContainerRef.current) return;
+    if (!isMagnifierEnabled || !mapRef.current || !mapContainerRef.current)
+      return;
     const map = mapRef.current;
     try {
       const point = map.latLngToContainerPoint(magnifierCenter);
@@ -1757,13 +2039,15 @@ export default function KeplerMap({
       const constrainedX = Math.max(0, Math.min(point.x, rect.width));
       const constrainedY = Math.max(0, Math.min(point.y, rect.height));
       setMagnifierPosition({ x: constrainedX, y: constrainedY });
-    } catch { }
+    } catch {}
   }, [isMagnifierEnabled, magnifierCenter]);
 
   useEffect(() => {
     if (!mapRef.current || !isMagnifierEnabled) return;
     const map = mapRef.current;
-    const handleMapMove = () => { if (!isDraggingMagnifier) updateMagnifierScreenPosition(); };
+    const handleMapMove = () => {
+      if (!isDraggingMagnifier) updateMagnifierScreenPosition();
+    };
     map.on("move", handleMapMove);
     map.on("zoom", handleMapMove);
     return () => {
@@ -1792,54 +2076,65 @@ export default function KeplerMap({
     setMagnifierPosition({ x: newPositionX, y: newPositionY });
 
     // Convert the new screen position to map coordinates (latitude/longitude)
-    const newMagnifierCenter = mapInstance.containerPointToLatLng([newPositionX, newPositionY]);
+    const newMagnifierCenter = mapInstance.containerPointToLatLng([
+      newPositionX,
+      newPositionY,
+    ]);
 
     // Set the new map center state
     setMagnifierCenter([newMagnifierCenter.lat, newMagnifierCenter.lng]);
-
   }, [
     isMagnifierEnabled,
     magnifierSettings.positionX,
     magnifierSettings.positionY,
     mapRef,
-    mapContainerRef
+    mapContainerRef,
   ]);
 
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLElement;
 
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
+      // HIGHLIGHT: New check to ignore clicks on the magnifier panel
+      const isClickOnPanel = target.closest(`.${styles.magnifierPanel}`);
+      if (isClickOnPanel) {
+        return; // Don't proceed with map or magnifier dragging if the click is on the panel.
+      }
 
-    // HIGHLIGHT: New check to ignore clicks on the magnifier panel
-    const isClickOnPanel = target.closest(`.${styles.magnifierPanel}`);
-    if (isClickOnPanel) {
-      return; // Don't proceed with map or magnifier dragging if the click is on the panel.
-    }
+      // Existing check for markers or popups
+      if (
+        target.closest(".leaflet-marker-icon") ||
+        target.closest(".leaflet-popup-content")
+      ) {
+        return;
+      }
 
-    // Existing check for markers or popups
-    if (target.closest('.leaflet-marker-icon') || target.closest('.leaflet-popup-content')) {
-      return;
-    }
+      if (isMagnifierEnabled && mapContainerRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
 
-    if (isMagnifierEnabled && mapContainerRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
+        const rect = mapContainerRef.current.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const offsetX = mouseX - magnifierPosition.x;
+        const offsetY = mouseY - magnifierPosition.y;
+        setDragOffset({ x: offsetX, y: offsetY });
+        setIsDraggingMagnifier(true);
+      }
+    },
+    [isMagnifierEnabled, magnifierPosition]
+  );
 
-      const rect = mapContainerRef.current.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      const offsetX = mouseX - magnifierPosition.x;
-      const offsetY = mouseY - magnifierPosition.y;
-      setDragOffset({ x: offsetX, y: offsetY });
-      setIsDraggingMagnifier(true);
-    }
-  }, [isMagnifierEnabled, magnifierPosition]);
-
-  const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDraggingMagnifier) {
-      e.preventDefault(); e.stopPropagation();
-    }
-    setIsDraggingMagnifier(false);
-  }, [isDraggingMagnifier]);
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (isDraggingMagnifier) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      setIsDraggingMagnifier(false);
+    },
+    [isDraggingMagnifier]
+  );
 
   useEffect(() => {
     if (showMagnifierSettings) return;
@@ -1848,12 +2143,20 @@ export default function KeplerMap({
       setMagnifierPosition(position);
       if (mapRef.current && mapContainerRef.current) {
         try {
-          const latLng = mapRef.current.containerPointToLatLng([position.x, position.y]);
+          const latLng = mapRef.current.containerPointToLatLng([
+            position.x,
+            position.y,
+          ]);
           setMagnifierCenter([latLng.lat, latLng.lng]);
-        } catch { }
+        } catch {}
       }
     }
-  }, [magnifierSettings, showMagnifierSettings, isMagnifierEnabled, calculateMagnifierPosition]);
+  }, [
+    magnifierSettings,
+    showMagnifierSettings,
+    isMagnifierEnabled,
+    calculateMagnifierPosition,
+  ]);
   const [magnifierMap, setMagnifierMap] = useState<LeafletMap | null>(null);
 
   useEffect(() => {
@@ -1884,7 +2187,6 @@ export default function KeplerMap({
     // or if the map instances themselves change.
   }, [isMagnifierEnabled, magnifierMap, mapRef.current]);
 
-
   // Effect 2: Handles UPDATES when the magnifier is dragged or zoom setting changes.
   // This hook remains the same as it was already correct.
   useEffect(() => {
@@ -1901,8 +2203,13 @@ export default function KeplerMap({
       magnifierCenter,
       Math.min(mainMapZoom + magnifierSettings.zoom, 18)
     );
-
-  }, [magnifierCenter, magnifierSettings.zoom, isMagnifierEnabled, magnifierMap, mapRef.current]); // Also, add the new dependencies // Dependencies: run when center or zoom changes.
+  }, [
+    magnifierCenter,
+    magnifierSettings.zoom,
+    isMagnifierEnabled,
+    magnifierMap,
+    mapRef.current,
+  ]); // Also, add the new dependencies // Dependencies: run when center or zoom changes.
   useEffect(() => {
     // If we have a map instance and the magnifier is enabled...
     if (magnifierMap && isMagnifierEnabled) {
@@ -1924,26 +2231,36 @@ export default function KeplerMap({
       }
     };
   }, []);
-  const formatTimestamp = (timestamp: string | undefined, type: 'full' | 'date' | 'time' = 'full'): string => {
+  const formatTimestamp = (
+    timestamp: string | undefined,
+    type: "full" | "date" | "time" = "full"
+  ): string => {
     if (!timestamp) {
-      return 'N/A';
+      return "N/A";
     }
 
     const date = new Date(timestamp);
     const options: Intl.DateTimeFormatOptions = {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
-      timeZone: 'Asia/Kolkata', // Explicitly specify IST
+      timeZone: "Asia/Kolkata", // Explicitly specify IST
     };
 
-    const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-    const formattedTime = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const formattedDate = date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+    });
+    const formattedTime = date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
 
-    if (type === 'date') return formattedDate;
-    if (type === 'time') return formattedTime;
+    if (type === "date") return formattedDate;
+    if (type === "time") return formattedTime;
 
     // Default to full format
     return `${formattedDate}, ${formattedTime}`;
@@ -1954,7 +2271,9 @@ export default function KeplerMap({
     if (activeRoute.length > 0) {
       setIsReplaying(true);
 
-      const isResuming = currentReplayPosition !== null && replayIndexRef.current < activeRoute.length - 1;
+      const isResuming =
+        currentReplayPosition !== null &&
+        replayIndexRef.current < activeRoute.length - 1;
 
       if (!isResuming) {
         replayIndexRef.current = 0;
@@ -1983,10 +2302,26 @@ export default function KeplerMap({
       //     clearTimeout(replayTimeoutId);
       //     setReplayTimeoutId(null);
       // }
-      if (haltPopupTimerRef.current) { clearTimeout(haltPopupTimerRef.current); haltPopupTimerRef.current = null; }
-      if (haltPopupRef.current && mapRef.current) { try { mapRef.current.closePopup(haltPopupRef.current); } catch { }; haltPopupRef.current = null; }
-      if (deviationPopupTimerRef.current) { clearTimeout(deviationPopupTimerRef.current); deviationPopupTimerRef.current = null; }
-      if (deviationPopupRef.current && mapRef.current) { try { mapRef.current.closePopup(deviationPopupRef.current); } catch { }; deviationPopupRef.current = null; }
+      if (haltPopupTimerRef.current) {
+        clearTimeout(haltPopupTimerRef.current);
+        haltPopupTimerRef.current = null;
+      }
+      if (haltPopupRef.current && mapRef.current) {
+        try {
+          mapRef.current.closePopup(haltPopupRef.current);
+        } catch {}
+        haltPopupRef.current = null;
+      }
+      if (deviationPopupTimerRef.current) {
+        clearTimeout(deviationPopupTimerRef.current);
+        deviationPopupTimerRef.current = null;
+      }
+      if (deviationPopupRef.current && mapRef.current) {
+        try {
+          mapRef.current.closePopup(deviationPopupRef.current);
+        } catch {}
+        deviationPopupRef.current = null;
+      }
     }
   };
   const pauseReplay = () => {
@@ -2010,11 +2345,26 @@ export default function KeplerMap({
     setCurrentReplayHaltIndex(-1);
     setIsPausedAtDeviation(false);
     setCurrentReplayDeviationIndex(-1);
-    if (haltPopupTimerRef.current) { clearTimeout(haltPopupTimerRef.current); haltPopupTimerRef.current = null; }
-    if (deviationPopupTimerRef.current) { clearTimeout(deviationPopupTimerRef.current); deviationPopupTimerRef.current = null; }
-    if (haltPopupRef.current && mapRef.current) { try { mapRef.current.closePopup(haltPopupRef.current); } catch { }; haltPopupRef.current = null; }
-    if (deviationPopupRef.current && mapRef.current) { try { mapRef.current.closePopup(deviationPopupRef.current); } catch { }; deviationPopupRef.current = null; }
-
+    if (haltPopupTimerRef.current) {
+      clearTimeout(haltPopupTimerRef.current);
+      haltPopupTimerRef.current = null;
+    }
+    if (deviationPopupTimerRef.current) {
+      clearTimeout(deviationPopupTimerRef.current);
+      deviationPopupTimerRef.current = null;
+    }
+    if (haltPopupRef.current && mapRef.current) {
+      try {
+        mapRef.current.closePopup(haltPopupRef.current);
+      } catch {}
+      haltPopupRef.current = null;
+    }
+    if (deviationPopupRef.current && mapRef.current) {
+      try {
+        mapRef.current.closePopup(deviationPopupRef.current);
+      } catch {}
+      deviationPopupRef.current = null;
+    }
   };
   const stopAndHideReplay = () => {
     // Stops the replay interval
@@ -2029,23 +2379,35 @@ export default function KeplerMap({
     setReplayProgress(0);
     setIsPausedAtHalt(false);
     setCurrentReplayHaltIndex(-1);
-    if (haltPopupTimerRef.current) { clearTimeout(haltPopupTimerRef.current); haltPopupTimerRef.current = null; }
-    if (haltPopupRef.current && mapRef.current) { try { mapRef.current.closePopup(haltPopupRef.current); } catch { }; haltPopupRef.current = null; }
-
+    if (haltPopupTimerRef.current) {
+      clearTimeout(haltPopupTimerRef.current);
+      haltPopupTimerRef.current = null;
+    }
+    if (haltPopupRef.current && mapRef.current) {
+      try {
+        mapRef.current.closePopup(haltPopupRef.current);
+      } catch {}
+      haltPopupRef.current = null;
+    }
 
     // Hides the replay panel
     setShowReplayPanel(false);
   };
 
-
-  const resetReplay = () => { setReplayProgress(0); setCurrentReplayPosition(null); };
+  const resetReplay = () => {
+    setReplayProgress(0);
+    setCurrentReplayPosition(null);
+  };
   const resumeReplay = () => setIsReplaying(true);
 
   // Skip forward/backward functions
   const skipForward = () => {
     if (!activeRoute.length) return;
     const skipAmount = Math.floor(activeRoute.length * 0.1); // Skip 10% of route
-    const newIndex = Math.min(replayIndexRef.current + skipAmount, activeRoute.length - 1);
+    const newIndex = Math.min(
+      replayIndexRef.current + skipAmount,
+      activeRoute.length - 1
+    );
     replayIndexRef.current = newIndex;
     setCurrentReplayPosition(activeRoute[newIndex]);
     const newProgress = (newIndex / (activeRoute.length - 1)) * 100;
@@ -2080,20 +2442,29 @@ export default function KeplerMap({
 
   useEffect(() => {
     if (!isReplaying || selectedDeviationForReplay === null) return;
-    const deviation = deviationRoutes.find((d) => d.id === selectedDeviationForReplay);
+    const deviation = deviationRoutes.find(
+      (d) => d.id === selectedDeviationForReplay
+    );
     if (!deviation) return;
 
     const interval = setInterval(() => {
       setReplayProgress((prev) => {
         const newProgress = prev + replaySpeed * 2;
-        if (newProgress >= 100) { setIsReplaying(false); return 100; }
+        if (newProgress >= 100) {
+          setIsReplaying(false);
+          return 100;
+        }
 
         const routeLength = deviation.path.length - 1;
         const currentIndex = Math.floor((newProgress / 100) * routeLength);
         const nextIndex = Math.min(currentIndex + 1, routeLength);
-        const segmentProgress = (newProgress / 100) * routeLength - currentIndex;
+        const segmentProgress =
+          (newProgress / 100) * routeLength - currentIndex;
 
-        if (currentIndex < deviation.path.length && nextIndex < deviation.path.length) {
+        if (
+          currentIndex < deviation.path.length &&
+          nextIndex < deviation.path.length
+        ) {
           const [lat1, lng1] = deviation.path[currentIndex];
           const [lat2, lng2] = deviation.path[nextIndex];
           const lat = lat1 + (lat2 - lat1) * segmentProgress;
@@ -2107,8 +2478,10 @@ export default function KeplerMap({
     return () => clearInterval(interval);
   }, [isReplaying, selectedDeviationForReplay, replaySpeed, deviationRoutes]);
 
-  const handleMagnifierSettingChange = (key: keyof MagnifierSettings, value: number) =>
-    setMagnifierSettings((prev) => ({ ...prev, [key]: value }));
+  const handleMagnifierSettingChange = (
+    key: keyof MagnifierSettings,
+    value: number
+  ) => setMagnifierSettings((prev) => ({ ...prev, [key]: value }));
 
   const navigateToVehicle = useCallback(() => {
     // Check if both the map instance and the current location exist
@@ -2150,7 +2523,6 @@ export default function KeplerMap({
     );
   }
 
-
   return (
     <div className={styles.mapWrapper}>
       <div
@@ -2159,64 +2531,104 @@ export default function KeplerMap({
         onMouseMove={handleMouseMove}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
-        style={{ cursor: isDraggingMagnifier ? "grabbing" : isMagnifierEnabled ? "grab" : "default" }}
+        style={{
+          cursor: isDraggingMagnifier
+            ? "grabbing"
+            : isMagnifierEnabled
+            ? "grab"
+            : "default",
+        }}
       >
-
         {showReplayPanel && (
           <div className={styles.enhancedReplayPanel}>
             {/* Progress Bar */}
             {currentReplayPosition && (
               <div className={styles.replayProgressContainer}>
                 <div className={styles.replayProgressBar}>
-                  <div className={styles.replayProgressFill} style={{ width: `${replayProgress}%` }} />
+                  <div
+                    className={styles.replayProgressFill}
+                    style={{ width: `${replayProgress}%` }}
+                  />
                 </div>
-                <span className={styles.replayProgressText}>{Math.round(replayProgress)}%</span>
+                <span className={styles.replayProgressText}>
+                  {Math.round(replayProgress)}%
+                </span>
               </div>
             )}
 
             {/* Control Buttons */}
             <div className={styles.replayControls}>
               {/* Skip to Start */}
-              <button onClick={skipToStart} className={styles.replayControlBtn} title="Skip to Start">
+              <button
+                onClick={skipToStart}
+                className={styles.replayControlBtn}
+                title="Skip to Start"
+              >
                 <Rewind size={18} />
               </button>
 
               {/* Skip Backward */}
-              <button onClick={skipBackward} className={styles.replayControlBtn} title="Skip Backward 10%">
+              <button
+                onClick={skipBackward}
+                className={styles.replayControlBtn}
+                title="Skip Backward 10%"
+              >
                 <SkipBack size={18} />
               </button>
 
               {/* Play/Pause */}
               {isReplaying ? (
-                <button onClick={pauseReplay} className={`${styles.replayControlBtn} ${styles.primaryBtn}`} title="Pause">
+                <button
+                  onClick={pauseReplay}
+                  className={`${styles.replayControlBtn} ${styles.primaryBtn}`}
+                  title="Pause"
+                >
                   <Pause size={22} />
                 </button>
               ) : (
-                <button onClick={startReplay} className={`${styles.replayControlBtn} ${styles.primaryBtn}`} title="Play">
+                <button
+                  onClick={startReplay}
+                  className={`${styles.replayControlBtn} ${styles.primaryBtn}`}
+                  title="Play"
+                >
                   <Play size={22} />
                 </button>
               )}
 
               {/* Skip Forward */}
-              <button onClick={skipForward} className={styles.replayControlBtn} title="Skip Forward 10%">
+              <button
+                onClick={skipForward}
+                className={styles.replayControlBtn}
+                title="Skip Forward 10%"
+              >
                 <SkipForward size={18} />
               </button>
 
               {/* Skip to End */}
-              <button onClick={skipToEnd} className={styles.replayControlBtn} title="Skip to End">
+              <button
+                onClick={skipToEnd}
+                className={styles.replayControlBtn}
+                title="Skip to End"
+              >
                 <FastForward size={18} />
               </button>
 
               {/* Stop */}
-              <button onClick={stopReplay} className={`${styles.replayControlBtn} ${styles.stopBtn}`} title="Stop">
+              <button
+                onClick={stopReplay}
+                className={`${styles.replayControlBtn} ${styles.stopBtn}`}
+                title="Stop"
+              >
                 <RotateCcw size={18} />
               </button>
 
               {/* Show Fence Toggle */}
               {internalFencePathData.length > 0 && (
                 <button
-                  onClick={() => setShowFence(prev => !prev)}
-                  className={`${styles.replayControlBtn} ${showFence ? styles.fenceActiveBtn : ''}`}
+                  onClick={() => setShowFence((prev) => !prev)}
+                  className={`${styles.replayControlBtn} ${
+                    showFence ? styles.fenceActiveBtn : ""
+                  }`}
                   title={showFence ? "Hide Fence" : "Show Fence"}
                 >
                   <Shield size={18} />
@@ -2242,7 +2654,11 @@ export default function KeplerMap({
               </div>
 
               {/* Close */}
-              <button onClick={stopAndHideReplay} className={`${styles.replayControlBtn} ${styles.closeBtn}`} title="Close">
+              <button
+                onClick={stopAndHideReplay}
+                className={`${styles.replayControlBtn} ${styles.closeBtn}`}
+                title="Close"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -2250,7 +2666,6 @@ export default function KeplerMap({
         )}
         {/* )} */}
         <MapContainer
-
           ref={mapRef}
           center={center}
           zoom={zoom}
@@ -2266,8 +2681,8 @@ export default function KeplerMap({
               url={getCurrentMapUrl()}
               attribution={
                 selectedMapStyle === "satellite" || isSatelliteView
-                  ? '© Esri'
-                  : '© OpenStreetMap contributors'
+                  ? "© Esri"
+                  : "© OpenStreetMap contributors"
               }
             />
           )}
@@ -2276,70 +2691,80 @@ export default function KeplerMap({
               key="india-boundary"
               data={indiaBoundary as any}
               style={{
-                fillColor: 'transparent', // 1. Set the fill color to transparent
-                fillOpacity: 0.0,         // 2. Set the fill opacity to zero
+                fillColor: "transparent", // 1. Set the fill color to transparent
+                fillOpacity: 0.0, // 2. Set the fill opacity to zero
                 // --- END OF CORRECTION ---
 
-                color: 'black',     // Purple line for the border
-                weight: 0.5,            // Thicker border line
-                opacity: 1.0,         // Solid border line
-                dashArray: 'none'
+                color: "black", // Purple line for the border
+                weight: 0.5, // Thicker border line
+                opacity: 1.0, // Solid border line
+                dashArray: "none",
               }}
-
             />
           )}
-          {activeMode === 'gps' && gpsPath.length > 0 && (
-
+          {activeMode === "gps" && gpsPath.length > 0 && (
             <Polyline
               positions={gpsPath}
               pathOptions={{ color: "#1e40af", weight: 4, opacity: 0.8 }}
             />
           )}
-          {activeMode === 'sim' && simPath.length > 0 && (
+          {activeMode === "sim" && simPath.length > 0 && (
             <Polyline
               positions={simPath}
-              pathOptions={{ color: "#800080", weight: 3, opacity: 0.7, dashArray: "10, 10" }} // Purple dashed line for SIM
+              pathOptions={{
+                color: "#800080",
+                weight: 3,
+                opacity: 0.7,
+                dashArray: "10, 10",
+              }} // Purple dashed line for SIM
             />
           )}
-          {activeMode === 'app' && appPath.length > 0 && (
+          {activeMode === "app" && appPath.length > 0 && (
             <Polyline
               positions={appPath}
               pathOptions={{ color: "#f97316", weight: 3, opacity: 0.7 }} // Orange line for APP
             />
           )}
 
-          {showDayRun && dayRunPolylines.map((coords, i) => (
-            <>
-              <Polyline
-                key={`dayrun-border-${i}`}
-                positions={coords}
-                pathOptions={{
-                  color: '#000000',
-                  weight: 8,
-                  opacity: 0.4
-                }}
-              />
-              <Polyline
-                key={`dayrun-${i}`}
-                positions={coords}
-                pathOptions={{
-                  color: polylineColors[i],
-                  weight: 4,
-                  opacity: 1
-                }}
-              >
-                <Popup>
-                  <div>
-                    <h4 style={{ color: "blue" }}>Day {i + 1} Run Details</h4>
-                    <p><strong>Start Time:</strong> {dayRunDetails[i].startTime}</p>
-                    <p><strong>Distance:</strong> {dayRunDetails[i].distance}</p>
-                    <p><strong>Time:</strong> {dayRunDetails[i].time}</p>
-                  </div>
-                </Popup>
-              </Polyline>
-            </>
-          ))}
-
+          {showDayRun &&
+            dayRunPolylines.map((coords, i) => (
+              <>
+                <Polyline
+                  key={`dayrun-border-${i}`}
+                  positions={coords}
+                  pathOptions={{
+                    color: "#000000",
+                    weight: 8,
+                    opacity: 0.4,
+                  }}
+                />
+                <Polyline
+                  key={`dayrun-${i}`}
+                  positions={coords}
+                  pathOptions={{
+                    color: polylineColors[i],
+                    weight: 4,
+                    opacity: 1,
+                  }}
+                >
+                  <Popup>
+                    <div>
+                      <h4 style={{ color: "blue" }}>Day {i + 1} Run Details</h4>
+                      <p>
+                        <strong>Start Time:</strong>{" "}
+                        {dayRunDetails[i].startTime}
+                      </p>
+                      <p>
+                        <strong>Distance:</strong> {dayRunDetails[i].distance}
+                      </p>
+                      <p>
+                        <strong>Time:</strong> {dayRunDetails[i].time}
+                      </p>
+                    </div>
+                  </Popup>
+                </Polyline>
+              </>
+            ))}
 
           {shipmentPickups.map(({ pos, label, meta }, i) => (
             <Marker
@@ -2387,11 +2812,13 @@ export default function KeplerMap({
             </Marker>
           ))}
 
-
-
           {/* Always render the vehicle marker and its popup */}
           {currentReplayPosition && customIcons.vehicle && (
-            <Marker position={currentReplayPosition} icon={customIcons.vehicle} ref={vehicleMarkerRef}>
+            <Marker
+              position={currentReplayPosition}
+              icon={customIcons.vehicle}
+              ref={vehicleMarkerRef}
+            >
               {/*
           This Popup must ALWAYS be rendered as a child of the Marker.
           Its visibility will be controlled imperatively by the useEffect.
@@ -2400,25 +2827,50 @@ export default function KeplerMap({
               <Popup
               // onClose={() => setIsPausedAtHalt(false)}
               >
-                {isPausedAtHalt && currentReplayHaltIndex > -1 && haltPoints[currentReplayHaltIndex] && (
-                  <div className={styles.popup}>
-                    <div className={`${styles.popupTitle} ${styles.titleRed}`}>Halt Info</div>
-                    <hr className={styles.divider}></hr>
-                    <div className={styles.popupBody}>
-                      Duration: <strong>{Math.floor(haltPoints[currentReplayHaltIndex].halt_duration / 60)} hour(s), {haltPoints[currentReplayHaltIndex].halt_duration % 60} minute(s)</strong>
+                {isPausedAtHalt &&
+                  currentReplayHaltIndex > -1 &&
+                  haltPoints[currentReplayHaltIndex] && (
+                    <div className={styles.popup}>
+                      <div
+                        className={`${styles.popupTitle} ${styles.titleRed}`}
+                      >
+                        Halt Info
+                      </div>
+                      <hr className={styles.divider}></hr>
+                      <div className={styles.popupBody}>
+                        Duration:{" "}
+                        <strong>
+                          {Math.floor(
+                            haltPoints[currentReplayHaltIndex].halt_duration /
+                              60
+                          )}{" "}
+                          hour(s),{" "}
+                          {haltPoints[currentReplayHaltIndex].halt_duration %
+                            60}{" "}
+                          minute(s)
+                        </strong>
+                      </div>
+                      <div className={styles.popupBody}>
+                        Start:{" "}
+                        <strong>
+                          {new Date(
+                            haltPoints[currentReplayHaltIndex].start_time
+                          ).toLocaleString()}
+                        </strong>
+                      </div>
+                      <div className={styles.popupBody}>
+                        End:{" "}
+                        <strong>
+                          {new Date(
+                            haltPoints[currentReplayHaltIndex].end_time
+                          ).toLocaleString()}
+                        </strong>
+                      </div>
                     </div>
-                    <div className={styles.popupBody}>
-                      Start: <strong>{new Date(haltPoints[currentReplayHaltIndex].start_time).toLocaleString()}</strong>
-                    </div>
-                    <div className={styles.popupBody}>
-                      End: <strong>{new Date(haltPoints[currentReplayHaltIndex].end_time).toLocaleString()}</strong>
-                    </div>
-                  </div>
-                )}
+                  )}
               </Popup>
             </Marker>
           )}
-
 
           {/* === Shipment: Deliveries (D1, D2, ...) === */}
           {shipmentDeliveries.map(({ pos, label, meta }, i) => (
@@ -2430,15 +2882,31 @@ export default function KeplerMap({
             >
               <Popup>
                 <div className={styles.popup}>
-                  <div className={`${styles.popupTitle} ${styles.titleDes}`}>Delivery {label}</div>
-                  <hr className={styles.divider} ></hr>
+                  <div className={`${styles.popupTitle} ${styles.titleDes}`}>
+                    Delivery {label}
+                  </div>
+                  <hr className={styles.divider}></hr>
 
-                  {meta?.location?.name && <div className={styles.popupBody}>{meta.location.name.trim()}</div>}
-                  {meta?.location?.locality && <div className={styles.popupBody}>{meta.location.locality}</div>}
-                  {meta?.location?.city && <div className={styles.popupBody}>City: {meta.location.city}</div>}
-                  {meta?.finished_at && <div className={styles.popupBody}>Arrived at: {formatTimestamp(meta.finished_at)}</div>}
-
-
+                  {meta?.location?.name && (
+                    <div className={styles.popupBody}>
+                      {meta.location.name.trim()}
+                    </div>
+                  )}
+                  {meta?.location?.locality && (
+                    <div className={styles.popupBody}>
+                      {meta.location.locality}
+                    </div>
+                  )}
+                  {meta?.location?.city && (
+                    <div className={styles.popupBody}>
+                      City: {meta.location.city}
+                    </div>
+                  )}
+                  {meta?.finished_at && (
+                    <div className={styles.popupBody}>
+                      Arrived at: {formatTimestamp(meta.finished_at)}
+                    </div>
+                  )}
                 </div>
               </Popup>
             </Marker>
@@ -2449,49 +2917,72 @@ export default function KeplerMap({
             <Polyline
               key={`ship-delivery-poly-${i}`}
               positions={coords}
-              pathOptions={{ color: "#ef4444", weight: 2, opacity: 0.9, dashArray: "2, 2", fill: true }}
+              pathOptions={{
+                color: "#ef4444",
+                weight: 2,
+                opacity: 0.9,
+                dashArray: "2, 2",
+                fill: true,
+              }}
             />
           ))}
           {/* === PICKUP Polylines from API (NEW BLOCK) === */}
-          {pickupPolylines.map((coords, i) => ( // <--- RENDER NEW STATE
-            <Polyline
-              key={`ship-pickup-poly-${i}`}
-              positions={coords}
-              pathOptions={{ color: "#22c55e", weight: 2, opacity: 0.9, dashArray: "5, 1", fill: true }} // Green color, distinct dash
-            />
-          ))}
+          {pickupPolylines.map(
+            (
+              coords,
+              i // <--- RENDER NEW STATE
+            ) => (
+              <Polyline
+                key={`ship-pickup-poly-${i}`}
+                positions={coords}
+                pathOptions={{
+                  color: "#22c55e",
+                  weight: 2,
+                  opacity: 0.9,
+                  dashArray: "5, 1",
+                  fill: true,
+                }} // Green color, distinct dash
+              />
+            )
+          )}
 
           {/* === Deviation Polylines (in red) === */}
-          {showDeviations && deviationRoutes.map((route) => (
-            <Polyline
-              key={`deviation-polyline-${route.id}`}
-              positions={route.path}
-              pathOptions={{
-                color: selectedDeviationForReplay === route.id ? "#f59e0b" : "#ef4444",
-                weight: 4,
-                opacity: 0.9,
-                dashArray: "10, 5"
-              }}
-            >
-              <Popup>
-                <div className={styles.popup}>
-                  <div className={`${styles.popupTitle} ${styles.titleRed}`}>Route Deviation</div>
-                  <div className={styles.metricRow}>
-                    <span className={styles.metricKey}>Location:</span>
-                    <span className={styles.metricVal}>{route.location}</span>
+          {showDeviations &&
+            deviationRoutes.map((route) => (
+              <Polyline
+                key={`deviation-polyline-${route.id}`}
+                positions={route.path}
+                pathOptions={{
+                  color:
+                    selectedDeviationForReplay === route.id
+                      ? "#f59e0b"
+                      : "#ef4444",
+                  weight: 4,
+                  opacity: 0.9,
+                  dashArray: "10, 5",
+                }}
+              >
+                <Popup>
+                  <div className={styles.popup}>
+                    <div className={`${styles.popupTitle} ${styles.titleRed}`}>
+                      Route Deviation
+                    </div>
+                    <div className={styles.metricRow}>
+                      <span className={styles.metricKey}>Location:</span>
+                      <span className={styles.metricVal}>{route.location}</span>
+                    </div>
+                    <div className={styles.metricRow}>
+                      <span className={styles.metricKey}>Distance:</span>
+                      <span className={styles.metricVal}>{route.distance}</span>
+                    </div>
+                    <div className={styles.metricRow}>
+                      <span className={styles.metricKey}>Duration:</span>
+                      <span className={styles.metricVal}>{route.duration}</span>
+                    </div>
                   </div>
-                  <div className={styles.metricRow}>
-                    <span className={styles.metricKey}>Distance:</span>
-                    <span className={styles.metricVal}>{route.distance}</span>
-                  </div>
-                  <div className={styles.metricRow}>
-                    <span className={styles.metricKey}>Duration:</span>
-                    <span className={styles.metricVal}>{route.duration}</span>
-                  </div>
-                </div>
-              </Popup>
-            </Polyline>
-          ))}
+                </Popup>
+              </Polyline>
+            ))}
 
           {/* === FASTag Polyline (if available and enabled) === */}
           {showFastag && fastagPath.length > 0 && (
@@ -2502,7 +2993,7 @@ export default function KeplerMap({
                 color: "#ff6b35",
                 weight: 4,
                 opacity: 0.9,
-                dashArray: "5, 10"
+                dashArray: "5, 10",
               }}
             >
               <Popup>
@@ -2516,235 +3007,359 @@ export default function KeplerMap({
 
           {/* === Fence Path Polyline (if available and enabled) === */}
           {(() => {
-            const shouldShowFence = (
+            const shouldShowFence =
               (showFencePath && fencePathData && fencePathData.length > 0) ||
-              (showFence && internalFencePathData && internalFencePathData.length > 0)
-            );
+              (showFence &&
+                internalFencePathData &&
+                internalFencePathData.length > 0);
 
-            const pathToUse = fencePathData && fencePathData.length > 0 ? fencePathData : internalFencePathData;
+            const pathToUse =
+              fencePathData && fencePathData.length > 0
+                ? fencePathData
+                : internalFencePathData;
 
-            return shouldShowFence && (
-              <Polyline
-                key="fence-path-polyline"
-                positions={pathToUse.map(coord => [coord[1], coord[0]])} // Convert lng,lat to lat,lng
-                pathOptions={{
-                  color: "#000",
-                  weight: 3,
-                  opacity: 0.8,
-                  fill: false,
-                  // dashArray: "15, 10"
-                }}
-              >
-                <Popup>
-                  <div className={styles.popup}>
-                    <div className={`${styles.popupTitle} ${styles.titleGreen}`}>Fence Path</div>
-                    <div className={styles.metricRow}>
-                      <span className={styles.metricKey}>Type:</span>
-                      <span className={styles.metricVal}>Recommended Route</span>
+            return (
+              shouldShowFence && (
+                <Polyline
+                  key="fence-path-polyline"
+                  positions={pathToUse.map((coord) => [coord[1], coord[0]])} // Convert lng,lat to lat,lng
+                  pathOptions={{
+                    color: "#000",
+                    weight: 3,
+                    opacity: 0.8,
+                    fill: false,
+                    // dashArray: "15, 10"
+                  }}
+                >
+                  <Popup>
+                    <div className={styles.popup}>
+                      <div
+                        className={`${styles.popupTitle} ${styles.titleGreen}`}
+                      >
+                        Fence Path
+                      </div>
+                      <div className={styles.metricRow}>
+                        <span className={styles.metricKey}>Type:</span>
+                        <span className={styles.metricVal}>
+                          Recommended Route
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Polyline>
+                  </Popup>
+                </Polyline>
+              )
             );
           })()}
 
           {currentLocation && !isReplaying && (
-            <Marker
-              position={currentLocation}
-              icon={customIcons.vehicle}
-
-            />
+            <Marker position={currentLocation} icon={customIcons.vehicle} />
           )}
 
           {/* FASTAG Toll Plazas (markers from API) */}
-          {showFastag && fastagPoints.map((p, idx) => {
-            const lat = p.geo_point.coordinates[1];
-            const lng = p.geo_point.coordinates[0];
-            const icon = isTollPassed(p) ? customIcons.tollPassed : customIcons.tollPending; // ✅
-            return (
-              <Marker key={`toll-${idx}`} position={[lat, lng]} icon={icon}>
-                <Popup>
-                  <div className={styles.popup}>
-                    <div className={`${styles.popupTitle} ${styles.titleOrange}`}>Toll Plaza Details</div>
-                    <hr className={styles.divider} ></hr>
-                    <div className={styles.popupBody}>{p.tollPlazaName}</div>
-                    <div className={styles.popupBody}>{p.address}</div>
-                    <div className={styles.popupMeta}>Time: {new Date(p.time_stamp).toLocaleString()}</div>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-          {shouldShowHaltMarkers && haltPoints.map((halt, idx) => {
-            const lat = halt.geo_point.coordinates[1];
-            const lng = halt.geo_point.coordinates[0];
-            // const durationInMinutes = Math.floor(/ 60); // Convert seconds to minutes
-            const durationHours = Math.floor(halt.halt_duration / 60);
-            const durationMins = halt.halt_duration % 60;
+          {showFastag &&
+            fastagPoints.map((p, idx) => {
+              const lat = p.geo_point.coordinates[1];
+              const lng = p.geo_point.coordinates[0];
+              const icon = isTollPassed(p)
+                ? customIcons.tollPassed
+                : customIcons.tollPending; // ✅
+              return (
+                <Marker key={`toll-${idx}`} position={[lat, lng]} icon={icon}>
+                  <Popup>
+                    <div className={styles.popup}>
+                      <div
+                        className={`${styles.popupTitle} ${styles.titleOrange}`}
+                      >
+                        Toll Plaza Details
+                      </div>
+                      <hr className={styles.divider}></hr>
+                      <div className={styles.popupBody}>{p.tollPlazaName}</div>
+                      <div className={styles.popupBody}>{p.address}</div>
+                      <div className={styles.popupMeta}>
+                        Time: {new Date(p.time_stamp).toLocaleString()}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+          {shouldShowHaltMarkers &&
+            haltPoints.map((halt, idx) => {
+              const lat = halt.geo_point.coordinates[1];
+              const lng = halt.geo_point.coordinates[0];
+              // const durationInMinutes = Math.floor(/ 60); // Convert seconds to minutes
+              const durationHours = Math.floor(halt.halt_duration / 60);
+              const durationMins = halt.halt_duration % 60;
 
-            return (
+              return (
+                <Marker
+                  key={`halt-${halt._id}-${idx}`}
+                  position={[lat, lng]}
+                  icon={customIcons?.deviation ?? undefined}
+                >
+                  <Popup>
+                    <div className={styles.popup}>
+                      <div
+                        className={`${styles.popupTitle} ${styles.titleRed}`}
+                      >
+                        Halt Info
+                      </div>
+                      <hr className={styles.divider}></hr>
+
+                      <div className={styles.popupBody}>
+                        Duration:
+                        <strong>
+                          {" "}
+                          {durationHours > 0
+                            ? `${durationHours} hour(s), `
+                            : ""}{" "}
+                          {Math.floor(durationMins)} minute(s)
+                        </strong>
+                      </div>
+                      <div className={styles.popupBody}>
+                        Start:
+                        <strong>
+                          {" "}
+                          {new Date(halt.start_time).toLocaleString()}
+                        </strong>
+                      </div>
+                      <div className={styles.popupBody}>
+                        End:
+                        <strong>
+                          {" "}
+                          {new Date(halt.end_time).toLocaleString()}
+                        </strong>
+                      </div>
+                      <div className={styles.popupBody}>
+                        <a
+                          href={`https://www.google.com/maps?q=${lat},${lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            background: "#4285F4",
+                            color: "white",
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            textDecoration: "none",
+                            fontSize: "12px",
+                            marginTop: "8px",
+                          }}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                          </svg>
+                          Open in Google Maps
+                        </a>
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+
+          {customIcons.waypoint &&
+            mainRouteFromApi.slice(1, -1).map((position, index) => (
               <Marker
-                key={`halt-${halt._id}-${idx}`}
-                position={[lat, lng]}
-                icon={customIcons?.deviation ?? undefined}
+                key={`waypoint-${index}`}
+                position={position}
+                icon={customIcons.waypoint}
               >
                 <Popup>
-
                   <div className={styles.popup}>
-                    <div className={`${styles.popupTitle} ${styles.titleRed}`}>Halt Info</div>
-                    <hr className={styles.divider} ></hr>
-
-                    <div className={styles.popupBody}>Duration:<strong>  {durationHours > 0 ? `${durationHours} hour(s), ` : ''} {Math.floor(durationMins)} minute(s)</strong></div>
-                    <div className={styles.popupBody}>Start:<strong> {new Date(halt.start_time).toLocaleString()}</strong></div>
-                    <div className={styles.popupBody}>End:<strong> {new Date(halt.end_time).toLocaleString()}</strong></div>
-                    <div className={styles.popupBody}>
-                      <a
-                        href={`https://www.google.com/maps?q=${lat},${lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          background: '#4285F4',
-                          color: 'white',
-                          padding: '6px 12px',
-                          borderRadius: '6px',
-                          textDecoration: 'none',
-                          fontSize: '12px',
-                          marginTop: '8px'
-                        }}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                          <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        Open in Google Maps
-                      </a>
+                    <div className={`${styles.popupTitle} ${styles.titleBlue}`}>
+                      Waypoint {index + 1}
                     </div>
+                    <div className={styles.popupBody}>Transit checkpoint</div>
                   </div>
                 </Popup>
               </Marker>
-            );
-          })}
-
-
-
-
-
-          {customIcons.waypoint && mainRouteFromApi.slice(1, -1).map((position, index) => (
-            <Marker key={`waypoint-${index}`} position={position} icon={customIcons.waypoint}>
-              <Popup>
-                <div className={styles.popup}>
-                  <div className={`${styles.popupTitle} ${styles.titleBlue}`}>Waypoint {index + 1}</div>
-                  <div className={styles.popupBody}>Transit checkpoint</div>
-                </div>
-              </Popup>
-            </Marker>))}
-
+            ))}
 
           {currentReplayPosition && customIcons.vehicle && (
             <Marker position={currentReplayPosition} icon={customIcons.vehicle}>
               <Popup>
                 <div className={styles.popup}>
-                  <div className={`${styles.popupTitle} ${styles.titleOrange}`}>Replay Position</div>
-                  <div className={styles.popupBody}>Progress: {Math.round(replayProgress)}%</div>
+                  <div className={`${styles.popupTitle} ${styles.titleOrange}`}>
+                    Replay Position
+                  </div>
+                  <div className={styles.popupBody}>
+                    Progress: {Math.round(replayProgress)}%
+                  </div>
                 </div>
               </Popup>
             </Marker>
           )}
 
-          {showDeviations && customIcons.deviation && deviationRoutes.map((route) => (
-            <div key={`deviation-markers-${route.id}`}>
-              <Marker position={route.path[0]} icon={customIcons.deviation}>
-                <Popup>
-                  <div className={styles.popup}>
-                    <div className={`${styles.popupTitle} ${styles.titleRed} ${styles.popupTitleDivider}`}>Deviation Alert</div>
-
-                    <div className={styles.metricRow}><span className={styles.metricKey}>Location:</span><span className={styles.metricVal}>{route.location}</span></div>
-                    <div className={styles.metricRow}><span className={styles.metricKey}>Start Time:</span><span className={styles.metricVal}>{route.startTime}</span></div>
-                    <div className={styles.metricRow}><span className={styles.metricKey}>End Time:</span><span className={styles.metricVal}>{route.endTime}</span></div>
-                    <div className={styles.metricRow}><span className={styles.metricKey}>Distance:</span><span className={styles.metricVal}>{route.distance}</span></div>
-                    <div className={styles.metricRow}><span className={styles.metricKey}>Reason:</span><span className={styles.metricVal}>{route.reason}</span></div>
-                    <div className={`${styles.metricRow} ${styles.metricRowTop}`}>
-                      <span className={styles.metricKey}>Total Duration:</span><span className={styles.metricVal}>{route.duration}</span>
-                    </div>
-
-                    <div className={styles.replayBlock}>
-                      <div className={styles.replayTitle}>Replay Route</div>
-                      <div className={styles.replayRow}>
-                        {selectedDeviationForReplay === route.id && isReplaying ? (
-                          <button onClick={() => setIsReplaying(false)} className={`${styles.btn} ${styles.btnRedSm}`}>
-                            <Pause className={styles.iconXs} /> Pause
-                          </button>
-                        ) : selectedDeviationForReplay === route.id && replayProgress > 0 ? (
-                          <button onClick={() => resumeReplay()} className={`${styles.btn} ${styles.btnBlueSm}`}>
-                            <Play className={styles.iconXs} /> Resume
-                          </button>
-                        ) : (
-                          <button onClick={() => {
-                            setSelectedDeviationForReplay(route.id);
-                            setIsReplaying(true);
-                            setReplayProgress(0);
-                          }} className={`${styles.btn} ${styles.btnGreenSm}`}>
-                            <Play className={styles.iconXs} /> Play
-                          </button>
-
-
-                        )}
-                        <button onClick={() => resetReplay()} className={`${styles.btn} ${styles.btnGraySm}`}>
-                          <RotateCcw className={styles.iconXs} /> Reset
-                        </button>
+          {showDeviations &&
+            customIcons.deviation &&
+            deviationRoutes.map((route) => (
+              <div key={`deviation-markers-${route.id}`}>
+                <Marker position={route.path[0]} icon={customIcons.deviation}>
+                  <Popup>
+                    <div className={styles.popup}>
+                      <div
+                        className={`${styles.popupTitle} ${styles.titleRed} ${styles.popupTitleDivider}`}
+                      >
+                        Deviation Alert
                       </div>
 
-                      {selectedDeviationForReplay === route.id && (
-                        <div className={styles.replayControls}>
-                          <div className={styles.replaySpeed}>
-                            <span className={styles.mutedXs}>Speed:</span>
-                            <select
-                              value={replaySpeed}
-                              onChange={(e) => setReplaySpeed(Number(e.target.value))}
-                              className={styles.selectXs}
+                      <div className={styles.metricRow}>
+                        <span className={styles.metricKey}>Location:</span>
+                        <span className={styles.metricVal}>
+                          {route.location}
+                        </span>
+                      </div>
+                      <div className={styles.metricRow}>
+                        <span className={styles.metricKey}>Start Time:</span>
+                        <span className={styles.metricVal}>
+                          {route.startTime}
+                        </span>
+                      </div>
+                      <div className={styles.metricRow}>
+                        <span className={styles.metricKey}>End Time:</span>
+                        <span className={styles.metricVal}>
+                          {route.endTime}
+                        </span>
+                      </div>
+                      <div className={styles.metricRow}>
+                        <span className={styles.metricKey}>Distance:</span>
+                        <span className={styles.metricVal}>
+                          {route.distance}
+                        </span>
+                      </div>
+                      <div className={styles.metricRow}>
+                        <span className={styles.metricKey}>Reason:</span>
+                        <span className={styles.metricVal}>{route.reason}</span>
+                      </div>
+                      <div
+                        className={`${styles.metricRow} ${styles.metricRowTop}`}
+                      >
+                        <span className={styles.metricKey}>
+                          Total Duration:
+                        </span>
+                        <span className={styles.metricVal}>
+                          {route.duration}
+                        </span>
+                      </div>
+
+                      <div className={styles.replayBlock}>
+                        <div className={styles.replayTitle}>Replay Route</div>
+                        <div className={styles.replayRow}>
+                          {selectedDeviationForReplay === route.id &&
+                          isReplaying ? (
+                            <button
+                              onClick={() => setIsReplaying(false)}
+                              className={`${styles.btn} ${styles.btnRedSm}`}
                             >
-                              <option value={0.1}>0.1x</option>
-                              <option value={0.3}>0.3X</option>
-                              <option value={0.5}>0.5x</option>
-                              <option value={1}>1x</option>
-                              <option value={2}>2x</option>
-                              <option value={4}>4x</option>
-                            </select>
-                          </div>
-                          <div className={styles.progressTrack}>
-                            <div className={styles.progressBar} style={{ width: `${replayProgress}%` }} />
-                          </div>
-                          <div className={styles.progressText}>Progress: {Math.round(replayProgress)}%</div>
+                              <Pause className={styles.iconXs} /> Pause
+                            </button>
+                          ) : selectedDeviationForReplay === route.id &&
+                            replayProgress > 0 ? (
+                            <button
+                              onClick={() => resumeReplay()}
+                              className={`${styles.btn} ${styles.btnBlueSm}`}
+                            >
+                              <Play className={styles.iconXs} /> Resume
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setSelectedDeviationForReplay(route.id);
+                                setIsReplaying(true);
+                                setReplayProgress(0);
+                              }}
+                              className={`${styles.btn} ${styles.btnGreenSm}`}
+                            >
+                              <Play className={styles.iconXs} /> Play
+                            </button>
+                          )}
+                          <button
+                            onClick={() => resetReplay()}
+                            className={`${styles.btn} ${styles.btnGraySm}`}
+                          >
+                            <RotateCcw className={styles.iconXs} /> Reset
+                          </button>
                         </div>
-                      )}
+
+                        {selectedDeviationForReplay === route.id && (
+                          <div className={styles.replayControls}>
+                            <div className={styles.replaySpeed}>
+                              <span className={styles.mutedXs}>Speed:</span>
+                              <select
+                                value={replaySpeed}
+                                onChange={(e) =>
+                                  setReplaySpeed(Number(e.target.value))
+                                }
+                                className={styles.selectXs}
+                              >
+                                <option value={0.1}>0.1x</option>
+                                <option value={0.3}>0.3X</option>
+                                <option value={0.5}>0.5x</option>
+                                <option value={1}>1x</option>
+                                <option value={2}>2x</option>
+                                <option value={4}>4x</option>
+                              </select>
+                            </div>
+                            <div className={styles.progressTrack}>
+                              <div
+                                className={styles.progressBar}
+                                style={{ width: `${replayProgress}%` }}
+                              />
+                            </div>
+                            <div className={styles.progressText}>
+                              Progress: {Math.round(replayProgress)}%
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
+                  </Popup>
+                </Marker>
 
-              <Marker position={route.path[route.path.length - 1]} icon={customIcons.deviation}>
-                <Popup>
-                  <div className={styles.popup}>
-                    <div className={`${styles.popupTitle} ${styles.titleOrange}`}>Deviation End</div>
-                    <div className={styles.popupBody}>Returned to main route</div>
-                    <div className={styles.popupMeta}>End: {route.endTime}</div>
-                  </div>
-                </Popup>
-              </Marker>
-            </div>
-          ))}
-
-
+                <Marker
+                  position={route.path[route.path.length - 1]}
+                  icon={customIcons.deviation}
+                >
+                  <Popup>
+                    <div className={styles.popup}>
+                      <div
+                        className={`${styles.popupTitle} ${styles.titleOrange}`}
+                      >
+                        Deviation End
+                      </div>
+                      <div className={styles.popupBody}>
+                        Returned to main route
+                      </div>
+                      <div className={styles.popupMeta}>
+                        End: {route.endTime}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              </div>
+            ))}
         </MapContainer>
         {/* Enhanced Magnifier Tool with Custom Settings */}
         {isMagnifierEnabled && (
           <div
             // 1. The onMouseDown handler is placed directly on this outer div
             onMouseDown={handleMouseDown}
-            className={`${styles.magnifier} ${isDraggingMagnifier ? styles.dragging : ''}`}
+            className={`${styles.magnifier} ${
+              isDraggingMagnifier ? styles.dragging : ""
+            }`}
             style={{
               // Only positioning and size - let CSS handle the glass effect
               left: magnifierPosition.x - magnifierSettings.size / 2,
@@ -2768,9 +3383,9 @@ export default function KeplerMap({
                 doubleClickZoom={false}
                 touchZoom={false}
                 keyboard={false}
-              // whenCreated={(mapInstance) => {
-              //   setMagnifierMapRef(mapInstance)
-              // }}
+                // whenCreated={(mapInstance) => {
+                //   setMagnifierMapRef(mapInstance)
+                // }}
               >
                 {/* <MapController mapRef={mapRef} /> */}
                 <MagnifierMapController setMap={setMagnifierMap} />
@@ -2778,11 +3393,11 @@ export default function KeplerMap({
                   <TileLayer
                     url={getCurrentMapUrl()}
                     attribution=""
-                    key={`magnifier-tiles-${selectedMapStyle}-${isSatelliteView ? "satellite" : "street"}-${magnifierCenter[0]}-${magnifierCenter[1]}`}
+                    key={`magnifier-tiles-${selectedMapStyle}-${
+                      isSatelliteView ? "satellite" : "street"
+                    }-${magnifierCenter[0]}-${magnifierCenter[1]}`}
                   />
                 )}
-
-
 
                 {/* Show main route in magnifier */}
                 {mainRoute.length > 0 && (
@@ -2798,7 +3413,7 @@ export default function KeplerMap({
                 )}
 
                 {/* Show GPS path in magnifier */}
-                {activeMode === 'gps' && gpsPath.length > 0 && (
+                {activeMode === "gps" && gpsPath.length > 0 && (
                   <Polyline
                     key="magnifier-gps-path"
                     positions={gpsPath}
@@ -2807,7 +3422,7 @@ export default function KeplerMap({
                 )}
 
                 {/* Show SIM path in magnifier */}
-                {activeMode === 'sim' && simPath.length > 0 && (
+                {activeMode === "sim" && simPath.length > 0 && (
                   <Polyline
                     key="magnifier-sim-path"
                     positions={simPath}
@@ -2816,7 +3431,7 @@ export default function KeplerMap({
                 )}
 
                 {/* Show APP path in magnifier */}
-                {activeMode === 'app' && appPath.length > 0 && (
+                {activeMode === "app" && appPath.length > 0 && (
                   <Polyline
                     key="magnifier-app-path"
                     positions={appPath}
@@ -2826,23 +3441,32 @@ export default function KeplerMap({
 
                 {/* Show fence path in magnifier if visible */}
                 {(() => {
-                  const shouldShowFence = (
-                    (showFencePath && fencePathData && fencePathData.length > 0) ||
-                    (internalFencePathData && internalFencePathData.length > 0)
-                  );
-                  const pathToUse = fencePathData && fencePathData.length > 0 ? fencePathData : internalFencePathData;
-                  return shouldShowFence && (
-                    <Polyline
-                      key="magnifier-fence-path"
-                      positions={pathToUse.map(coord => [coord[1], coord[0]])}
-                      pathOptions={{
-                        color: "#000",
-                        weight: 3,
-                        opacity: 0.8,
-                        fill: false,
-                        dashArray: "15, 10"
-                      }}
-                    />
+                  const shouldShowFence =
+                    (showFencePath &&
+                      fencePathData &&
+                      fencePathData.length > 0) ||
+                    (internalFencePathData && internalFencePathData.length > 0);
+                  const pathToUse =
+                    fencePathData && fencePathData.length > 0
+                      ? fencePathData
+                      : internalFencePathData;
+                  return (
+                    shouldShowFence && (
+                      <Polyline
+                        key="magnifier-fence-path"
+                        positions={pathToUse.map((coord) => [
+                          coord[1],
+                          coord[0],
+                        ])}
+                        pathOptions={{
+                          color: "#000",
+                          weight: 3,
+                          opacity: 0.8,
+                          fill: false,
+                          dashArray: "15, 10",
+                        }}
+                      />
+                    )
                   );
                 })()}
 
@@ -2851,7 +3475,13 @@ export default function KeplerMap({
                   <Polyline
                     key={`magnifier-delivery-poly-${i}`}
                     positions={coords}
-                    pathOptions={{ color: "#ef4444", weight: 2, opacity: 0.9, dashArray: "2, 2", fill: true }}
+                    pathOptions={{
+                      color: "#ef4444",
+                      weight: 2,
+                      opacity: 0.9,
+                      dashArray: "2, 2",
+                      fill: true,
+                    }}
                   />
                 ))}
 
@@ -2862,10 +3492,16 @@ export default function KeplerMap({
                       key={`magnifier-deviation-${route.id}`}
                       positions={route.path}
                       pathOptions={{
-                        color: selectedDeviationForReplay === route.id ? "#f59e0b" : "#ef4444",
+                        color:
+                          selectedDeviationForReplay === route.id
+                            ? "#f59e0b"
+                            : "#ef4444",
                         weight: selectedDeviationForReplay === route.id ? 6 : 4,
                         opacity: 1,
-                        dashArray: selectedDeviationForReplay === route.id ? "none" : "10, 5",
+                        dashArray:
+                          selectedDeviationForReplay === route.id
+                            ? "none"
+                            : "10, 5",
                       }}
                     />
                   ))}
@@ -2879,7 +3515,7 @@ export default function KeplerMap({
                       color: "#ff6b35",
                       weight: 4,
                       opacity: 0.9,
-                      dashArray: "5, 10"
+                      dashArray: "5, 10",
                     }}
                   />
                 )}
@@ -2889,7 +3525,9 @@ export default function KeplerMap({
                   fastagPoints.map((toll: any, idx: number) => {
                     const lat = parseFloat(toll.geo_point.coordinates[1]);
                     const lng = parseFloat(toll.geo_point.coordinates[0]);
-                    const icon = isTollPassed(toll) ? customIcons.tollPassed : customIcons.tollPending;
+                    const icon = isTollPassed(toll)
+                      ? customIcons.tollPassed
+                      : customIcons.tollPending;
                     return (
                       <Marker
                         key={`magnifier-toll-${idx}`}
@@ -2938,11 +3576,23 @@ export default function KeplerMap({
                   mainRoute
                     .slice(1, -1)
                     .map((position, index) => (
-                      <Marker key={`magnifier-waypoint-${index}`} position={position} icon={customIcons.waypoint} />
+                      <Marker
+                        key={`magnifier-waypoint-${index}`}
+                        position={position}
+                        icon={customIcons.waypoint}
+                      />
                     ))}
-                {customIcons.vehicle && <Marker position={vehiclePosition} icon={customIcons.vehicle} />}
+                {customIcons.vehicle && (
+                  <Marker
+                    position={vehiclePosition}
+                    icon={customIcons.vehicle}
+                  />
+                )}
                 {currentReplayPosition && customIcons.vehicle && (
-                  <Marker position={currentReplayPosition} icon={customIcons.vehicle} />
+                  <Marker
+                    position={currentReplayPosition}
+                    icon={customIcons.vehicle}
+                  />
                 )}
 
                 {/* Show deviation markers in magnifier */}
@@ -2950,12 +3600,16 @@ export default function KeplerMap({
                   customIcons.deviation &&
                   deviationRoutes.map((route) => (
                     <div key={`magnifier-deviation-markers-${route.id}`}>
-                      <Marker position={route.path[0]} icon={customIcons.deviation} />
-                      <Marker position={route.path[route.path.length - 1]} icon={customIcons.deviation} />
+                      <Marker
+                        position={route.path[0]}
+                        icon={customIcons.deviation}
+                      />
+                      <Marker
+                        position={route.path[route.path.length - 1]}
+                        icon={customIcons.deviation}
+                      />
                     </div>
                   ))}
-
-
               </MapContainer>
 
               {/* Glass border */}
@@ -2980,18 +3634,24 @@ export default function KeplerMap({
           </div>
         )}
 
-
-
         {/* Magnifier Settings Panel */}
         {showMagnifierSettings && (
-          <div className={styles.magnifierPanel}
+          <div
+            className={styles.magnifierPanel}
             style={{
               transform: `translate(${panelPosition.x}px, ${panelPosition.y}px)`,
-              cursor: isDraggingPanel ? 'grabbing' : 'grab',
-            }}>
-            <div className={styles.magnifierPanelHeader} onMouseDown={handlePanelMouseDown}>
+              cursor: isDraggingPanel ? "grabbing" : "grab",
+            }}
+          >
+            <div
+              className={styles.magnifierPanelHeader}
+              onMouseDown={handlePanelMouseDown}
+            >
               <h3>Magnifier Settings</h3>
-              <button onClick={() => setShowMagnifierSettings(false)} className={styles.iconBtnPlain}>
+              <button
+                onClick={() => setShowMagnifierSettings(false)}
+                className={styles.iconBtnPlain}
+              >
                 <X className={styles.iconSm} />
               </button>
             </div>
@@ -3000,55 +3660,128 @@ export default function KeplerMap({
               <div>
                 <div className={styles.panelRowHead}>
                   <label>Position X</label>
-                  <div className={styles.monoBadge}>{magnifierSettings.positionX.toFixed(3)}</div>
+                  <div className={styles.monoBadge}>
+                    {magnifierSettings.positionX.toFixed(3)}
+                  </div>
                 </div>
-                <input type="range" min="0" max="1" step="0.001" value={magnifierSettings.positionX}
-                  onChange={(e) => handleMagnifierSettingChange("positionX", parseFloat(e.target.value))}
-                  className={styles.slider} />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.001"
+                  value={magnifierSettings.positionX}
+                  onChange={(e) =>
+                    handleMagnifierSettingChange(
+                      "positionX",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                  className={styles.slider}
+                />
               </div>
 
               <div>
                 <div className={styles.panelRowHead}>
                   <label>Position Y</label>
-                  <div className={styles.monoBadge}>{magnifierSettings.positionY.toFixed(3)}</div>
+                  <div className={styles.monoBadge}>
+                    {magnifierSettings.positionY.toFixed(3)}
+                  </div>
                 </div>
-                <input type="range" min="0" max="1" step="0.001" value={magnifierSettings.positionY}
-                  onChange={(e) => handleMagnifierSettingChange("positionY", parseFloat(e.target.value))}
-                  className={styles.slider} />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.001"
+                  value={magnifierSettings.positionY}
+                  onChange={(e) =>
+                    handleMagnifierSettingChange(
+                      "positionY",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                  className={styles.slider}
+                />
               </div>
 
               <div>
                 <div className={styles.panelRowHead}>
                   <label>Size</label>
-                  <div className={styles.monoBadge}>{magnifierSettings.size.toFixed(1)}</div>
+                  <div className={styles.monoBadge}>
+                    {magnifierSettings.size.toFixed(1)}
+                  </div>
                 </div>
-                <input type="range" min="100" max="400" step="1" value={magnifierSettings.size}
-                  onChange={(e) => handleMagnifierSettingChange("size", parseFloat(e.target.value))}
-                  className={styles.slider} />
+                <input
+                  type="range"
+                  min="100"
+                  max="400"
+                  step="1"
+                  value={magnifierSettings.size}
+                  onChange={(e) =>
+                    handleMagnifierSettingChange(
+                      "size",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                  className={styles.slider}
+                />
               </div>
 
               <div>
                 <div className={styles.panelRowHead}>
                   <label>Zoom</label>
-                  <div className={styles.monoBadge}>{magnifierSettings.zoom}</div>
+                  <div className={styles.monoBadge}>
+                    {magnifierSettings.zoom}
+                  </div>
                 </div>
-                <input type="range" min="1" max="8" step="1" value={magnifierSettings.zoom}
-                  onChange={(e) => handleMagnifierSettingChange("zoom", parseInt(e.target.value))}
-                  className={styles.slider} />
+                <input
+                  type="range"
+                  min="1"
+                  max="8"
+                  step="1"
+                  value={magnifierSettings.zoom}
+                  onChange={(e) =>
+                    handleMagnifierSettingChange(
+                      "zoom",
+                      parseInt(e.target.value)
+                    )
+                  }
+                  className={styles.slider}
+                />
               </div>
 
               <div>
                 <div className={styles.panelRowHead}>
                   <label>Border Width</label>
-                  <div className={styles.monoBadge}>{magnifierSettings.borderWidth.toFixed(3)}</div>
+                  <div className={styles.monoBadge}>
+                    {magnifierSettings.borderWidth.toFixed(3)}
+                  </div>
                 </div>
-                <input type="range" min="0" max="10" step="0.1" value={magnifierSettings.borderWidth}
-                  onChange={(e) => handleMagnifierSettingChange("borderWidth", parseFloat(e.target.value))}
-                  className={styles.slider} />
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                  value={magnifierSettings.borderWidth}
+                  onChange={(e) =>
+                    handleMagnifierSettingChange(
+                      "borderWidth",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                  className={styles.slider}
+                />
               </div>
 
               <button
-                onClick={() => setMagnifierSettings({ positionX: 0.5, positionY: 0.5, size: 200, zoom: 4, borderWidth: 4 })}
+                onClick={() =>
+                  setMagnifierSettings({
+                    positionX: 0.5,
+                    positionY: 0.5,
+                    size: 200,
+                    zoom: 4,
+                    borderWidth: 4,
+                  })
+                }
                 className={`${styles.btn} ${styles.btnSlate}`}
               >
                 Reset to Defaults
@@ -3059,7 +3792,13 @@ export default function KeplerMap({
 
         {/* Shipment Details */}
         {shipmentData && (
-          <div className={`${styles.shipmentDetailsOverlay} ${showMagnifierSettings ? styles.statusShift : ""} ${!isFullscreen ? styles.smallText : ""} ${showMagnifierSettings ? styles.hideOnSettings : ""}`}>
+          <div
+            className={`${styles.shipmentDetailsOverlay} ${
+              showMagnifierSettings ? styles.statusShift : ""
+            } ${!isFullscreen ? styles.smallText : ""} ${
+              showMagnifierSettings ? styles.hideOnSettings : ""
+            }`}
+          >
             <div className={styles.statusTitle}>Shipment Details</div>
             <div className={styles.statusList}>
               <div className={styles.statusItem}>
@@ -3072,7 +3811,9 @@ export default function KeplerMap({
               </div>
               <div className={styles.statusItem}>
                 <span className={`${styles.dot} ${styles.dotPurple}`}></span>
-                <span>Driver: {toTitleCase(shipmentData.driver?.name) || "N/A"}</span>
+                <span>
+                  Driver: {toTitleCase(shipmentData.driver?.name) || "N/A"}
+                </span>
               </div>
             </div>
           </div>
@@ -3080,13 +3821,21 @@ export default function KeplerMap({
 
         {/* Live Tracking Status */}
         {/* <div className={`${styles.statusOverlay} ${showMagnifierSettings ? styles.statusShift : ""} ${!isFullscreen ? styles.smallText : ""}`}> */}
-        <div className={`${styles.statusOverlay} ${showMagnifierSettings ? styles.statusShift : ""} ${!isFullscreen ? styles.smallText : ""} ${showMagnifierSettings ? styles.hideOnSettings : ""}`}>
+        <div
+          className={`${styles.statusOverlay} ${
+            showMagnifierSettings ? styles.statusShift : ""
+          } ${!isFullscreen ? styles.smallText : ""} ${
+            showMagnifierSettings ? styles.hideOnSettings : ""
+          }`}
+        >
           <div className={styles.statusTitle}>Live Tracking Status</div>
           <div className={styles.statusList}>
             {shipmentData?.latest_status && (
               <div className={styles.statusItem}>
                 <span className={`${styles.dot} ${styles.dotGreen}`}></span>
-                <span>Status: {getShipmentStatus(shipmentData.latest_status).status}</span>
+                <span>
+                  Status: {getShipmentStatus(shipmentData.latest_status).status}
+                </span>
               </div>
             )}
             {progressPercentage > 0 && (
@@ -3099,14 +3848,28 @@ export default function KeplerMap({
               <span className={`${styles.dot} ${styles.dotOrange}`}></span>
               <span>
                 {(() => {
-                  const lastDelivery = shipmentData?.deliveries?.[shipmentData.deliveries.length - 1];
+                  const lastDelivery =
+                    shipmentData?.deliveries?.[
+                      shipmentData.deliveries.length - 1
+                    ];
                   const finishedAt = lastDelivery?.finished_at;
 
-                  if (shipmentData?.latest_status?.toLowerCase().includes('delivered') || finishedAt) {
+                  if (
+                    shipmentData?.latest_status
+                      ?.toLowerCase()
+                      .includes("delivered") ||
+                    finishedAt
+                  ) {
                     if (finishedAt) {
-                      return `Delivered on: ${new Date(finishedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+                      return `Delivered on: ${new Date(
+                        finishedAt
+                      ).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}`;
                     }
-                    return 'Delivered on: N/A';
+                    return "Delivered on: N/A";
                   }
                   return `ETA: ${eta || "N/A"}`;
                 })()}
@@ -3115,18 +3878,25 @@ export default function KeplerMap({
             {shipmentData?.trip_tracker?.last_location_address && (
               <div className={styles.statusItem}>
                 <span className={`${styles.dot} ${styles.dotPurple}`}></span>
-                <span>Location: {shipmentData.trip_tracker.last_location_address}</span>
+                <span>
+                  Location: {shipmentData.trip_tracker.last_location_address}
+                </span>
               </div>
             )}
             {isMagnifierEnabled && (
               <div className={`${styles.statusItem} ${styles.statusSplit}`}>
                 <span className={`${styles.dot} ${styles.dotBluePulse}`}></span>
-                <span>Magnifier: {magnifierCenter[0].toFixed(2)}, {magnifierCenter[1].toFixed(2)}</span>
+                <span>
+                  Magnifier: {magnifierCenter[0].toFixed(2)},{" "}
+                  {magnifierCenter[1].toFixed(2)}
+                </span>
               </div>
             )}
             {isReplaying && (
               <div className={`${styles.statusItem} ${styles.statusSplit}`}>
-                <span className={`${styles.dot} ${styles.dotPurplePulse}`}></span>
+                <span
+                  className={`${styles.dot} ${styles.dotPurplePulse}`}
+                ></span>
                 <span>Replaying Route</span>
               </div>
             )}
@@ -3137,49 +3907,101 @@ export default function KeplerMap({
         <div className={styles.topRightControls}>
           <button
             onClick={() => setShowMapStyleSelector(!showMapStyleSelector)}
-            className={`${styles.iconBtn} ${showMapStyleSelector ? styles.iconBtnActivePurple : ""}`}
+            className={`${styles.iconBtn} ${
+              showMapStyleSelector ? styles.iconBtnActivePurple : ""
+            }`}
             title="Map Style"
           >
-            <svg className={styles.iconSm} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            <svg
+              className={styles.iconSm}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+              />
             </svg>
           </button>
 
           <button
             onClick={navigateToVehicle}
-            className={`${styles.iconBtn} ${isNavigating ? styles.iconBtnActivePurple : ""}`}
+            className={`${styles.iconBtn} ${
+              isNavigating ? styles.iconBtnActivePurple : ""
+            }`}
             title="Go to Vehicle Location"
           >
-            <svg className={styles.iconSm} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg
+              className={styles.iconSm}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
           </button>
 
           <button
             onClick={() => setIsMagnifierEnabled(!isMagnifierEnabled)}
-            className={`${styles.iconBtn} ${isMagnifierEnabled ? styles.iconBtnActivePurple : ""}`}
+            className={`${styles.iconBtn} ${
+              isMagnifierEnabled ? styles.iconBtnActivePurple : ""
+            }`}
             title="Toggle Magnifier"
           >
-            <svg className={styles.iconSm} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className={styles.iconSm}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </button>
 
           <button
             onClick={() => setShowMagnifierSettings(!showMagnifierSettings)}
-            className={`${styles.iconBtn} ${showMagnifierSettings ? styles.iconBtnActivePurple : ""}`}
+            className={`${styles.iconBtn} ${
+              showMagnifierSettings ? styles.iconBtnActivePurple : ""
+            }`}
             title="Magnifier Settings"
           >
-            <svg className={styles.iconSm} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-.426-1.756-2.924-1.756-3.35 0a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg
+              className={styles.iconSm}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-.426-1.756-2.924-1.756-3.35 0a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
           </button>
 
@@ -3205,7 +4027,10 @@ export default function KeplerMap({
           <div className={styles.mapStyleSelector}>
             <div className={styles.mapStyleHeader}>
               <h3>Map Style</h3>
-              <button onClick={() => setShowMapStyleSelector(false)} className={styles.iconBtnPlain}>
+              <button
+                onClick={() => setShowMapStyleSelector(false)}
+                className={styles.iconBtnPlain}
+              >
                 <X className={styles.iconSm} />
               </button>
             </div>
@@ -3214,9 +4039,14 @@ export default function KeplerMap({
                 <button
                   key={style.id}
                   onClick={() => setSelectedMapStyle(style.id)}
-                  className={`${styles.styleItem} ${selectedMapStyle === style.id ? styles.styleItemActive : ""}`}
+                  className={`${styles.styleItem} ${
+                    selectedMapStyle === style.id ? styles.styleItemActive : ""
+                  }`}
                 >
-                  <div className={styles.styleSwatch} style={{ backgroundColor: style.color }} />
+                  <div
+                    className={styles.styleSwatch}
+                    style={{ backgroundColor: style.color }}
+                  />
                   <span className={styles.styleName}>{style.name}</span>
                 </button>
               ))}
@@ -3226,45 +4056,83 @@ export default function KeplerMap({
 
         {/* Right side controls */}
         {/* <div className={`${styles.sideControls} ${isFullscreen ? styles.sideControlsFullscreen : ""}`}> */}
-        <div className={`${styles.sideControls} ${isFullscreen ? styles.sideControlsFullscreen : ""} ${isMobile ? styles.sideControlsMobile : ""}`}>
+        <div
+          className={`${styles.sideControls} ${
+            isFullscreen ? styles.sideControlsFullscreen : ""
+          } ${isMobile ? styles.sideControlsMobile : ""}`}
+        >
           {/* {pathData?.app && pathData?.app?.length > 0 && ( */}
           {appPath.length > 0 && (
             <button
-              onClick={() => { setActiveMode(activeMode === 'app' ? null : 'app'); setShowReplayPanel(true); }}
-              className={`${styles.sideBtn} ${activeMode === 'app' ? styles.sideBtnOrange : styles.sideBtnGray
-                }`}
+              onClick={() => {
+                setActiveMode(activeMode === "app" ? null : "app");
+                setShowReplayPanel(true);
+              }}
+              className={`${styles.sideBtn} ${
+                activeMode === "app" ? styles.sideBtnOrange : styles.sideBtnGray
+              }`}
             >
-              <div className={styles.sideDotBox}><svg className={styles.iconXs} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clipRule="evenodd" /></svg></div>
+              <div className={styles.sideDotBox}>
+                <svg
+                  className={styles.iconXs}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
               <span>App</span>
-            </button>)}
+            </button>
+          )}
           {/* {pathData?.sim && pathData?.sim.length > 0 && ( */}
           {simPath.length > 0 && (
             <button
               onClick={() => {
-                setActiveMode(activeMode === 'sim' ? null : 'sim');
+                setActiveMode(activeMode === "sim" ? null : "sim");
                 setShowReplayPanel(true);
               }}
-              className={`${styles.sideBtn} ${activeMode === 'sim' ? styles.sideBtnPurple : styles.sideBtnGray
-                }`}
-            > {/* Added a new color class for SIM */}
-              <div className={styles.sideDotBox}><svg className={styles.iconXs} fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" /></svg></div>
+              className={`${styles.sideBtn} ${
+                activeMode === "sim" ? styles.sideBtnPurple : styles.sideBtnGray
+              }`}
+            >
+              {" "}
+              {/* Added a new color class for SIM */}
+              <div className={styles.sideDotBox}>
+                <svg
+                  className={styles.iconXs}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                </svg>
+              </div>
               <span>SIM</span>
             </button>
-          )
-          }
+          )}
           {internalFencePathData.length > 0 && (
             <button
               onClick={() => {
                 if (internalFencePathData.length) {
-                  setShowFence(v => !v);
+                  setShowFence((v) => !v);
                 }
               }}
-              className={`${styles.sideBtn} ${showFence ? styles.iconBtnActiveGreen : styles.sideBtnGray}`}
-            >{/* Added a new color class for SIM */}
+              className={`${styles.sideBtn} ${
+                showFence ? styles.iconBtnActiveGreen : styles.sideBtnGray
+              }`}
+            >
+              {/* Added a new color class for SIM */}
               <div className={styles.sideDotBox}>
                 <svg className={styles.iconSm} fill="#fff" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                  />
                 </svg>
               </div>
               <span>Show Fence</span>
@@ -3272,39 +4140,64 @@ export default function KeplerMap({
           )}
           {fastagPath.length > 0 && (
             <button
-              onClick={() => setShowFastag(v => !v)}
-              className={`${styles.sideBtn} ${showFastag ? styles.sideBtnFastag : styles.sideBtnGray}`}
-            >{/* Added a new color class for SIM */}
+              onClick={() => setShowFastag((v) => !v)}
+              className={`${styles.sideBtn} ${
+                showFastag ? styles.sideBtnFastag : styles.sideBtnGray
+              }`}
+            >
+              {/* Added a new color class for SIM */}
               <div className={styles.sideDotBox}>
-
                 <svg className="icon" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M14 7h5v11h-5V7zm-1-1.5l3-2h2.5l3 2H13zm2 3h3v3h-3V9z" />
                   <path d="M1 18h18v-1H1v1zm3-1v-8h1v8H4zm4 0v-8h1v8H8zm4 0v-8h1v8h-1z" />
                   <path d="M13.5 9.5l-11-4v-1l11 4v1z" />
-                </svg></div>
+                </svg>
+              </div>
               <span>FASTag</span>
             </button>
           )}
 
           {/* {pathData?.gps */}
-          {gpsPath.length > 0
+          {gpsPath.length > 0 && (
             //  && (Array.isArray(pathData.gps) ? pathData.gps.length > 0 : typeof pathData.gps === 'string')
-            && (
-              <button
-                onClick={() => { setActiveMode(activeMode === 'gps' ? null : 'gps'); setShowReplayPanel(true); }}
-                className={`${styles.sideBtn} ${activeMode === 'gps' ? styles.sideBtnGreen : styles.sideBtnGray
-                  }`}
-              >
-                <div className={styles.sideDotBox}><svg className={styles.iconXs} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg></div>
-                <span>GPS</span>
-              </button>)}
+            <button
+              onClick={() => {
+                setActiveMode(activeMode === "gps" ? null : "gps");
+                setShowReplayPanel(true);
+              }}
+              className={`${styles.sideBtn} ${
+                activeMode === "gps" ? styles.sideBtnGreen : styles.sideBtnGray
+              }`}
+            >
+              <div className={styles.sideDotBox}>
+                <svg
+                  className={styles.iconXs}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <span>GPS</span>
+            </button>
+          )}
           {haltPoints.length > 0 && (
             <button
               onClick={() => setShowHalt((prev) => !prev)}
-              className={`${styles.sideBtn} ${showHalt ? styles.sideBtnRed : styles.sideBtnGray}`}
+              className={`${styles.sideBtn} ${
+                showHalt ? styles.sideBtnRed : styles.sideBtnGray
+              }`}
             >
               <div className={styles.sideDotBox}>
-                <svg className={styles.iconXs} fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className={styles.iconXs}
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
                 </svg>
               </div>
@@ -3312,16 +4205,25 @@ export default function KeplerMap({
             </button>
           )}
 
-
-
-
           {deviationRoutes.length > 0 && (
             <button
               onClick={() => setShowDeviations(!showDeviations)}
-              className={`${styles.sideBtn} ${showDeviations ? styles.sideBtnOrange : styles.sideBtnGray}`}
+              className={`${styles.sideBtn} ${
+                showDeviations ? styles.sideBtnOrange : styles.sideBtnGray
+              }`}
             >
               {/* <div className={styles.sideDotBox}></div> */}
-              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
                 <line x1="6" x2="6" y1="3" y2="15"></line>
                 <circle cx="18" cy="6" r="3"></circle>
                 <path d="M18 9a9 9 0 0 1-9 9"></path>
@@ -3331,20 +4233,34 @@ export default function KeplerMap({
             </button>
           )}
 
-
-
           <button
             onClick={() => {
               if (isFullscreen) {
                 setShowDayRun((prev) => !prev);
               }
             }}
-            className={`${styles.sideBtn} ${showDayRun ? styles.sideBtnPink : styles.sideBtnGray} ${!isFullscreen ? styles.disabled : ''}`}
+            className={`${styles.sideBtn} ${
+              showDayRun ? styles.sideBtnPink : styles.sideBtnGray
+            } ${!isFullscreen ? styles.disabled : ""}`}
             disabled={!isFullscreen}
-            title={!isFullscreen ? "Day Run details available only in fullscreen mode" : "Toggle Day Run details"}
+            title={
+              !isFullscreen
+                ? "Day Run details available only in fullscreen mode"
+                : "Toggle Day Run details"
+            }
           >
             {/* <div className={styles.sideDotBox}></div> */}
-            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20z"></path>
               <path d="M12 6L12 12"></path>
               <path d="M12 12H18"></path>
@@ -3361,12 +4277,29 @@ export default function KeplerMap({
 
         {/* Day Run Table */}
         {showDayRun && (
-          <div className={`${styles.dayRunTable} ${showMagnifierSettings ? styles.statusShift : ""} ${!isFullscreen ? styles.smallText : ""}`}>
+          <div
+            className={`${styles.dayRunTable} ${
+              showMagnifierSettings ? styles.statusShift : ""
+            } ${!isFullscreen ? styles.smallText : ""}`}
+          >
             <div className={styles.tableHeader}>
               <h3>Day Run Details</h3>
-              <button onClick={() => setShowDayRun(false)} className={styles.iconBtnPlain}>
-                <svg className={styles.iconSm} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <button
+                onClick={() => setShowDayRun(false)}
+                className={styles.iconBtnPlain}
+              >
+                <svg
+                  className={styles.iconSm}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -3387,19 +4320,19 @@ export default function KeplerMap({
                       <tr
                         key={index}
                         onClick={() => zoomToDayRun(index)}
-                        style={{ cursor: 'pointer' }}
+                        style={{ cursor: "pointer" }}
                         className={styles.dayRunRow}
                       >
                         <td>
                           <div
                             style={{
-                              width: '20px',
-                              height: '20px',
-                              backgroundColor: polylineColors[index] || '#999',
-                              borderRadius: '4px',
-                              margin: '0 auto',
-                              border: '2px solid #fff',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                              width: "20px",
+                              height: "20px",
+                              backgroundColor: polylineColors[index] || "#999",
+                              borderRadius: "4px",
+                              margin: "0 auto",
+                              border: "2px solid #fff",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
                             }}
                           />
                         </td>
@@ -3412,7 +4345,14 @@ export default function KeplerMap({
                   </tbody>
                 </table>
               ) : (
-                <div style={{ padding: '12px', textAlign: 'center', color: '#6b7280', fontSize: '12px' }}>
+                <div
+                  style={{
+                    padding: "12px",
+                    textAlign: "center",
+                    color: "#6b7280",
+                    fontSize: "12px",
+                  }}
+                >
                   No day run data available
                 </div>
               )}
