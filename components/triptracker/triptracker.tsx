@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   Truck,
@@ -35,13 +35,8 @@ import {
 import "./triptracker.css";
 // import KeplerMap from "./map/Kepler-map"; // or "../map/KeplerMap" if you rename the file
 // To this:
-import NextImage from "next/image";
 import dynamic from "next/dynamic";
 
-// // Add this line with your other imports
-import TollGateIcon from "@/assets/toll_gate_icon_passed.svg";
-import Mapmark from "@/assets/mapMarker.svg";
-import fullLogo from "@/assets/SmartTruck_tracker.svg";
 
 import { toTitleCase } from "@/utils/stringUtils";
 
@@ -150,6 +145,21 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const [mapMode, setMapMode] = useState<"location" | "map">("location");
   const [timelineData, setTimelineData] = useState<any[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const calculateEtaDelta = useCallback((etaDateString: any, actualDateString: any) => {
+    if (!etaDateString || !actualDateString) return;
+
+    const eta = new Date(etaDateString);
+    const actual = new Date(actualDateString);
+    const diffInMs = actual.getTime() - eta.getTime();
+    const isLate = diffInMs > 0;
+    const absDiff = Math.abs(diffInMs);
+
+    const hours = Math.floor(absDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+    setEtaDelta({ isLate, hours, minutes });
+  }, []);
   // This single state object controls the entire map's behavior
   const [mapState, setMapState] = useState({
     mode: "location", // 'location' or 'map'
@@ -297,7 +307,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   }>({ open: false });
 
   const toggleSection = (sectionKey: string) => {
-    setCollapsedSections((prev) => ({
+    setCollapsedSections((prev: Record<string, boolean>) => ({
       ...prev,
       [sectionKey]: !prev[sectionKey],
     }));
@@ -309,7 +319,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const handleKpiClick = (kpiId: any) => {
     setOpenTooltipId(openTooltipId === kpiId ? null : kpiId);
   };
-  const getShipmentStatus = (statusCode: string) => {
+  const getShipmentStatus = useCallback((statusCode: string) => {
     let status = "";
 
     let statusClass = "";
@@ -366,7 +376,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         break;
     }
     return { status, disableRefresh, statusClass };
-  };
+  }, [disableRefresh]);
   const handleRefresh = () => {
     setRefreshTrigger((prev) => prev + 1);
   };
@@ -468,7 +478,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchShipmentData();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, uniqueCode, calculateEtaDelta, getShipmentStatus]);
 
   // This useEffect handles the toll history data
   useEffect(() => {
@@ -488,7 +498,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchTollHistory();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, uniqueCode]);
 
   // This useEffect handles the trails data
   useEffect(() => {
@@ -509,7 +519,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchTrails();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, uniqueCode]);
 
   // This useEffect handles the ePOD data
   useEffect(() => {
@@ -533,7 +543,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchEpods();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, uniqueCode]);
 
   // This useEffect handles the halt data
   useEffect(() => {
@@ -553,7 +563,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchHaltData();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, uniqueCode]);
 
   // This useEffect manages a timeout to hide the PDF loader
   useEffect(() => {
@@ -582,7 +592,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     //     return 'map';
     //   }
     // });
-    setMapState((prev) => ({
+    setMapState((prev: any) => ({
       ...prev,
       mode: prev.mode === "map" ? "location" : "map",
       // We also reset the filters when toggling off
@@ -820,23 +830,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     apiData,
     finalDestination?.finished_at
   );
-  const calculateEtaDelta = (etaDateString: any, actualDateString: any) => {
-    if (!etaDateString || !actualDateString) return;
-
-    const eta = new Date(etaDateString);
-    const actual = new Date(actualDateString);
-    const diffInMs = actual.getTime() - eta.getTime();
-    const isLate = diffInMs > 0;
-    const absDiff = Math.abs(diffInMs);
-
-    const hours = Math.floor(absDiff / (1000 * 60 * 60));
-    const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
-
-    setEtaDelta({ isLate, hours, minutes });
-    const isSimActive = apiData?.tripTrackerData.methods.includes("SIM");
-    const isGpsActive = apiData?.tripTrackerData.methods.includes("GPS");
-    const isAppActive = apiData?.tripTrackerData.methods.includes("GPS");
-  };
+  const isSimActive = apiData?.trip_tracker?.methods?.includes("SIM");
+  const isGpsActive = apiData?.trip_tracker?.methods?.includes("GPS");
+  const isAppActive = apiData?.trip_tracker?.methods?.includes("APP");
   // Add these variables before the `return` statement
   const totalWeight =
     apiData?.invoices?.reduce((sum: number, invoice: Invoice) => {
@@ -862,9 +858,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             <div className="header-content">
               <div className="header-logo-section">
                 <div className="header-logo-container">
-                  <img
+                  <Image
                     src="/SmartTruck_tracker.svg"
                     alt="logo"
+                    width={150}
+                    height={40}
                     className="header-logo-img"
                   />
                 </div>
@@ -2175,7 +2173,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 <div className="timeline-icon-container">
                                   {/* <div className="timeline-icon-wrapper"> */}
                                   {/* <Mapmark className="timeline-icon" /> */}
-                                  <img
+                                  <Image
                                     src="/mapMarker.svg"
                                     alt=""
                                     width={20}
@@ -2235,7 +2233,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                   </div>
                                 </div>
                                 <div className="toll-icon-container">
-                                  <img
+                                  <Image
                                     src="/toll_gate_icon_passed.svg"
                                     alt=""
                                     width={28}
