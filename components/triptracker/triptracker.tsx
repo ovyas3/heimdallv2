@@ -135,11 +135,18 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   });
   // CHANGED — add `info`; you can delete `vehicleDriver` and `tripMetadata` if no longer used
   const [apiData, setApiData] = useState<any>(null);
+  const isSupplierView = apiData?.shipper?._id === "5e079ff27a35ea6ab410f3ba";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSatelliteViewLocal, setIsSatelliteViewLocal] = useState(false);
   const [mapPoints, setMapPoints] = useState<MapPoint[]>([]);
   const [intermediates, setIntermediates] = useState<FormattedStop[]>([]);
+
+  useEffect(() => {
+    if (isSupplierView) {
+      setMapState((prev) => ({ ...prev, mode: "map" }));
+    }
+  }, [isSupplierView]);
 
   const [isMapFull, setIsMapFull] = useState(false); // <-- NEW state
   const [mapMode, setMapMode] = useState<"location" | "map">("location");
@@ -162,7 +169,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   }, []);
   // This single state object controls the entire map's behavior
   const [mapState, setMapState] = useState({
-    mode: "location", // 'location' or 'map'
+    mode: isSupplierView ? "map" : "location", // 'location' or 'map'
     showHalts: false,
     showDeviations: false,
   });
@@ -198,6 +205,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
   const [dropGateInTime, setDropGateInTime] = useState<string | null>(null);
   const [dropGateOutTime, setDropGateOutTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isSupplierView) {
+      setMapState((prev: any) => ({ ...prev, mode: "map" }));
+    }
+  }, [isSupplierView]);
 
   const formatEta = (utcString: any) => {
     if (!utcString) return "N/A";
@@ -844,6 +857,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       return sum + (invoice.total_nop || 0);
     }, 0) || null;
 
+
   return (
     <div className="dashboard-container">
       {loading ? (
@@ -1126,6 +1140,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     geoFenceData={apiData?.geo_fence}
                     tripTrackerMethods={apiData?.trip_tracker?.methods || []}
                     shipmentData={apiData}
+                    isSupplier={isSupplierView}
                     // apiData={apiData}
                     // tollHistoryData={tollHistoryData}
                     // haltData={haltData}
@@ -1149,24 +1164,40 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   <div className="card-header">
                     {/* NEW — Tabs, same pattern as your timeline tabs */}
                     <div className="tab-container">
-                      <button
-                        className={`tab-button ${
-                          activeInfoTab === "vehicle" ? "active" : ""
-                        }`}
-                        onClick={() => setActiveInfoTab("vehicle")}
-                      >
-                        <Truck className="card-icon" />
-                        Vehicle
-                      </button>
-                      <button
-                        className={`tab-button ${
-                          activeInfoTab === "metadata" ? "active" : ""
-                        }`}
-                        onClick={() => setActiveInfoTab("metadata")}
-                      >
-                        <Package className="tab-icon" />
-                        Metadata
-                      </button>
+                      {!isSupplierView && (
+                        <>
+                          <button
+                            className={`tab-button ${
+                              activeInfoTab === "vehicle" ? "active" : ""
+                            }`}
+                            onClick={() => setActiveInfoTab("vehicle")}
+                          >
+                            <Truck className="card-icon" />
+                            Vehicle
+                          </button>
+                          <button
+                            className={`tab-button ${
+                              activeInfoTab === "metadata" ? "active" : ""
+                            }`}
+                            onClick={() => setActiveInfoTab("metadata")}
+                          >
+                            <Package className="tab-icon" />
+                            Metadata
+                          </button>
+                        </>
+                      )}
+                      {isSupplierView && (
+                        <div
+                          className="card-title"
+                          style={{
+                            fontWeight: 600,
+                            fontSize: "14px",
+                            padding: "8px 12px",
+                          }}
+                        >
+                          Shipment Details
+                        </div>
+                      )}
                     </div>
 
                     <button
@@ -1183,31 +1214,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                   {!collapsedSections.info && (
                     <div className="card-content">
-                      {activeInfoTab === "vehicle" && (
-                        /* MOVED FROM OLD "Vehicle & Driver" CARD — no changes inside */
+                      {isSupplierView ? (
                         <div className="vehicle-driver-details">
-                          <div className="detail-item">
-                            <span className="detail-label">Name</span>
-                            <span className="detail-value">
-                              {toTitleCase(apiData?.driver?.name) || "N/A"}
-                            </span>
-                          </div>
-                          <div className="detail-item">
-                            <span className="detail-label">Mobile No</span>
-                            <span className="detail-value">
-                              {apiData?.driver?.mobile || "N/A"}
-                            </span>
-                          </div>
                           <div className="detail-item">
                             <span className="detail-label">Vehicle No</span>
                             <span className="detail-value">
                               {apiData?.driver?.vehicle_no || "N/A"}
-                            </span>
-                          </div>
-                          <div className="detail-item">
-                            <span className="detail-label">Type</span>
-                            <span className="detail-value">
-                              {apiData?.driver?.vehicle_type?.name || "N/A"}
                             </span>
                           </div>
                           <div className="detail-item">
@@ -1217,64 +1229,140 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             </span>
                           </div>
                           <div className="detail-item">
-                            <span className="detail-label">Day run</span>
+                            <span className="detail-label">Driver Name</span>
                             <span className="detail-value">
-                              {apiData?.dayrun?.avg_distance
-                                ? `${apiData.dayrun.avg_distance.toFixed(2)} Km`
-                                : "N/A"}
+                              {toTitleCase(apiData?.driver?.name) || "N/A"}
+                            </span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Mobile Number</span>
+                            <span className="detail-value">
+                              {apiData?.driver?.mobile || "N/A"}
+                            </span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">PO Number</span>
+                            <span className="detail-value">
+                              {apiData?.po_no ||
+                                apiData?.externals?.po_number ||
+                                "N/A"}
+                            </span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Waybill No</span>
+                            <span className="detail-value">
+                              {apiData?.ewaybill_no || "N/A"}
+                            </span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Expiry</span>
+                            <span className="detail-value">
+                              {formatTimestamp(apiData?.ewaybill_expiry_date, "date") || "N/A"}
+                            </span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Material</span>
+                            <span className="detail-value">
+                              {toTitleCase(apiData?.materials?.[0]?.name) || "N/A"}
                             </span>
                           </div>
                         </div>
-                      )}
-
-                      {activeInfoTab === "metadata" && (
-                        /* MOVED FROM OLD "Trip Metadata" CARD — no changes inside */
-                        <div className="metadata-details">
-                          <div className="detail-item">
-                            <div className="detail-label">Customer</div>
-
-                            <div className="detail-value">
-                              {toTitleCase(lastDelivery?.location?.name) ||
-                                "N/A"}
-                            </div>
-                          </div>
-                          <div className="detail-item">
-                            <div className="detail-label">Shipper</div>
-                            <div className="detail-value">
-                              {" "}
-                              {`${apiData?.shipper?.parent_name} (${toTitleCase(
-                                apiData?.shipper?.name
-                              )})` || "N/A"}
-                            </div>
-                          </div>
-                          <div className="detail-grid">
-                            <div className="detail-item">
-                              <div className="detail-label">Material</div>
-                              <div className="detail-value">
-                                {toTitleCase(apiData?.materials?.[0]?.name) ||
-                                  "N/A"}
+                      ) : (
+                        <>
+                          {activeInfoTab === "vehicle" && (
+                            /* MOVED FROM OLD "Vehicle & Driver" CARD — no changes inside */
+                            <div className="vehicle-driver-details">
+                              <div className="detail-item">
+                                <span className="detail-label">Name</span>
+                                <span className="detail-value">
+                                  {toTitleCase(apiData?.driver?.name) || "N/A"}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Mobile No</span>
+                                <span className="detail-value">
+                                  {apiData?.driver?.mobile || "N/A"}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Vehicle No</span>
+                                <span className="detail-value">
+                                  {apiData?.driver?.vehicle_no || "N/A"}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Type</span>
+                                <span className="detail-value">
+                                  {apiData?.driver?.vehicle_type?.name || "N/A"}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Transporter</span>
+                                <span className="detail-value">
+                                  {apiData?.carrier?.name || "N/A"}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Day run</span>
+                                <span className="detail-value">
+                                  {apiData?.dayrun?.avg_distance
+                                    ? `${apiData.dayrun.avg_distance.toFixed(2)} Km`
+                                    : "N/A"}
+                                </span>
                               </div>
                             </div>
-                            <div className="detail-item">
-                              <div className="detail-label">Weight</div>
-                              <div className="detail-value">
-                                {" "}
-                                {totalWeight !== null
-                                  ? totalWeight.toFixed(2)
-                                  : "N/A"}
-                                {" MT"}
+                          )}
+
+                          {activeInfoTab === "metadata" && (
+                            /* MOVED FROM OLD "Trip Metadata" CARD — no changes inside */
+                            <div className="metadata-details">
+                              <div className="detail-item">
+                                <div className="detail-label">Customer</div>
+
+                                <div className="detail-value">
+                                  {toTitleCase(lastDelivery?.location?.name) ||
+                                    "N/A"}
+                                </div>
+                              </div>
+                              <div className="detail-item">
+                                <div className="detail-label">Shipper</div>
+                                <div className="detail-value">
+                                  {" "}
+                                  {`${apiData?.shipper?.parent_name} (${toTitleCase(
+                                    apiData?.shipper?.name
+                                  )})` || "N/A"}
+                                </div>
+                              </div>
+                              <div className="detail-grid">
+                                <div className="detail-item">
+                                  <div className="detail-label">Material</div>
+                                  <div className="detail-value">
+                                    {toTitleCase(apiData?.materials?.[0]?.name) ||
+                                      "N/A"}
+                                  </div>
+                                </div>
+                                <div className="detail-item">
+                                  <div className="detail-label">Weight</div>
+                                  <div className="detail-value">
+                                    {" "}
+                                    {totalWeight !== null
+                                      ? totalWeight.toFixed(2)
+                                      : "N/A"}
+                                    {" MT"}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="detail-item">
+                                <div className="detail-label">Quantity</div>
+                                <div className="detail-value">
+                                  {" "}
+                                  {totalQuantity !== null ? totalQuantity : "N/A"}
+                                  {" MT"}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="detail-item">
-                            <div className="detail-label">Quantity</div>
-                            <div className="detail-value">
-                              {" "}
-                              {totalQuantity !== null ? totalQuantity : "N/A"}
-                              {" MT"}
-                            </div>
-                          </div>
-                        </div>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
@@ -1314,7 +1402,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           </div>
                         </div>
                         <div className="location-details">
-                          <div className="location-type">Origin</div>
+                          <div className="location-type">{isSupplierView ? "Source city" : "Origin"}</div>
                           <div className="location-name">
                             {toTitleCase(
                               originLocation?.location?.name || "N/A"
@@ -1326,7 +1414,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <div className="location-time">
                               <Clock className="time-icon" />
                               <span>
-                                Gate In: {formatTimestamp(pickGateInTime)}
+                                {isSupplierView ? "Arrived at Source: " : "Gate In: "}
+                                {formatTimestamp(pickGateInTime)}
                               </span>
                             </div>
                           )}
@@ -1336,7 +1425,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <div className="location-time">
                               <Clock className="time-icon" />
                               <span>
-                                Gate Out: {formatTimestamp(pickGateOutTime)}
+                                {isSupplierView ? "Dispatched from Source: " : "Gate Out: "}
+                                {formatTimestamp(pickGateOutTime)}
                               </span>
                             </div>
                           )}
@@ -1365,7 +1455,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                       {/* FINAL DESTINATION (always visible at bottom) */}
 
-                      {finalDestination && (
+                      {(finalDestination || isSupplierView) && (
                         <div
                           className="location-item destination"
                           style={{ position: "relative" }}
@@ -1376,17 +1466,22 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             </div>
                           </div>
                           <div className="location-details">
-                            <div className="location-type">Destination</div>
+                             <div className="location-type">
+                              {isSupplierView ? "Destination city" : "Destination"}
+                            </div>
                             <div className="location-name">
-                              {toTitleCase(finalDestination?.location?.name) ||
-                                "N/A"}
+                              {isSupplierView
+                                ? "JSL Jajpur"
+                                : toTitleCase(finalDestination?.location?.name) ||
+                                  "N/A"}
                             </div>
 
                             {dropGateInTime && (
                               <div className="location-time">
                                 <Clock className="time-icon" />
                                 <span>
-                                  Gate In: {formatTimestamp(dropGateInTime)}
+                                  {isSupplierView ? "Reached Destination: " : "Gate In: "}
+                                  {formatTimestamp(dropGateInTime)}
                                 </span>
                               </div>
                             )}
@@ -1432,7 +1527,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
               </div>
               {/* Center Section */}
               <div className="center-section">
-                <div className="kpi-strip">
+                {!isSupplierView && (
+                  <div className="kpi-strip">
                   {/* <div className="kpi-card early  tooltip" onClick={() => handleKpiClick("eta-delta")}> */}
                   <div
                     className={`kpi-card early tooltip ${
@@ -1728,6 +1824,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     </div> */}
                   </div>
                 </div>
+              )}
 
                 <div
                   className={`card map-card ${
@@ -1884,6 +1981,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               apiData?.trip_tracker?.methods || []
                             }
                             shipmentData={apiData}
+                            isSupplier={isSupplierView}
 
                             // optional callbacks if you want to control toggles from dashboard:
                             // onToggleGPSRoute={() => {/* set some local state if needed */}}
@@ -1895,6 +1993,102 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     </div>
                   )}
                 </div>
+                {isSupplierView && (
+                  <div className="card journey-progress-card">
+                    <div className="card-header">
+                      <div className="card-title">
+                        <Ruler className="card-icon" />
+                        <span>Journey Progress</span>
+                      </div>
+                    </div>
+                    <div className="card-content" style={{ padding: "16px" }}>
+                      <div className="kpi-distance-metrics" style={{ width: "100%" }}>
+                        <div
+                          className="distance-grid"
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr 1fr",
+                            gap: "16px",
+                            marginBottom: "16px",
+                          }}
+                        >
+                          <div className="distance-item">
+                            <div
+                              className="distance-value"
+                              style={{ fontSize: "18px", fontWeight: "bold" }}
+                            >
+                              {totalDistanceKm}
+                            </div>
+                            <div
+                              className="distance-label"
+                              style={{ fontSize: "12px", color: "#6b7280" }}
+                            >
+                              Total (km)
+                            </div>
+                          </div>
+                          <div className="distance-item">
+                            <div
+                              className="distance-value traveled"
+                              style={{
+                                fontSize: "18px",
+                                fontWeight: "bold",
+                                color: "#16a34a",
+                              }}
+                            >
+                              {travelledDistanceKm}
+                            </div>
+                            <div
+                              className="distance-label"
+                              style={{ fontSize: "12px", color: "#6b7280" }}
+                            >
+                              Travelled (km)
+                            </div>
+                          </div>
+                          <div className="distance-item">
+                            <div
+                              className="distance-value remaining"
+                              style={{
+                                fontSize: "18px",
+                                fontWeight: "bold",
+                                color: "#ef4444",
+                              }}
+                            >
+                              {remainingDistanceKm}
+                            </div>
+                            <div
+                              className="distance-label"
+                              style={{ fontSize: "12px", color: "#6b7280" }}
+                            >
+                              Remaining (km)
+                            </div>
+                          </div>
+                        </div>
+                        <div className="progress-bar" style={{ height: "8px" }}>
+                          <div
+                            className="progress-bar-fill"
+                            style={{
+                              width: `${Math.min(progressPercentage, 100)}%`,
+                              height: "100%",
+                              background:
+                                "linear-gradient(90deg, #22c55e 0%, #16a34a 100%)",
+                            }}
+                          ></div>
+                        </div>
+                        <div
+                          className="progress-text"
+                          style={{
+                            fontSize: "12px",
+                            color: "#6b7280",
+                            marginTop: "8px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {progressPercentage.toFixed(1)}% Completed
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* <div className="card ad-card">
               <div className="ad-content">
@@ -2137,15 +2331,17 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         <CreditCard className="tab-icon" />
                         Toll History
                       </button>
-                      <button
-                        className={`tab-button ${
-                          activeTimelineTab === "documents" ? "active" : ""
-                        }`}
-                        onClick={() => setActiveTimelineTab("documents")}
-                      >
-                        <FileText className="tab-icon" />
-                        ePOD
-                      </button>
+                      {!isSupplierView && (
+                        <button
+                          className={`tab-button ${
+                            activeTimelineTab === "documents" ? "active" : ""
+                          }`}
+                          onClick={() => setActiveTimelineTab("documents")}
+                        >
+                          <FileText className="tab-icon" />
+                          ePOD
+                        </button>
+                      )}
                     </div>
                     <button
                       className="collapse-button"
