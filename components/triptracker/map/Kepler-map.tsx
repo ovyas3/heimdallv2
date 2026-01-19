@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import * as L from "leaflet";
 import { MapPin } from "lucide-react";
@@ -106,6 +106,7 @@ interface KeplerMapProps {
     };
     trip_tracker?: {
       last_location_address?: string;
+      polyline_sim?: string;
     };
     deliveries?: Array<{
       finished_at?: string;
@@ -148,25 +149,13 @@ interface PathPoint {
 
 // Define the overall shape of the path data object
 interface PathData {
-  sim: PathPoint[];
-  app: PathPoint[];
-  gps: string | PathPoint[]; // Can be a string or an array of PathPoint
-  timeline: any[];
-  gpsStatus: number;
-  status: string;
-  temperature: number | null;
-}
-interface PathResponse {
-  sim?: PathPoint[];
+  sim?: string | PathPoint[];
   app?: PathPoint[];
   gps?: string | PathPoint[];
-}
-
-// Define the state for the path data
-interface PathState {
-  sim?: PathPoint[];
-  app?: PathPoint[];
-  gps?: string | PathPoint[];
+  timeline?: any[];
+  gpsStatus?: number;
+  status?: string;
+  temperature?: number | null;
 }
 interface HaltPoint {
   _id: string;
@@ -349,6 +338,33 @@ export default function KeplerMap({
     "#34495E",
   ];
 
+  const decodePolyline = useCallback((encoded: string): [number, number][] => {
+    if (!encoded) return [];
+    let index = 0,
+      lat = 0,
+      lng = 0;
+    const coordinates: [number, number][] = [];
+
+    const shift5 = () => {
+      let result = 0,
+        shift = 0,
+        b: number;
+      do {
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      return result & 1 ? ~(result >> 1) : result >> 1;
+    };
+
+    while (index < encoded.length) {
+      lat += shift5();
+      lng += shift5();
+      coordinates.push([lat * 1e-5, lng * 1e-5]); // [lat, lng]
+    }
+    return coordinates;
+  }, []);
+
   const zoomToDayRun = useCallback(
     (dayIndex: number) => {
       if (!mapRef.current || !dayRunPolylines[dayIndex]) return;
@@ -378,7 +394,7 @@ export default function KeplerMap({
   );
   // Add this at the top of your KeplerMap component function
   // const [pathData, setPathData] = useState({ sim: [], app: [], gps: [] });
-  const [pathData, setPathData] = useState<PathState | null>(null);
+  const [pathData, setPathData] = useState<PathData | null>(null);
   const [isLoadingPath, setIsLoadingPath] = useState(true);
   const [showFastag, setShowFastag] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -447,6 +463,17 @@ export default function KeplerMap({
       setShowDayRun(false);
     }
   }, [isFullscreen, showDayRun]);
+
+  useEffect(() => {
+    if (activeMode) return;
+    if (simPath.length > 0) {
+      setActiveMode("sim");
+    } else if (gpsPath.length > 0) {
+      setActiveMode("gps");
+    } else if (appPath.length > 0) {
+      setActiveMode("app");
+    }
+  }, [simPath, gpsPath, appPath, activeMode]);
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !activeMode) return;
@@ -749,17 +776,17 @@ export default function KeplerMap({
 
   // Robust popup using Leaflet L.popup so we don't depend on react-leaflet child timing
   useEffect(() => {
-    if (!mapRef.current) return;
+    const currentMap = mapRef.current;
+    if (!currentMap) return;
 
-    // Clear any previous popup / timer
     const closeExisting = () => {
       if (haltPopupTimerRef.current) {
         clearTimeout(haltPopupTimerRef.current);
         haltPopupTimerRef.current = null;
       }
-      if (haltPopupRef.current && mapRef.current) {
+      if (haltPopupRef.current) {
         try {
-          mapRef.current.closePopup(haltPopupRef.current);
+          currentMap.closePopup(haltPopupRef.current);
         } catch {}
         haltPopupRef.current = null;
       }
@@ -815,12 +842,12 @@ export default function KeplerMap({
         })
           .setLatLng(currentReplayPosition)
           .setContent(content)
-          .openOn(mapRef.current as any); // openOn attaches it to the map
+          .openOn(currentMap as any); // openOn attaches it to the map
         haltPopupRef.current = popup;
 
         // Pan map slightly to show the popup
         try {
-          mapRef.current.panTo(currentReplayPosition, {
+          currentMap.panTo(currentReplayPosition, {
             animate: true,
             duration: 0.4,
           });
@@ -828,9 +855,9 @@ export default function KeplerMap({
 
         // set timer to close popup and resume replay
         haltPopupTimerRef.current = setTimeout(() => {
-          if (haltPopupRef.current && mapRef.current) {
+          if (haltPopupRef.current) {
             try {
-              mapRef.current.closePopup(haltPopupRef.current);
+              currentMap.closePopup(haltPopupRef.current);
             } catch {}
             haltPopupRef.current = null;
           }
@@ -850,9 +877,9 @@ export default function KeplerMap({
         clearTimeout(haltPopupTimerRef.current);
         haltPopupTimerRef.current = null;
       }
-      if (haltPopupRef.current && mapRef.current) {
+      if (haltPopupRef.current) {
         try {
-          mapRef.current.closePopup(haltPopupRef.current);
+          currentMap.closePopup(haltPopupRef.current);
         } catch {}
         haltPopupRef.current = null;
       }
@@ -864,37 +891,37 @@ export default function KeplerMap({
     haltPoints,
   ]);
 
-  // Deviation popup useEffect - similar to halt popup but for deviations
   useEffect(() => {
-    if (!mapRef.current) return;
-    // Clear any previous deviation popup / timer
+    const currentMap = mapRef.current;
+    if (!currentMap) return;
+
     const closeExistingDeviation = () => {
       if (deviationPopupTimerRef.current) {
         clearTimeout(deviationPopupTimerRef.current);
         deviationPopupTimerRef.current = null;
       }
-      if (deviationPopupRef.current && mapRef.current) {
+      if (deviationPopupRef.current) {
         try {
-          mapRef.current.closePopup(deviationPopupRef.current);
+          currentMap.closePopup(deviationPopupRef.current);
         } catch {}
         deviationPopupRef.current = null;
       }
     };
+
     if (
       isPausedAtDeviation &&
       currentReplayDeviationIndex > -1 &&
       currentReplayPosition &&
       deviationData[currentReplayDeviationIndex]
     ) {
-      // Build a simple HTML string for the deviation popup content
       const deviation = deviationData[currentReplayDeviationIndex];
-      // const durationInMinutes = Math.floor(deviation.duration / 60); // Convert seconds to minutes
       const durationHours = Math.floor(deviation.duration / 60);
       const durationMins = deviation.duration % 60;
       const formattedDuration =
         durationHours > 0
           ? `${durationHours}h ${durationMins}m`
           : `${durationMins}m`;
+
       const content = `
       <div class="${styles.popup}">
         <div class="${styles.popupTitle} ${styles.titleRed}">Deviation Info</div>
@@ -906,52 +933,51 @@ export default function KeplerMap({
         <div class="${styles.popupBody}">End: <strong>${deviation.endTime}</strong></div>
       </div>
     `;
-      // ensure previous popup closed
+
       closeExistingDeviation();
-      // create/open popup at vehicle position
+
       try {
         const popup = L.popup({
           closeOnClick: false,
           autoClose: false,
-          className: "", // optional: add custom class
+          className: "",
         })
           .setLatLng(currentReplayPosition)
           .setContent(content)
-          .openOn(mapRef.current as any); // openOn attaches it to the map
+          .openOn(currentMap as any);
         deviationPopupRef.current = popup;
-        // Pan map slightly to show the popup
+
         try {
-          mapRef.current.panTo(currentReplayPosition, {
+          currentMap.panTo(currentReplayPosition, {
             animate: true,
             duration: 0.4,
           });
         } catch {}
-        // set timer to close popup and resume replay
+
         deviationPopupTimerRef.current = setTimeout(() => {
-          if (deviationPopupRef.current && mapRef.current) {
+          if (deviationPopupRef.current) {
             try {
-              mapRef.current.closePopup(deviationPopupRef.current);
+              currentMap.closePopup(deviationPopupRef.current);
             } catch {}
             deviationPopupRef.current = null;
           }
           setIsPausedAtDeviation(false);
-        }, 2500); // Show popup for 2.5 seconds
+        }, 2500);
       } catch (err) {
         console.error("Failed to show deviation popup", err);
       }
     } else {
-      // not paused or missing data -> close any existing popup
       closeExistingDeviation();
     }
-    // cleanup
+
     return () => {
       if (deviationPopupTimerRef.current) {
         clearTimeout(deviationPopupTimerRef.current);
         deviationPopupTimerRef.current = null;
       }
-      if (deviationPopupRef.current && mapRef.current) {
+      if (deviationPopupRef.current) {
         try {
-          mapRef.current.closePopup(deviationPopupRef.current);
+          currentMap.closePopup(deviationPopupRef.current);
         } catch {}
         deviationPopupRef.current = null;
       }
@@ -978,17 +1004,6 @@ export default function KeplerMap({
     finished_at?: string;
     waypoints?: ShipPoint[];
   };
-  interface PathResponse {
-    sim?: PathPoint[];
-    app?: PathPoint[];
-    gps?: string | PathPoint[];
-  }
-  interface PathState {
-    path: [number, number][];
-    sim?: PathPoint[];
-    app?: PathPoint[];
-    gps?: string | PathPoint[];
-  }
 
   type ShipmentResponse = {
     shipment?: {
@@ -1018,27 +1033,6 @@ export default function KeplerMap({
     distance: number;
     travel_time: number;
     polyline: string;
-  }
-
-  // Define the structure of a geo_point
-  interface GeoPoint {
-    type: string;
-    coordinates: [number, number]; // [longitude, latitude]
-  }
-
-  // Define the structure of a path point in the SIM or APP data
-  interface PathPoint {
-    geo_point: GeoPoint;
-    address: string;
-    created_at: string;
-  }
-
-  // Define the structure of the main API response
-  interface PathData {
-    sim: PathPoint[];
-    app: PathPoint[];
-    gps: string | PathPoint[]; // 'gps' can be a string or an array of PathPoint
-    // ... other properties
   }
 
   // --- New state for shipment rendering ---
@@ -1198,6 +1192,10 @@ export default function KeplerMap({
           // Update the state with the day run polylines
           setDayRunPolylines(decodedDayRuns);
 
+          if (shipment?.trip_tracker?.polyline_sim) {
+            setSimPath(decodePolyline(shipment.trip_tracker.polyline_sim));
+          }
+
           if (shipment && shipment.delivery_date) {
             // Create a Date object from the ISO 8601 string
             const deliveryDate = new Date(shipment.delivery_date);
@@ -1280,12 +1278,29 @@ export default function KeplerMap({
       return () => ac.abort();
     },
     [
-      // decodePolyline
+      decodePolyline, // Added decodePolyline to dependencies
+      unique_code,
+      setDayRunDetails,
+      setDeviationData,
+      setDayRunPolylines,
+      setEta,
+      setMainRouteFromApi,
+      setPickupPolylines,
+      setShipmentPickups,
+      setShipmentDeliveries,
+      setDeliveryPolylines,
+      setIsLoadingShipment,
+      setProgressPercentage,
     ]
   ); // This dependency is correct
 
+  const deviationRoutes = useMemo(
+    () => (deviationData.length > 0 ? deviationData : []),
+    [deviationData]
+  );
+
   // Function to fetch fence path data using passed geo_fence data
-  const fetchInternalFencePathData = async () => {
+  const fetchInternalFencePathData = useCallback(async () => {
     if (!geoFenceData || !tripTrackerMethods.length) {
       return;
     }
@@ -1309,13 +1324,14 @@ export default function KeplerMap({
       }
 
       if (!fenceUrl) {
+        setIsLoadingFence(false);
         return;
       }
       setShowFence(false);
       // Check cache first
       if (fenceCache[fenceUrl]) {
-        const cachedData = fenceCache[fenceUrl];
-        setInternalFencePathData(cachedData);
+        setInternalFencePathData(fenceCache[fenceUrl]);
+        setIsLoadingFence(false);
         return;
       }
 
@@ -1353,7 +1369,7 @@ export default function KeplerMap({
     } finally {
       setIsLoadingFence(false);
     }
-  };
+  }, [geoFenceData, tripTrackerMethods, fenceCache, decodePolyline, setIsLoadingFence, setInternalFencePathData, setShowFence, setFenceCache]);
   useEffect(() => {
     // Wait until we have data before doing anything
     if (shipmentPickups.length === 0 && shipmentDeliveries.length === 0) return;
@@ -1362,19 +1378,17 @@ export default function KeplerMap({
 
     // FIXED: Only fit bounds on initial load, NOT when replay ends
     // Check if we're NOT in replay mode AND haven't started replaying yet
-    if (mapRef.current && !isReplaying && replayProgress === 0) {
-      if (map && map.getContainer) {
-        const all = [
-          ...shipmentPickups.map((p) => p.pos),
-          ...shipmentDeliveries.map((d) => d.pos),
-        ];
-        if (currentLocation) all.push(currentLocation); // include live point
-        if (all.length > 0) {
-          mapRef.current.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
-        }
+    if (map && !isReplaying && replayProgress === 0) {
+      const all = [
+        ...shipmentPickups.map((p) => p.pos),
+        ...shipmentDeliveries.map((d) => d.pos),
+      ];
+      if (currentLocation) all.push(currentLocation); // include live point
+      if (all.length > 0) {
+        map.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
       }
     }
-  }, [shipmentPickups, shipmentDeliveries, isReplaying, replayProgress]);
+  }, [shipmentPickups, shipmentDeliveries, isReplaying, replayProgress, currentLocation]);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -1409,42 +1423,15 @@ export default function KeplerMap({
       clearInterval(interval);
       ac.abort();
     };
-  }, []);
+  }, [unique_code, fetchInternalFencePathData]); // Added unique_code and fetchInternalFencePathData to dependencies
 
   // Google Encoded Polyline Algorithm decoder → [lat, lng][]
   // function decodePolyline(encoded: string): [number, number][] {
-  const decodePolyline = useCallback((encoded: string): [number, number][] => {
-    if (!encoded) return [];
-    let index = 0,
-      lat = 0,
-      lng = 0;
-    const coordinates: [number, number][] = [];
-
-    const shift5 = () => {
-      let result = 0,
-        shift = 0,
-        b: number;
-      do {
-        b = encoded.charCodeAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      return result & 1 ? ~(result >> 1) : result >> 1;
-    };
-
-    while (index < encoded.length) {
-      lat += shift5();
-      lng += shift5();
-      coordinates.push([lat * 1e-5, lng * 1e-5]); // [lat, lng]
-    }
-    return coordinates;
-  }, []);
 
   // This useEffect is already correct and will now work properly
 
   // Add this useEffect to fetch the path data
-  useEffect(() => {
-    const fetchPathData = async () => {
+  const fetchPathData = useCallback(async () => {
       try {
         const response = await fetch(
           `https://live-api.instavans.com/api/raccoon/path?unique_code=${encodeURIComponent(
@@ -1454,25 +1441,28 @@ export default function KeplerMap({
         if (!response.ok) {
           throw new Error("Failed to fetch path data");
         }
-        const data: PathResponse = await response.json();
+        const data: PathData = await response.json();
         // Handle the different data types for the path
         // let decodedPath = [];
         // let decodedPath: [number, number][];
         let decodedPath: [number, number][] = [];
 
-        if (data.sim && data.sim.length > 0) {
-          // decodedPath = data.sim.map(point=> point.geo_point.coordinates);
-          const decodedSim = data.sim.map(
-            (p) =>
-              [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
-                number,
-                number
-              ]
-          );
-          // const decodedSim = data.sim.map(point => point.geo_point.coordinates);
+        if (data.sim) {
+          let decodedSim: [number, number][] = [];
+          if (typeof data.sim === "string") {
+            decodedSim = decodePolyline(data.sim);
+          } else if (Array.isArray(data.sim) && data.sim.length > 0) {
+            decodedSim = data.sim.map(
+              (p) =>
+                [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
+                  number,
+                  number
+                ]
+            );
+          }
           setSimPath(decodedSim);
-          // setActiveMode('sim');
         }
+
         if (data.app && data.app.length > 0) {
           const decodedApp = data.app.map(
             (p) =>
@@ -1489,22 +1479,44 @@ export default function KeplerMap({
           let decodedGps: [number, number][] = [];
           if (typeof data.gps === "string") {
             // Decode the polyline string for GPS
-            decodedGps = polyline.decode(data.gps);
+            decodedGps = decodePolyline(data.gps);
           } else if (Array.isArray(data.gps) && data.gps.length > 0) {
             // Handle the case where GPS data is an array of points
-            decodedGps = data.gps.map((point) => point.geo_point.coordinates);
+            decodedGps = data.gps.map(
+              (point) =>
+                [
+                  point.geo_point.coordinates[1],
+                  point.geo_point.coordinates[0],
+                ] as [number, number]
+            );
           }
           setGpsPath(decodedGps);
         }
+
+        setPathData(data);
       } catch (error) {
         console.error(error);
       } finally {
         setIsLoadingPath(false);
       }
-    };
+    }, [unique_code, decodePolyline, setSimPath, setAppPath, setGpsPath, setPathData, setIsLoadingPath]);
 
+  useEffect(() => {
     fetchPathData();
-  }, []); // The empty array ensures this runs only once
+  }, [fetchPathData]); // The empty array ensures this runs only once
+
+  // Auto-select activeMode based on available path data
+  useEffect(() => {
+    if (pathData) {
+      if (pathData.gps && pathData.gps.length > 0) {
+        setActiveMode("gps");
+      } else if (pathData.sim && pathData.sim.length > 0) {
+        setActiveMode("sim");
+      } else if (pathData.app && pathData.app.length > 0) {
+        setActiveMode("app");
+      }
+    }
+  }, [pathData, setActiveMode]);
 
   useEffect(() => {
     if (!pathData || !activeMode) {
@@ -1512,26 +1524,19 @@ export default function KeplerMap({
       return;
     }
 
-    const sourceData = pathData[activeMode];
-    if (!sourceData) {
-      setActiveRoute([]);
-      return;
-    }
-
     let coordinates: [number, number][] = [];
 
-    if (typeof sourceData === "string") {
-      coordinates = polyline.decode(sourceData);
-    } else if (Array.isArray(sourceData)) {
-      // This part of your code is correct, it reverses the [lng, lat] from the API.
-      coordinates = (sourceData as PathPoint[]).map((point) => {
-        const [lng, lat] = point.geo_point.coordinates;
-        return [lat, lng];
-      });
+    // Use the specific path data based on activeMode
+    if (activeMode === "gps") {
+      coordinates = gpsPath;
+    } else if (activeMode === "sim") {
+      coordinates = simPath;
+    } else if (activeMode === "app") {
+      coordinates = appPath;
     }
 
     setActiveRoute(coordinates);
-  }, [activeMode, pathData]);
+  }, [activeMode, pathData, gpsPath, simPath, appPath]);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -1580,7 +1585,7 @@ export default function KeplerMap({
 
     loadFastag();
     return () => ac.abort();
-  }, []);
+  }, [unique_code, decodePolyline]);
 
   // This hook gives us the map instance!
   // ... (existing functions and callbacks)
@@ -1629,7 +1634,7 @@ export default function KeplerMap({
       window.removeEventListener("mousemove", handleGlobalMouseMove);
       window.removeEventListener("mouseup", handleGlobalMouseUp);
     };
-  }, [isDraggingPanel, panelDragOffset]);
+  }, [isDraggingPanel, panelDragOffset, setPanelPosition]); // Added setPanelPosition to dependencies
 
   useEffect(() => {
     if (!activeMode) {
@@ -1646,7 +1651,7 @@ export default function KeplerMap({
     } else {
       setActiveRoute([]);
     }
-  }, [activeMode, gpsPath, simPath, appPath]);
+  }, [activeMode, gpsPath, simPath, appPath, setActiveRoute]); // Added setActiveRoute to dependencies
 
   // Status conversion function - same as main triptracker
   const getShipmentStatus = (statusCode: string) => {
@@ -1880,7 +1885,7 @@ export default function KeplerMap({
 
     loadHalt();
     return () => ac.abort();
-  }, []);
+  }, [unique_code, setHaltPoints]); // Added unique_code and setHaltPoints to dependencies
 
   const createRouteBuffer = (
     route: [number, number][],
@@ -1905,7 +1910,7 @@ export default function KeplerMap({
   const routeBuffer = createRouteBuffer(mainRoute);
 
   // Use dynamic deviation data from API, fallback to empty array if no data
-  const deviationRoutes = deviationData.length > 0 ? deviationData : [];
+  // const deviationRoutes = deviationData.length > 0 ? deviationData : []; // This is now a useMemo
 
   const geofenceAreas = [
     {
@@ -2026,6 +2031,8 @@ export default function KeplerMap({
       isDraggingMagnifier,
       dragOffset,
       magnifierSettings.size,
+      setMagnifierPosition,
+      setMagnifierCenter,
     ]
   );
 
@@ -2040,7 +2047,7 @@ export default function KeplerMap({
       const constrainedY = Math.max(0, Math.min(point.y, rect.height));
       setMagnifierPosition({ x: constrainedX, y: constrainedY });
     } catch {}
-  }, [isMagnifierEnabled, magnifierCenter]);
+  }, [isMagnifierEnabled, magnifierCenter, setMagnifierPosition]);
 
   useEffect(() => {
     if (!mapRef.current || !isMagnifierEnabled) return;
@@ -2089,6 +2096,8 @@ export default function KeplerMap({
     magnifierSettings.positionY,
     mapRef,
     mapContainerRef,
+    setMagnifierPosition,
+    setMagnifierCenter,
   ]);
 
   const handleMouseDown = useCallback(
@@ -2122,7 +2131,7 @@ export default function KeplerMap({
         setIsDraggingMagnifier(true);
       }
     },
-    [isMagnifierEnabled, magnifierPosition]
+    [isMagnifierEnabled, magnifierPosition, setDragOffset, setIsDraggingMagnifier]
   );
 
   const handleMouseUp = useCallback(
@@ -2133,7 +2142,7 @@ export default function KeplerMap({
       }
       setIsDraggingMagnifier(false);
     },
-    [isDraggingMagnifier]
+    [isDraggingMagnifier, setIsDraggingMagnifier]
   );
 
   useEffect(() => {
@@ -2156,6 +2165,10 @@ export default function KeplerMap({
     showMagnifierSettings,
     isMagnifierEnabled,
     calculateMagnifierPosition,
+    setMagnifierPosition,
+    setMagnifierCenter,
+    mapRef,
+    mapContainerRef,
   ]);
   const [magnifierMap, setMagnifierMap] = useState<LeafletMap | null>(null);
 
@@ -2185,7 +2198,7 @@ export default function KeplerMap({
     }
     // This effect's dependencies: It will re-run if the magnifier is toggled on/off,
     // or if the map instances themselves change.
-  }, [isMagnifierEnabled, magnifierMap, mapRef.current]);
+  }, [isMagnifierEnabled, magnifierMap, mapRef, magnifierCenter, magnifierSettings.zoom]);
 
   // Effect 2: Handles UPDATES when the magnifier is dragged or zoom setting changes.
   // This hook remains the same as it was already correct.
@@ -2208,7 +2221,7 @@ export default function KeplerMap({
     magnifierSettings.zoom,
     isMagnifierEnabled,
     magnifierMap,
-    mapRef.current,
+    mapRef,
   ]); // Also, add the new dependencies // Dependencies: run when center or zoom changes.
   useEffect(() => {
     // If we have a map instance and the magnifier is enabled...
@@ -2476,7 +2489,7 @@ export default function KeplerMap({
     }, 100 / replaySpeed);
 
     return () => clearInterval(interval);
-  }, [isReplaying, selectedDeviationForReplay, replaySpeed, deviationRoutes]);
+  }, [isReplaying, selectedDeviationForReplay, replaySpeed, deviationRoutes, setCurrentReplayPosition, setIsReplaying, setReplayProgress]); // Added missing dependencies
 
   const handleMagnifierSettingChange = (
     key: keyof MagnifierSettings,
@@ -2506,7 +2519,7 @@ export default function KeplerMap({
         }
       }
     }
-  }, [currentLocation, isNavigating, previousBounds]);
+  }, [currentLocation, isNavigating, previousBounds, mapRef, setPreviousBounds, setIsNavigating]);
   const handleMagnifierPanelMouseDown = (e: React.MouseEvent) => {
     // This is the new function to prevent event propagation
     // It stops the mousedown event from bubbling up to the map container's onMouseDown handler.
@@ -2702,13 +2715,7 @@ export default function KeplerMap({
               }}
             />
           )}
-          {activeMode === "gps" && gpsPath.length > 0 && (
-            <Polyline
-              positions={gpsPath}
-              pathOptions={{ color: "#1e40af", weight: 4, opacity: 0.8 }}
-            />
-          )}
-          {activeMode === "sim" && simPath.length > 0 && (
+          {activeMode === "sim" && (
             <Polyline
               positions={simPath}
               pathOptions={{
@@ -2717,6 +2724,12 @@ export default function KeplerMap({
                 opacity: 0.7,
                 dashArray: "10, 10",
               }} // Purple dashed line for SIM
+            />
+          )}
+          {activeMode === "gps" && gpsPath.length > 0 && (
+            <Polyline
+              positions={gpsPath}
+              pathOptions={{ color: "#1e40af", weight: 4, opacity: 0.8 }}
             />
           )}
           {activeMode === "app" && appPath.length > 0 && (
@@ -3198,7 +3211,7 @@ export default function KeplerMap({
                   <div className={styles.popupBody}>
                     Progress: {Math.round(replayProgress)}%
                   </div>
-                </div>
+                </div >
               </Popup>
             </Marker>
           )}
