@@ -114,6 +114,7 @@ interface KeplerMapProps {
     pick_arrived_at?: string;
     pick_finished_at?: string;
   };
+  isSupplier?: boolean;
 }
 
 interface MagnifierSettings {
@@ -221,6 +222,7 @@ export default function KeplerMap({
   onToggleGPSRoute,
   onToggleDeviations,
   shipmentData,
+  isSupplier,
 }: KeplerMapProps) {
   const [isClient, setIsClient] = useState(false);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
@@ -2739,7 +2741,7 @@ export default function KeplerMap({
             />
           )}
 
-          {showDayRun &&
+          {showDayRun && !isSupplier &&
             dayRunPolylines.map((coords, i) => (
               <>
                 <Polyline
@@ -2960,7 +2962,7 @@ export default function KeplerMap({
           )}
 
           {/* === Deviation Polylines (in red) === */}
-          {showDeviations &&
+          {showDeviations && !isSupplier &&
             deviationRoutes.map((route) => (
               <Polyline
                 key={`deviation-polyline-${route.id}`}
@@ -3096,7 +3098,7 @@ export default function KeplerMap({
                 </Marker>
               );
             })}
-          {shouldShowHaltMarkers &&
+          {shouldShowHaltMarkers && !isSupplier &&
             haltPoints.map((halt, idx) => {
               const lat = halt.geo_point.coordinates[1];
               const lng = halt.geo_point.coordinates[0];
@@ -3216,7 +3218,7 @@ export default function KeplerMap({
             </Marker>
           )}
 
-          {showDeviations &&
+          {showDeviations && !isSupplier &&
             customIcons.deviation &&
             deviationRoutes.map((route) => (
               <div key={`deviation-markers-${route.id}`}>
@@ -3499,7 +3501,7 @@ export default function KeplerMap({
                 ))}
 
                 {/* Show deviation routes in magnifier */}
-                {showDeviations &&
+                {showDeviations && !isSupplier &&
                   deviationRoutes.map((route) => (
                     <Polyline
                       key={`magnifier-deviation-${route.id}`}
@@ -3551,7 +3553,7 @@ export default function KeplerMap({
                   })}
 
                 {/* Show halt markers in magnifier */}
-                {shouldShowHaltMarkers &&
+                {shouldShowHaltMarkers && !isSupplier &&
                   customIcons.halt &&
                   haltPoints.map((halt, idx) => {
                     const lat = halt.geo_point.coordinates[1];
@@ -3609,7 +3611,7 @@ export default function KeplerMap({
                 )}
 
                 {/* Show deviation markers in magnifier */}
-                {showDeviations &&
+                {showDeviations && !isSupplier &&
                   customIcons.deviation &&
                   deviationRoutes.map((route) => (
                     <div key={`magnifier-deviation-markers-${route.id}`}>
@@ -3834,13 +3836,14 @@ export default function KeplerMap({
 
         {/* Live Tracking Status */}
         {/* <div className={`${styles.statusOverlay} ${showMagnifierSettings ? styles.statusShift : ""} ${!isFullscreen ? styles.smallText : ""}`}> */}
-        <div
-          className={`${styles.statusOverlay} ${
-            showMagnifierSettings ? styles.statusShift : ""
-          } ${!isFullscreen ? styles.smallText : ""} ${
-            showMagnifierSettings ? styles.hideOnSettings : ""
-          }`}
-        >
+        {!isSupplier && (
+          <div
+            className={`${styles.statusOverlay} ${
+              showMagnifierSettings ? styles.statusShift : ""
+            } ${!isFullscreen ? styles.smallText : ""} ${
+              showMagnifierSettings ? styles.hideOnSettings : ""
+            }`}
+          >
           <div className={styles.statusTitle}>Live Tracking Status</div>
           <div className={styles.statusList}>
             {shipmentData?.latest_status && (
@@ -3915,6 +3918,7 @@ export default function KeplerMap({
             )}
           </div>
         </div>
+      )}
 
         {/* Top-right icon buttons */}
         <div className={styles.topRightControls}>
@@ -4198,7 +4202,7 @@ export default function KeplerMap({
               <span>GPS</span>
             </button>
           )}
-          {haltPoints.length > 0 && (
+          {haltPoints.length > 0 && !isSupplier && (
             <button
               onClick={() => setShowHalt((prev) => !prev)}
               className={`${styles.sideBtn} ${
@@ -4218,7 +4222,7 @@ export default function KeplerMap({
             </button>
           )}
 
-          {deviationRoutes.length > 0 && (
+          {deviationRoutes.length > 0 && !isSupplier && (
             <button
               onClick={() => setShowDeviations(!showDeviations)}
               className={`${styles.sideBtn} ${
@@ -4246,50 +4250,52 @@ export default function KeplerMap({
             </button>
           )}
 
-          <button
-            onClick={() => {
-              if (isFullscreen) {
-                setShowDayRun((prev) => !prev);
+          {!isSupplier && (
+            <button
+              onClick={() => {
+                if (isFullscreen) {
+                  setShowDayRun((prev) => !prev);
+                }
+              }}
+              className={`${styles.sideBtn} ${
+                showDayRun ? styles.sideBtnPink : styles.sideBtnGray
+              } ${!isFullscreen ? styles.disabled : ""}`}
+              disabled={!isFullscreen}
+              title={
+                !isFullscreen
+                  ? "Day Run details available only in fullscreen mode"
+                  : "Toggle Day Run details"
               }
-            }}
-            className={`${styles.sideBtn} ${
-              showDayRun ? styles.sideBtnPink : styles.sideBtnGray
-            } ${!isFullscreen ? styles.disabled : ""}`}
-            disabled={!isFullscreen}
-            title={
-              !isFullscreen
-                ? "Day Run details available only in fullscreen mode"
-                : "Toggle Day Run details"
-            }
-          >
-            {/* <div className={styles.sideDotBox}></div> */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="11"
-              height="11"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
             >
-              <path d="M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20z"></path>
-              <path d="M12 6L12 12"></path>
-              <path d="M12 12H18"></path>
-              <path d="M5 12h-3"></path>
-              <path d="M22 12h-2"></path>
-              <path d="M12 2v2"></path>
-              <path d="M12 20v2"></path>
-              <path d="M4.22 4.22l1.42 1.42"></path>
-              <path d="M18.36 18.36l1.42 1.42"></path>
-            </svg>
-            <span>Day run</span>
-          </button>
+              {/* <div className={styles.sideDotBox}></div> */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20z"></path>
+                <path d="M12 6L12 12"></path>
+                <path d="M12 12H18"></path>
+                <path d="M5 12h-3"></path>
+                <path d="M22 12h-2"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 20v2"></path>
+                <path d="M4.22 4.22l1.42 1.42"></path>
+                <path d="M18.36 18.36l1.42 1.42"></path>
+              </svg>
+              <span>Day run</span>
+            </button>
+          )}
         </div>
 
         {/* Day Run Table */}
-        {showDayRun && (
+        {showDayRun && !isSupplier && (
           <div
             className={`${styles.dayRunTable} ${
               showMagnifierSettings ? styles.statusShift : ""
