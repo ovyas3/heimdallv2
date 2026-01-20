@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import {
   Truck,
@@ -156,6 +156,18 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showAllPOs, setShowAllPOs] = useState(false);
   const [showAllEwayBills, setShowAllEwayBills] = useState(false);
+
+  const poArray = useMemo(() => {
+    const rawPos = apiData?.purchase_order;
+    if (!rawPos) return [];
+
+    const normalized = Array.isArray(rawPos) ? rawPos : [String(rawPos)];
+
+    return normalized
+      .flatMap((item: any) => String(item).split(","))
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+  }, [apiData?.purchase_order]);
 
   const calculateEtaDelta = useCallback((etaDateString: any, actualDateString: any) => {
     if (!etaDateString || !actualDateString) return;
@@ -1255,21 +1267,19 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               <div className="detail-value-with-action">
                                 <div className="stacked-values">
                                   <span className="detail-value">
-                                    {apiData?.purchase_order?.[0] || "N/A"}
+                                    {poArray[0] || "N/A"}
                                   </span>
                                   {showAllPOs &&
-                                    apiData?.purchase_order
-                                      ?.slice(1)
-                                      .map((po: string, idx: number) => (
-                                        <span
-                                          key={`po-${idx}`}
-                                          className="detail-value"
-                                        >
-                                          {po}
-                                        </span>
-                                      ))}
+                                    poArray.slice(1).map((po: string, idx: number) => (
+                                      <span
+                                        key={`po-${idx}`}
+                                        className="detail-value"
+                                      >
+                                        {po}
+                                      </span>
+                                    ))}
                                 </div>
-                                {apiData?.purchase_order?.length > 1 && (
+                                {poArray.length > 1 && (
                                   <button
                                     className="expand-action-btn-circular"
                                     onClick={() => setShowAllPOs(!showAllPOs)}
