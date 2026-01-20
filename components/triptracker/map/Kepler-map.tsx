@@ -2795,9 +2795,14 @@ export default function KeplerMap({
                   </div>
                   <hr className={styles.divider}></hr>
 
-                  {meta?.location?.name && (
+                  {(isSupplier && i === 0
+                    ? meta?.location?.city
+                    : meta?.location?.name) && (
                     <div className={styles.popupBody}>
-                      {meta.location.name.trim()}
+                      {(isSupplier && i === 0
+                        ? meta?.location?.city
+                        : meta?.location?.name
+                      )?.trim()}
                     </div>
                   )}
                   {meta?.location?.locality && (
@@ -2813,13 +2818,15 @@ export default function KeplerMap({
 
                   {shipmentData?.pick_arrived_at && i === 0 && (
                     <div className={styles.popupMeta}>
-                      Gate In: {formatTimestamp(shipmentData.pick_arrived_at)}
+                      {isSupplier ? "Arrived at Source: " : "Gate In: "}
+                      {formatTimestamp(shipmentData.pick_arrived_at)}
                     </div>
                   )}
 
                   {shipmentData?.pick_finished_at && i === 0 && (
                     <div className={styles.popupMeta}>
-                      Gate Out: {formatTimestamp(shipmentData.pick_finished_at)}
+                      {isSupplier ? "Dispatched from Source: " : "Gate Out: "}
+                      {formatTimestamp(shipmentData.pick_finished_at)}
                     </div>
                   )}
                 </div>
