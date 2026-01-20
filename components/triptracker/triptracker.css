@@ -1680,16 +1680,15 @@ body {
   font-weight: 600;
   color: #1e293b;
   text-align: right;
-  word-break: break-word;
-  /* Ensure long text breaks */
-  max-width: 60%;
-  /* Limit width to allow label to show */
+  white-space: nowrap;
+  word-break: normal;
 }
 
 .detail-label {
   font-size: 0.875rem;
   color: var(--text-secondary);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 /* .detail-value {
@@ -4867,4 +4866,51 @@ timeline-icon path {
   .side-panel-body {
     padding: 0.75rem;
   }
+}
+/* --- Refined Expansion UI --- */
+.detail-item-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.detail-value-with-action {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.stacked-values {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.expand-action-btn-circular {
+  background: white;
+  border: 1.5px solid var(--primary-color);
+  color: var(--primary-color);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.expand-action-btn-circular:hover {
+  background: var(--primary-lighter);
+}
+
+.expand-action-btn-circular svg {
+  stroke-width: 2.5px;
 }
