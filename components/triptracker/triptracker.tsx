@@ -28,9 +28,11 @@ import { HelpModal } from "./help-modal";
 import {
   FileText,
   Image as ImageIcon,
-  Download,
   X,
   Receipt,
+  Download,
+  Plus as PlusIcon,
+  Minus as MinusIcon,
 } from "lucide-react";
 import "./triptracker.css";
 // import KeplerMap from "./map/Kepler-map"; // or "../map/KeplerMap" if you rename the file
@@ -135,7 +137,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   });
   // CHANGED — add `info`; you can delete `vehicleDriver` and `tripMetadata` if no longer used
   const [apiData, setApiData] = useState<any>(null);
-  const isSupplierView = apiData?.shipper?._id === "5e079ff27a35ea6ab410f3ba";
+  const isSupplierView = apiData?.shipper?._id === "6963e33726cb5f7729e20dad";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSatelliteViewLocal, setIsSatelliteViewLocal] = useState(false);
@@ -152,6 +154,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const [mapMode, setMapMode] = useState<"location" | "map">("location");
   const [timelineData, setTimelineData] = useState<any[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showAllPOs, setShowAllPOs] = useState(false);
+  const [showAllEwayBills, setShowAllEwayBills] = useState(false);
 
   const calculateEtaDelta = useCallback((etaDateString: any, actualDateString: any) => {
     if (!etaDateString || !actualDateString) return;
@@ -897,10 +901,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                   <div>
                     <div className="customer-name">
-                      {toTitleCase(lastDelivery?.location?.name) || "N/A"}
-                      {/* Tata steel */}
+                      {isSupplierView
+                        ? toTitleCase(apiData?.supplier?.parent_name) || "N/A"
+                        : toTitleCase(lastDelivery?.location?.name) || "N/A"}
                     </div>
-                    <div className="customer-role">Customer</div>
+                    <div className="customer-role">
+                      {isSupplierView ? "Supplier" : "Customer"}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1222,12 +1229,14 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               {apiData?.driver?.vehicle_no || "N/A"}
                             </span>
                           </div>
-                          <div className="detail-item">
-                            <span className="detail-label">Transporter</span>
-                            <span className="detail-value">
-                              {apiData?.carrier?.name || "N/A"}
-                            </span>
-                          </div>
+                          {!isSupplierView && (
+                            <div className="detail-item">
+                              <span className="detail-label">Transporter</span>
+                              <span className="detail-value">
+                                {apiData?.carrier?.parent_name || "N/A"}
+                              </span>
+                            </div>
+                          )}
                           <div className="detail-item">
                             <span className="detail-label">Driver Name</span>
                             <span className="detail-value">
@@ -1240,25 +1249,100 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               {apiData?.driver?.mobile || "N/A"}
                             </span>
                           </div>
-                          <div className="detail-item">
-                            <span className="detail-label">PO Number</span>
-                            <span className="detail-value">
-                              {apiData?.po_no ||
-                                apiData?.externals?.po_number ||
-                                "N/A"}
-                            </span>
+                          <div className="detail-item-group">
+                            <div className="detail-item">
+                              <span className="detail-label">PO Number</span>
+                              <div className="detail-value-with-action">
+                                <div className="stacked-values">
+                                  <span className="detail-value">
+                                    {apiData?.purchase_order?.[0] || "N/A"}
+                                  </span>
+                                  {showAllPOs &&
+                                    apiData?.purchase_order
+                                      ?.slice(1)
+                                      .map((po: string, idx: number) => (
+                                        <span
+                                          key={`po-${idx}`}
+                                          className="detail-value"
+                                        >
+                                          {po}
+                                        </span>
+                                      ))}
+                                </div>
+                                {apiData?.purchase_order?.length > 1 && (
+                                  <button
+                                    className="expand-action-btn-circular"
+                                    onClick={() => setShowAllPOs(!showAllPOs)}
+                                  >
+                                    {showAllPOs ? (
+                                      <MinusIcon size={16} />
+                                    ) : (
+                                      <PlusIcon size={16} />
+                                    )}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="detail-item">
-                            <span className="detail-label">Waybill No</span>
-                            <span className="detail-value">
-                              {apiData?.ewaybill_no || "N/A"}
-                            </span>
-                          </div>
-                          <div className="detail-item">
-                            <span className="detail-label">Expiry</span>
-                            <span className="detail-value">
-                              {formatTimestamp(apiData?.ewaybill_expiry_date, "date") || "N/A"}
-                            </span>
+
+                          <div className="detail-item-group">
+                            <div className="detail-item">
+                              <span className="detail-label">Waybill No</span>
+                              <div className="detail-value-with-action">
+                                <div className="stacked-values">
+                                  <span className="detail-value">
+                                    {apiData?.eway_bill?.[0]?.eway || "N/A"}
+                                  </span>
+                                  {showAllEwayBills &&
+                                    apiData?.eway_bill
+                                      ?.slice(1)
+                                      .map((eb: any, idx: number) => (
+                                        <span
+                                          key={`eb-${idx}`}
+                                          className="detail-value"
+                                        >
+                                          {eb.eway}
+                                        </span>
+                                      ))}
+                                </div>
+                                {apiData?.eway_bill?.length > 1 && (
+                                  <button
+                                    className="expand-action-btn-circular"
+                                    onClick={() =>
+                                      setShowAllEwayBills(!showAllEwayBills)
+                                    }
+                                  >
+                                    {showAllEwayBills ? (
+                                      <MinusIcon size={16} />
+                                    ) : (
+                                      <PlusIcon size={16} />
+                                    )}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <div className="detail-item">
+                              <span className="detail-label">Expiry</span>
+                              <div className="stacked-values">
+                                <span className="detail-value">
+                                  {formatTimestamp(
+                                    apiData?.eway_bill?.[0]?.expiry,
+                                    "date"
+                                  ) || "N/A"}
+                                </span>
+                                {showAllEwayBills &&
+                                  apiData?.eway_bill
+                                    ?.slice(1)
+                                    .map((eb: any, idx: number) => (
+                                      <span
+                                        key={`eb-exp-${idx}`}
+                                        className="detail-value"
+                                      >
+                                        {formatTimestamp(eb.expiry, "date")}
+                                      </span>
+                                    ))}
+                              </div>
+                            </div>
                           </div>
                           <div className="detail-item">
                             <span className="detail-label">Material</span>
@@ -1299,7 +1383,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               <div className="detail-item">
                                 <span className="detail-label">Transporter</span>
                                 <span className="detail-value">
-                                  {apiData?.carrier?.name || "N/A"}
+                                  {apiData?.carrier?.parent_name || "N/A"}
                                 </span>
                               </div>
                               <div className="detail-item">
@@ -1317,11 +1401,15 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             /* MOVED FROM OLD "Trip Metadata" CARD — no changes inside */
                             <div className="metadata-details">
                               <div className="detail-item">
-                                <div className="detail-label">Customer</div>
+                                <div className="detail-label">
+                                  {isSupplierView ? "Supplier" : "Customer"}
+                                </div>
 
                                 <div className="detail-value">
-                                  {toTitleCase(lastDelivery?.location?.name) ||
-                                    "N/A"}
+                                  {isSupplierView
+                                    ? toTitleCase(apiData?.supplier?.parent_name)
+                                    : toTitleCase(lastDelivery?.location?.name) ||
+                                      "N/A"}
                                 </div>
                               </div>
                               <div className="detail-item">
@@ -1405,7 +1493,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           <div className="location-type">{isSupplierView ? "Source city" : "Origin"}</div>
                           <div className="location-name">
                             {toTitleCase(
-                              originLocation?.location?.name || "N/A"
+                              isSupplierView
+                                ? originLocation?.location?.city || "N/A"
+                                : originLocation?.location?.name || "N/A"
                             )}
                           </div>
 
