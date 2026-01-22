@@ -1123,7 +1123,7 @@ export default function KeplerMap({
         setIsLoadingShipment(true);
         try {
           const res = await fetch(
-            `https://live-api.instavans.com/api/raccoon/shipment?unique_code=${encodeURIComponent(
+            `https://dev-api.instavans.com/api/raccoon/shipment?unique_code=${encodeURIComponent(
               unique_code ?? ""
             )}`,
             { signal: ac.signal }
@@ -1398,7 +1398,7 @@ export default function KeplerMap({
     const fetchCurrentLocation = async () => {
       try {
         const res = await fetch(
-          `https://live-api.instavans.com/api/raccoon/currentLocation?unique_code=${encodeURIComponent(
+          `https://dev-api.instavans.com/api/raccoon/currentLocation?unique_code=${encodeURIComponent(
             unique_code ?? ""
           )}`,
           { signal: ac.signal }
@@ -1436,7 +1436,7 @@ export default function KeplerMap({
   const fetchPathData = useCallback(async () => {
       try {
         const response = await fetch(
-          `https://live-api.instavans.com/api/raccoon/path?unique_code=${encodeURIComponent(
+          `https://dev-api.instavans.com/api/raccoon/path?unique_code=${encodeURIComponent(
             unique_code ?? ""
           )}`
         );
@@ -1547,7 +1547,7 @@ export default function KeplerMap({
       setIsLoadingFastag(true);
       try {
         const res = await fetch(
-          `https://live-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(
+          `https://dev-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(
             unique_code ?? ""
           )}`,
           { method: "GET", signal: ac.signal }
@@ -1869,7 +1869,7 @@ export default function KeplerMap({
     const loadHalt = async () => {
       try {
         const res = await fetch(
-          `https://live-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(
+          `https://dev-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(
             unique_code ?? ""
           )}`,
           { method: "GET", signal: ac.signal }

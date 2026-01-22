@@ -418,7 +418,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         setLoading(true);
 
         const shipmentResponse = await fetch(
-          `https://live-api.instavans.com/api/raccoon/shipment?unique_code=${encodeURIComponent(
+          `https://dev-api.instavans.com/api/raccoon/shipment?unique_code=${encodeURIComponent(
             uniqueCode ?? ""
           )}`
         );
@@ -514,7 +514,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     const fetchTollHistory = async () => {
       try {
         const tollResponse = await fetch(
-          `https://live-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(
+          `https://dev-api.instavans.com/api/raccoon/toll_history?unique_code=${encodeURIComponent(
             uniqueCode ?? ""
           )}`
         );
@@ -534,7 +534,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     const fetchTrails = async () => {
       try {
         const trailsResponse = await fetch(
-          `https://live-api.instavans.com/api/raccoon/trails?unique_code=${encodeURIComponent(
+          `https://dev-api.instavans.com/api/raccoon/trails?unique_code=${encodeURIComponent(
             uniqueCode ?? ""
           )}`
         );
@@ -555,7 +555,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     const fetchEpods = async () => {
       try {
         const epodsResponse = await fetch(
-          `https://live-api.instavans.com/api/raccoon/epods?unique_code=${encodeURIComponent(
+          `https://dev-api.instavans.com/api/raccoon/epods?unique_code=${encodeURIComponent(
             uniqueCode ?? ""
           )}`
         );
@@ -579,7 +579,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     const fetchHaltData = async () => {
       try {
         const haltResponse = await fetch(
-          `https://live-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(
+          `https://dev-api.instavans.com/api/raccoon/halt?unique_code=${encodeURIComponent(
             uniqueCode ?? ""
           )}`
         );
