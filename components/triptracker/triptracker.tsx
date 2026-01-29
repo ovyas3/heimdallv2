@@ -137,7 +137,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   });
   // CHANGED — add `info`; you can delete `vehicleDriver` and `tripMetadata` if no longer used
   const [apiData, setApiData] = useState<any>(null);
-  const isSupplierView = apiData?.shipper?._id === "694b847f2a7c87efd3fe4f09";
+  const isSupplierView = apiData?.shipper?._id === "694b847f2a7c87efd3fe4f09" && !!apiData?.supplier?._id;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSatelliteViewLocal, setIsSatelliteViewLocal] = useState(false);
