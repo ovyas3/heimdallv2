@@ -1713,7 +1713,7 @@ export default function KeplerMap({
     return { status, statusClass };
   };
 
-  const [selectedMapStyle, setSelectedMapStyle] = useState("satellite");
+  const [selectedMapStyle, setSelectedMapStyle] = useState("osm-light");
   const [showMapStyleSelector, setShowMapStyleSelector] = useState(false);
   const mapStyles = [
     { id: "none", name: "No Basemap", url: "", color: "#000000" },
