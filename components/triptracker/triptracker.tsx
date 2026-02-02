@@ -680,9 +680,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const travelledDistanceKm = Math.round(
     (apiData?.trip_tracker?.travelled_distance || 0) / 1000
   );
-  const remainingDistanceKm = Math.round(
-    (apiData?.trip_tracker?.remaining_distance || 0) / 1000
-  );
+  const remainingDistanceKm = Math.max(0, totalDistanceKm - travelledDistanceKm);
   const progressPercentage =
     totalDistanceKm > 0 ? (travelledDistanceKm / totalDistanceKm) * 100 : 0;
   // Add this new function to calculate the on-time percentage
