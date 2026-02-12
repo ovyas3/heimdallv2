@@ -15,6 +15,8 @@ import {
   FastForward,
   Rewind,
   Shield,
+  Layers,
+  Satellite,
 } from "lucide-react";
 import styles from "./Kepler-map.module.css";
 import type {
@@ -811,9 +813,8 @@ export default function KeplerMap({
       <div class="${styles.popup}">
         <div class="${styles.popupTitle} ${styles.titleRed}">Halt Info</div>
         <hr class="${styles.divider}" />
-        <div class="${styles.popupBody}">Duration: <strong>${
-        durationHours > 0 ? durationHours + " hour(s), " : ""
-      }${durationMins} minute(s)</strong></div>
+        <div class="${styles.popupBody}">Duration: <strong>${durationHours > 0 ? durationHours + " hour(s), " : ""
+        }${durationMins} minute(s)</strong></div>
         <div class="${styles.popupBody}">Start: <strong>${new Date(
         h.start_time
       ).toLocaleString()}</strong></div>
@@ -1140,9 +1141,7 @@ export default function KeplerMap({
           const travelledDistanceKm = Math.round(
             (shipment?.trip_tracker?.travelled_distance || 0) / 1000
           );
-          const remainingDistanceKm = Math.round(
-            (shipment?.trip_tracker?.remaining_distance || 0) / 1000
-          );
+          const remainingDistanceKm = Math.max(0, totalDistanceKm - travelledDistanceKm);
           const newProgress =
             totalDistanceKm > 0
               ? (travelledDistanceKm / totalDistanceKm) * 100
@@ -1714,6 +1713,34 @@ export default function KeplerMap({
   };
 
   const [selectedMapStyle, setSelectedMapStyle] = useState("osm-light");
+
+  // Load theme from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("map-theme");
+      if (saved) {
+        setSelectedMapStyle(saved);
+      }
+    }
+  }, []);
+
+  // Save theme to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("map-theme", selectedMapStyle);
+    }
+  }, [selectedMapStyle]);
+
+  // Sync with isSatelliteView prop
+  useEffect(() => {
+    if (isSatelliteView) {
+      setSelectedMapStyle("satellite");
+    } else {
+      // If satellite is toggled off, and we are currently on satellite, revert to light
+      setSelectedMapStyle((prev) => (prev === "satellite" ? "osm-light" : prev));
+    }
+  }, [isSatelliteView]);
+
   const [showMapStyleSelector, setShowMapStyleSelector] = useState(false);
   const mapStyles = [
     { id: "none", name: "No Basemap", url: "", color: "#000000" },
@@ -2641,9 +2668,8 @@ export default function KeplerMap({
               {internalFencePathData.length > 0 && (
                 <button
                   onClick={() => setShowFence((prev) => !prev)}
-                  className={`${styles.replayControlBtn} ${
-                    showFence ? styles.fenceActiveBtn : ""
-                  }`}
+                  className={`${styles.replayControlBtn} ${showFence ? styles.fenceActiveBtn : ""
+                    }`}
                   title={showFence ? "Hide Fence" : "Show Fence"}
                 >
                   <Shield size={18} />
@@ -3379,9 +3405,8 @@ export default function KeplerMap({
           <div
             // 1. The onMouseDown handler is placed directly on this outer div
             onMouseDown={handleMouseDown}
-            className={`${styles.magnifier} ${
-              isDraggingMagnifier ? styles.dragging : ""
-            }`}
+            className={`${styles.magnifier} ${isDraggingMagnifier ? styles.dragging : ""
+              }`}
             style={{
               // Only positioning and size - let CSS handle the glass effect
               left: magnifierPosition.x - magnifierSettings.size / 2,
@@ -3415,9 +3440,8 @@ export default function KeplerMap({
                   <TileLayer
                     url={getCurrentMapUrl()}
                     attribution=""
-                    key={`magnifier-tiles-${selectedMapStyle}-${
-                      isSatelliteView ? "satellite" : "street"
-                    }-${magnifierCenter[0]}-${magnifierCenter[1]}`}
+                    key={`magnifier-tiles-${selectedMapStyle}-${isSatelliteView ? "satellite" : "street"
+                      }-${magnifierCenter[0]}-${magnifierCenter[1]}`}
                   />
                 )}
 
@@ -3815,11 +3839,9 @@ export default function KeplerMap({
         {/* Shipment Details */}
         {shipmentData && (
           <div
-            className={`${styles.shipmentDetailsOverlay} ${
-              showMagnifierSettings ? styles.statusShift : ""
-            } ${!isFullscreen ? styles.smallText : ""} ${
-              showMagnifierSettings ? styles.hideOnSettings : ""
-            }`}
+            className={`${styles.shipmentDetailsOverlay} ${showMagnifierSettings ? styles.statusShift : ""
+              } ${!isFullscreen ? styles.smallText : ""} ${showMagnifierSettings ? styles.hideOnSettings : ""
+              }`}
           >
             <div className={styles.statusTitle}>Shipment Details</div>
             <div className={styles.statusList}>
@@ -3845,11 +3867,9 @@ export default function KeplerMap({
         {/* <div className={`${styles.statusOverlay} ${showMagnifierSettings ? styles.statusShift : ""} ${!isFullscreen ? styles.smallText : ""}`}> */}
         {!isSupplier && (
           <div
-            className={`${styles.statusOverlay} ${
-              showMagnifierSettings ? styles.statusShift : ""
-            } ${!isFullscreen ? styles.smallText : ""} ${
-              showMagnifierSettings ? styles.hideOnSettings : ""
-            }`}
+            className={`${styles.statusOverlay} ${showMagnifierSettings ? styles.statusShift : ""
+              } ${!isFullscreen ? styles.smallText : ""} ${showMagnifierSettings ? styles.hideOnSettings : ""
+              }`}
           >
           <div className={styles.statusTitle}>Live Tracking Status</div>
           <div className={styles.statusList}>
@@ -3930,10 +3950,24 @@ export default function KeplerMap({
         {/* Top-right icon buttons */}
         <div className={styles.topRightControls}>
           <button
+            onClick={() => {
+              if (onToggleSatellite) {
+                onToggleSatellite();
+              } else {
+                setSelectedMapStyle((prev) => (prev === "satellite" ? "osm-light" : "satellite"));
+              }
+            }}
+            className={`${styles.iconBtn} ${selectedMapStyle === "satellite" ? styles.iconBtnActivePurple : ""
+              }`}
+            title={selectedMapStyle === "satellite" ? "Switch to Light View" : "Switch to Satellite View"}
+          >
+            <Layers className={styles.iconSm} />
+          </button>
+
+          <button
             onClick={() => setShowMapStyleSelector(!showMapStyleSelector)}
-            className={`${styles.iconBtn} ${
-              showMapStyleSelector ? styles.iconBtnActivePurple : ""
-            }`}
+            className={`${styles.iconBtn} ${showMapStyleSelector ? styles.iconBtnActivePurple : ""
+              }`}
             title="Map Style"
           >
             <svg
@@ -3953,9 +3987,8 @@ export default function KeplerMap({
 
           <button
             onClick={navigateToVehicle}
-            className={`${styles.iconBtn} ${
-              isNavigating ? styles.iconBtnActivePurple : ""
-            }`}
+            className={`${styles.iconBtn} ${isNavigating ? styles.iconBtnActivePurple : ""
+              }`}
             title="Go to Vehicle Location"
           >
             <svg
@@ -3981,9 +4014,8 @@ export default function KeplerMap({
 
           <button
             onClick={() => setIsMagnifierEnabled(!isMagnifierEnabled)}
-            className={`${styles.iconBtn} ${
-              isMagnifierEnabled ? styles.iconBtnActivePurple : ""
-            }`}
+            className={`${styles.iconBtn} ${isMagnifierEnabled ? styles.iconBtnActivePurple : ""
+              }`}
             title="Toggle Magnifier"
           >
             <svg
@@ -4003,9 +4035,8 @@ export default function KeplerMap({
 
           <button
             onClick={() => setShowMagnifierSettings(!showMagnifierSettings)}
-            className={`${styles.iconBtn} ${
-              showMagnifierSettings ? styles.iconBtnActivePurple : ""
-            }`}
+            className={`${styles.iconBtn} ${showMagnifierSettings ? styles.iconBtnActivePurple : ""
+              }`}
             title="Magnifier Settings"
           >
             <svg
@@ -4063,9 +4094,8 @@ export default function KeplerMap({
                 <button
                   key={style.id}
                   onClick={() => setSelectedMapStyle(style.id)}
-                  className={`${styles.styleItem} ${
-                    selectedMapStyle === style.id ? styles.styleItemActive : ""
-                  }`}
+                  className={`${styles.styleItem} ${selectedMapStyle === style.id ? styles.styleItemActive : ""
+                    }`}
                 >
                   <div
                     className={styles.styleSwatch}
@@ -4081,9 +4111,8 @@ export default function KeplerMap({
         {/* Right side controls */}
         {/* <div className={`${styles.sideControls} ${isFullscreen ? styles.sideControlsFullscreen : ""}`}> */}
         <div
-          className={`${styles.sideControls} ${
-            isFullscreen ? styles.sideControlsFullscreen : ""
-          } ${isMobile ? styles.sideControlsMobile : ""}`}
+          className={`${styles.sideControls} ${isFullscreen ? styles.sideControlsFullscreen : ""
+            } ${isMobile ? styles.sideControlsMobile : ""}`}
         >
           {/* {pathData?.app && pathData?.app?.length > 0 && ( */}
           {appPath.length > 0 && (
@@ -4092,9 +4121,8 @@ export default function KeplerMap({
                 setActiveMode(activeMode === "app" ? null : "app");
                 setShowReplayPanel(true);
               }}
-              className={`${styles.sideBtn} ${
-                activeMode === "app" ? styles.sideBtnOrange : styles.sideBtnGray
-              }`}
+              className={`${styles.sideBtn} ${activeMode === "app" ? styles.sideBtnOrange : styles.sideBtnGray
+                }`}
             >
               <div className={styles.sideDotBox}>
                 <svg
@@ -4119,9 +4147,8 @@ export default function KeplerMap({
                 setActiveMode(activeMode === "sim" ? null : "sim");
                 setShowReplayPanel(true);
               }}
-              className={`${styles.sideBtn} ${
-                activeMode === "sim" ? styles.sideBtnPurple : styles.sideBtnGray
-              }`}
+              className={`${styles.sideBtn} ${activeMode === "sim" ? styles.sideBtnPurple : styles.sideBtnGray
+                }`}
             >
               {" "}
               {/* Added a new color class for SIM */}
@@ -4144,9 +4171,8 @@ export default function KeplerMap({
                   setShowFence((v) => !v);
                 }
               }}
-              className={`${styles.sideBtn} ${
-                showFence ? styles.iconBtnActiveGreen : styles.sideBtnGray
-              }`}
+              className={`${styles.sideBtn} ${showFence ? styles.iconBtnActiveGreen : styles.sideBtnGray
+                }`}
             >
               {/* Added a new color class for SIM */}
               <div className={styles.sideDotBox}>
@@ -4165,9 +4191,8 @@ export default function KeplerMap({
           {fastagPath.length > 0 && (
             <button
               onClick={() => setShowFastag((v) => !v)}
-              className={`${styles.sideBtn} ${
-                showFastag ? styles.sideBtnFastag : styles.sideBtnGray
-              }`}
+              className={`${styles.sideBtn} ${showFastag ? styles.sideBtnFastag : styles.sideBtnGray
+                }`}
             >
               {/* Added a new color class for SIM */}
               <div className={styles.sideDotBox}>
@@ -4189,9 +4214,8 @@ export default function KeplerMap({
                 setActiveMode(activeMode === "gps" ? null : "gps");
                 setShowReplayPanel(true);
               }}
-              className={`${styles.sideBtn} ${
-                activeMode === "gps" ? styles.sideBtnGreen : styles.sideBtnGray
-              }`}
+              className={`${styles.sideBtn} ${activeMode === "gps" ? styles.sideBtnGreen : styles.sideBtnGray
+                }`}
             >
               <div className={styles.sideDotBox}>
                 <svg
@@ -4212,9 +4236,8 @@ export default function KeplerMap({
           {haltPoints.length > 0 && !isSupplier && (
             <button
               onClick={() => setShowHalt((prev) => !prev)}
-              className={`${styles.sideBtn} ${
-                showHalt ? styles.sideBtnRed : styles.sideBtnGray
-              }`}
+              className={`${styles.sideBtn} ${showHalt ? styles.sideBtnRed : styles.sideBtnGray
+                }`}
             >
               <div className={styles.sideDotBox}>
                 <svg
@@ -4232,9 +4255,8 @@ export default function KeplerMap({
           {deviationRoutes.length > 0 && !isSupplier && (
             <button
               onClick={() => setShowDeviations(!showDeviations)}
-              className={`${styles.sideBtn} ${
-                showDeviations ? styles.sideBtnOrange : styles.sideBtnGray
-              }`}
+              className={`${styles.sideBtn} ${showDeviations ? styles.sideBtnOrange : styles.sideBtnGray
+                }`}
             >
               {/* <div className={styles.sideDotBox}></div> */}
               <svg
@@ -4264,9 +4286,8 @@ export default function KeplerMap({
                   setShowDayRun((prev) => !prev);
                 }
               }}
-              className={`${styles.sideBtn} ${
-                showDayRun ? styles.sideBtnPink : styles.sideBtnGray
-              } ${!isFullscreen ? styles.disabled : ""}`}
+              className={`${styles.sideBtn} ${showDayRun ? styles.sideBtnPink : styles.sideBtnGray
+                } ${!isFullscreen ? styles.disabled : ""}`}
               disabled={!isFullscreen}
               title={
                 !isFullscreen
@@ -4304,9 +4325,8 @@ export default function KeplerMap({
         {/* Day Run Table */}
         {showDayRun && !isSupplier && (
           <div
-            className={`${styles.dayRunTable} ${
-              showMagnifierSettings ? styles.statusShift : ""
-            } ${!isFullscreen ? styles.smallText : ""}`}
+            className={`${styles.dayRunTable} ${showMagnifierSettings ? styles.statusShift : ""
+              } ${!isFullscreen ? styles.smallText : ""}`}
           >
             <div className={styles.tableHeader}>
               <h3>Day Run Details</h3>

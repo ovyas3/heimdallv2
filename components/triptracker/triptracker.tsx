@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import {
   Truck,
@@ -23,6 +23,7 @@ import {
   // Add this for Fastag
   AppWindow,
   AlertOctagon,
+  Layers,
 } from "lucide-react";
 import { HelpModal } from "./help-modal";
 import {
@@ -93,17 +94,21 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     finished_at: string;
   }
   interface FormattedLocation {
-    id?: string; // Add this if you use it for the key
+    id?: string;
     kind?: "pickup" | "drop";
     name: string;
+    reference?: string;
+    area?: string;
     date: string;
     time: string;
   }
   // Add this interface along with your other interfaces
   interface FormattedStop {
-    id?: string; // Add if used for the key
+    id?: string;
     kind: "pickup" | "drop";
     name: string;
+    reference?: string;
+    area?: string;
     date: string;
     time: string;
   }
@@ -111,6 +116,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     id: string;
     name: string;
     address: string;
+    reference?: string;
+    area?: string;
     geo_point: {
       coordinates: number[];
     };
@@ -125,7 +132,14 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     "vehicle"
   );
   const [tollHistoryData, setTollHistoryData] = useState<any[]>([]);
+  const [simHistoryData, setSimHistoryData] = useState<any[]>([]);
   const [haltData, setHaltData] = useState<any[]>([]);
+  const [customTooltip, setCustomTooltip] = useState<{
+    x: number;
+    y: number;
+    text: string;
+    align?: "left" | "right";
+  } | null>(null);
   // Add this with your other useState hooks
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   // Add this line with your other useState hooks
@@ -141,14 +155,36 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSatelliteViewLocal, setIsSatelliteViewLocal] = useState(false);
+
+  // Initialize from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("map-theme");
+      if (saved === "satellite") {
+        setIsSatelliteViewLocal(true);
+      } else if (saved === "osm-light") {
+        setIsSatelliteViewLocal(false);
+      }
+    }
+  }, []);
+
+  const handleToggleTheme = useCallback(() => {
+    setIsSatelliteViewLocal((prev) => {
+      const next = !prev;
+      localStorage.setItem("map-theme", next ? "satellite" : "osm-light");
+      return next;
+    });
+  }, []);
+
   const [mapPoints, setMapPoints] = useState<MapPoint[]>([]);
   const [intermediates, setIntermediates] = useState<FormattedStop[]>([]);
 
-  useEffect(() => {
-    if (isSupplierView) {
-      setMapState((prev) => ({ ...prev, mode: "map" }));
-    }
-  }, [isSupplierView]);
+  // No-op here, merged into below effect
+  // useEffect(() => {
+  //   if (isSupplierView) {
+  //     setMapState((prev) => ({ ...prev, mode: "map" }));
+  //   }
+  // }, [isSupplierView]);
 
   const [isMapFull, setIsMapFull] = useState(false); // <-- NEW state
   const [mapMode, setMapMode] = useState<"location" | "map">("location");
@@ -197,7 +233,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   // ] as any
 
   const [activeTimelineTab, setActiveTimelineTab] = useState<
-    "timeline" | "tollHistory" | "documents"
+    "timeline" | "tollHistory" | "documents" | "simHistory"
   >("timeline");
   // const ePods = [
   //   { id: "epod1", name: "ePOD - Gate 3", url: "/epods/epod1.jpg", thumb: "/epods/epod1-thumb.jpg" },
@@ -412,7 +448,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
   // This useEffect handles the main shipment data
   const [pathData, setPathData] = useState({ sim: [], app: [], gps: [] });
+  const lastFetchId = useRef("");
   useEffect(() => {
+    if (!uniqueCode) return;
+    const currentFetchId = `${uniqueCode}-${refreshTrigger}`;
+    if (lastFetchId.current === currentFetchId) return;
+    lastFetchId.current = currentFetchId;
+
     const fetchShipmentData = async () => {
       try {
         setLoading(true);
@@ -448,6 +490,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
           allPickups.slice(1).map((p: ShipmentStop) => ({
             ...p,
             name: p.location.name,
+            reference: p.location.reference,
+            area: p.location.area,
             date: formatTimestamp(p.finished_at),
             time: formatTimestamp(p.finished_at),
           }))
@@ -458,6 +502,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
           allDeliveries.slice(0, -1).map((d: ShipmentStop) => ({
             ...d,
             name: d.location.name,
+            reference: d.location.reference,
+            area: d.location.area,
             date: formatTimestamp(d.finished_at),
             time: formatTimestamp(d.finished_at),
           }))
@@ -511,6 +557,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
   // This useEffect handles the toll history data
   useEffect(() => {
+    if (!apiData) return;
     const fetchTollHistory = async () => {
       try {
         const tollResponse = await fetch(
@@ -527,10 +574,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchTollHistory();
-  }, [refreshTrigger, uniqueCode]);
+  }, [refreshTrigger, uniqueCode, apiData]);
 
   // This useEffect handles the trails data
   useEffect(() => {
+    if (!apiData) return;
     const fetchTrails = async () => {
       try {
         const trailsResponse = await fetch(
@@ -548,10 +596,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchTrails();
-  }, [refreshTrigger, uniqueCode]);
+  }, [refreshTrigger, uniqueCode, apiData]);
 
   // This useEffect handles the ePOD data
   useEffect(() => {
+    if (!apiData || isSupplierView) return;
     const fetchEpods = async () => {
       try {
         const epodsResponse = await fetch(
@@ -572,10 +621,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchEpods();
-  }, [refreshTrigger, uniqueCode]);
+  }, [refreshTrigger, uniqueCode, apiData, isSupplierView]);
 
   // This useEffect handles the halt data
   useEffect(() => {
+    if (!apiData) return;
     const fetchHaltData = async () => {
       try {
         const haltResponse = await fetch(
@@ -592,7 +642,33 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchHaltData();
-  }, [refreshTrigger, uniqueCode]);
+  }, [refreshTrigger, uniqueCode, apiData]);
+
+  // This useEffect handles the SIM History data
+  useEffect(() => {
+    if (!apiData || !apiData.trip_tracker?.methods?.includes("SIM")) return;
+    const fetchSimHistory = async () => {
+      try {
+        const simHistoryResponse = await fetch(
+          `https://live-api.instavans.com/api/raccoon/sim-trail?unique_code=${encodeURIComponent(
+            uniqueCode ?? ""
+          )}`
+        );
+        if (!simHistoryResponse.ok) {
+          // If 404 or other error, we might just have empty data, but let's log it
+          console.log(`SIM History API status: ${simHistoryResponse.status}`);
+        }
+
+        if (simHistoryResponse.ok) {
+          const simData = await simHistoryResponse.json();
+          setSimHistoryData(simData.data || []);
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch SIM history data:", err);
+      }
+    };
+    fetchSimHistory();
+  }, [refreshTrigger, uniqueCode, apiData]);
 
   // This useEffect manages a timeout to hide the PDF loader
   useEffect(() => {
@@ -814,15 +890,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
           prediction = "on-time";
           context = `${distanceProgressPercent}% complete • On track for on-time delivery`;
         } else {
-          context = `${distanceProgressPercent}% complete • Expected ${earlyDays} day${
-            earlyDays > 1 ? "s" : ""
-          } early`;
+          context = `${distanceProgressPercent}% complete • Expected ${earlyDays} day${earlyDays > 1 ? "s" : ""
+            } early`;
         }
       } else {
         prediction = "delayed";
-        context = `${distanceProgressPercent}% complete • Expected ${predictedDelayDays} day${
-          predictedDelayDays > 1 ? "s" : ""
-        } delay`;
+        context = `${distanceProgressPercent}% complete • Expected ${predictedDelayDays} day${predictedDelayDays > 1 ? "s" : ""
+          } delay`;
       }
 
       // Add performance context
@@ -909,11 +983,31 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     <Building2 className="customer-icon" />
                   </div>
 
-                  <div>
-                    <div className="customer-name">
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      className="customer-name"
+                      title={isSupplierView
+                        ? (apiData?.supplier?.parent_name || "")
+                        : (lastDelivery?.location?.name || "")}
+                    >
                       {isSupplierView
-                        ? toTitleCase(apiData?.supplier?.parent_name) || "N/A"
-                        : toTitleCase(lastDelivery?.location?.name) || "N/A"}
+                        ? (() => {
+                          const shortCode =
+                            apiData?.shipper?.parent?.short_code ||
+                            apiData?.supplier?.parent?.short_code ||
+                            apiData?.supplier?.short_code;
+                          return apiData?.supplier?.parent_name
+                            ? `${shortCode ? `${shortCode} - ` : ""}${toTitleCase(
+                              apiData.supplier.parent_name
+                            )}`
+                            : "N/A";
+                        })()
+                        : [
+                          lastDelivery?.location?.reference,
+                          toTitleCase(lastDelivery?.location?.name || ""),
+                        ]
+                          .filter(Boolean)
+                          .join(" - ") || "N/A"}
                     </div>
                     <div className="customer-role">
                       {isSupplierView ? "Supplier" : "Customer"}
@@ -1152,6 +1246,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     showGeofence
                     isFullscreen
                     isSatelliteView={isSatelliteViewLocal}
+                    onToggleSatellite={handleToggleTheme}
                     onToggleFullscreen={() => setIsMapFull(false)}
                     unique_code={uniqueCode}
                     geoFenceData={apiData?.geo_fence}
@@ -1174,9 +1269,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
               {/* Left Sidebar */}
               <div className="sidebar-left">
                 <div
-                  className={`card ${
-                    collapsedSections.info ? "collapsed" : ""
-                  }`}
+                  className={`card ${collapsedSections.info ? "collapsed" : ""
+                    }`}
                 >
                   <div className="card-header">
                     {/* NEW — Tabs, same pattern as your timeline tabs */}
@@ -1184,18 +1278,16 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       {!isSupplierView && (
                         <>
                           <button
-                            className={`tab-button ${
-                              activeInfoTab === "vehicle" ? "active" : ""
-                            }`}
+                            className={`tab-button ${activeInfoTab === "vehicle" ? "active" : ""
+                              }`}
                             onClick={() => setActiveInfoTab("vehicle")}
                           >
                             <Truck className="card-icon" />
                             Vehicle
                           </button>
                           <button
-                            className={`tab-button ${
-                              activeInfoTab === "metadata" ? "active" : ""
-                            }`}
+                            className={`tab-button ${activeInfoTab === "metadata" ? "active" : ""
+                              }`}
                             onClick={() => setActiveInfoTab("metadata")}
                           >
                             <Package className="tab-icon" />
@@ -1295,7 +1387,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                           <div className="detail-item-group">
                             <div className="detail-item">
-                              <span className="detail-label">Waybill No</span>
+                              <span className="detail-label">eWay Bills</span>
                               <div className="detail-value-with-action">
                                 <div className="stacked-values">
                                   <span className="detail-value">
@@ -1316,9 +1408,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 {apiData?.eway_bill?.length > 1 && (
                                   <button
                                     className="expand-action-btn-circular"
-                                    onClick={() =>
-                                      setShowAllEwayBills(!showAllEwayBills)
-                                    }
+                                    onClick={() => setShowAllEwayBills(!showAllEwayBills)}
                                   >
                                     {showAllEwayBills ? (
                                       <MinusIcon size={16} />
@@ -1355,7 +1445,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           <div className="detail-item">
                             <span className="detail-label">Material</span>
                             <span className="detail-value">
-                              {toTitleCase(apiData?.materials?.[0]?.name) || "N/A"}
+                              {apiData?.materials?.[0]?.name || "N/A"}
                             </span>
                           </div>
                         </div>
@@ -1383,6 +1473,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 </span>
                               </div>
                               <div className="detail-item">
+                                <span className="detail-label">GPS Provider</span>
+                                <span className="detail-value">
+                                  {toTitleCase(apiData?.driver?.gps?.provider) || "N/A"}
+                                </span>
+                              </div>
+                              <div className="detail-item">
                                 <span className="detail-label">Type</span>
                                 <span className="detail-value">
                                   {apiData?.driver?.vehicle_type?.name || "N/A"}
@@ -1391,14 +1487,10 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               <div className="detail-item">
                                 <span className="detail-label">Transporter</span>
                                 <span className="detail-value">
-                                  {apiData?.carrier?.parent_name || "N/A"}
-                                </span>
-                              </div>
-                              <div className="detail-item">
-                                <span className="detail-label">Day run</span>
-                                <span className="detail-value">
-                                  {apiData?.dayrun?.avg_distance
-                                    ? `${apiData.dayrun.avg_distance.toFixed(2)} Km`
+                                  {apiData?.carrier?.parent_name
+                                    ? `${apiData.carrier.parent_name} - ${toTitleCase(
+                                      apiData.carrier.name
+                                    )}`
                                     : "N/A"}
                                 </span>
                               </div>
@@ -1415,9 +1507,22 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                                 <div className="detail-value">
                                   {isSupplierView
-                                    ? toTitleCase(apiData?.supplier?.parent_name)
-                                    : toTitleCase(lastDelivery?.location?.name) ||
-                                      "N/A"}
+                                    ? apiData?.supplier?.parent_name
+                                      ? (() => {
+                                        const shortCode =
+                                          apiData.shipper?.parent?.short_code ||
+                                          apiData.supplier?.parent?.short_code;
+                                        return `${shortCode ? `${shortCode} - ` : ""}${toTitleCase(
+                                          apiData.supplier.parent_name
+                                        )}`;
+                                      })()
+                                      : "N/A"
+                                    : [
+                                      lastDelivery?.location?.reference,
+                                      toTitleCase(lastDelivery?.location?.name || ""),
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" - ") || "N/A"}
                                 </div>
                               </div>
                               <div className="detail-item">
@@ -1433,7 +1538,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 <div className="detail-item">
                                   <div className="detail-label">Material</div>
                                   <div className="detail-value">
-                                    {toTitleCase(apiData?.materials?.[0]?.name) ||
+                                    {apiData?.materials?.[0]?.name ||
                                       "N/A"}
                                   </div>
                                 </div>
@@ -1449,13 +1554,21 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 </div>
                               </div>
                               <div className="detail-item">
+                                <span className="detail-label">Day run</span>
+                                <span className="detail-value">
+                                  {apiData?.dayrun?.avg_distance
+                                    ? `${apiData.dayrun.avg_distance.toFixed(2)} Km`
+                                    : "N/A"}
+                                </span>
+                              </div>
+                              {/* <div className="detail-item">
                                 <div className="detail-label">Quantity</div>
                                 <div className="detail-value">
                                   {" "}
                                   {totalQuantity !== null ? totalQuantity : "N/A"}
                                   {" MT"}
                                 </div>
-                              </div>
+                              </div> */}
                             </div>
                           )}
                         </>
@@ -1464,9 +1577,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   )}
                 </div>
                 <div
-                  className={`card ${
-                    collapsedSections.locations ? "collapsed" : ""
-                  }`}
+                  className={`card ${collapsedSections.locations ? "collapsed" : ""
+                    }`}
                 >
                   <div className="card-header">
                     <div className="card-title">
@@ -1500,11 +1612,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         <div className="location-details">
                           <div className="location-type">{isSupplierView ? "Source city" : "Origin"}</div>
                           <div className="location-name">
-                            {toTitleCase(
-                              isSupplierView
-                                ? originLocation?.location?.city || "N/A"
-                                : originLocation?.location?.name || "N/A"
-                            )}
+                            {isSupplierView
+                              ? toTitleCase(originLocation?.location?.city || "N/A")
+                              : [
+                                originLocation?.location?.reference,
+                                toTitleCase(originLocation?.location?.name || ""),
+                                originLocation?.location?.area
+                              ].filter(Boolean).join(" - ") || "N/A"}
                           </div>
 
                           {/* Gate In Time */}
@@ -1570,8 +1684,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <div className="location-name">
                               {isSupplierView
                                 ? "JSL Jajpur"
-                                : toTitleCase(finalDestination?.location?.name) ||
-                                  "N/A"}
+                                : [
+                                  finalDestination?.location?.reference,
+                                  toTitleCase(finalDestination?.location?.name || ""),
+                                  finalDestination?.location?.area
+                                ].filter(Boolean).join(" - ") || "N/A"}
                             </div>
 
                             {dropGateInTime && (
@@ -1598,16 +1715,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <button
                               className="more-badge dest-badge"
                               onClick={() => setShowAllDests(true)}
-                              aria-label={`Show ${
-                                destinations.length
-                              }} more destination${
-                                destinations.length > 1 ? "s" : ""
-                              }`}
-                              title={`Show ${
-                                destinations.length
-                              } more destination${
-                                destinations.length > 1 ? "s" : ""
-                              }`}
+                              aria-label={`Show ${destinations.length
+                                }} more destination${destinations.length > 1 ? "s" : ""
+                                }`}
+                              title={`Show ${destinations.length
+                                } more destination${destinations.length > 1 ? "s" : ""
+                                }`}
                               style={{
                                 position: "absolute",
                                 top: "12px",
@@ -1627,28 +1740,27 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
               <div className="center-section">
                 {!isSupplierView && (
                   <div className="kpi-strip">
-                  {/* <div className="kpi-card early  tooltip" onClick={() => handleKpiClick("eta-delta")}> */}
-                  <div
-                    className={`kpi-card early tooltip ${
-                      openTooltipId === "eta-delta" ? "tooltip-open" : ""
-                    }`}
-                    onClick={() => handleKpiClick("eta-delta")}
-                  >
-                    <div className="kpi-icon-badge">
-                      <Clock className="kpi-icon" />
-                    </div>
-                    {apiData?.latest_status == "CPTD" ? (
-                      <div className="kpi-value" style={{ fontSize: "14px" }}>
-                        {" "}
-                        {etaDelta.isLate
-                          ? `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
-                          : `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`}
+                    {/* <div className="kpi-card early  tooltip" onClick={() => handleKpiClick("eta-delta")}> */}
+                    <div
+                      className={`kpi-card early tooltip ${openTooltipId === "eta-delta" ? "tooltip-open" : ""
+                        }`}
+                      onClick={() => handleKpiClick("eta-delta")}
+                    >
+                      <div className="kpi-icon-badge">
+                        <Clock className="kpi-icon" />
                       </div>
-                    ) : (
-                      <div className="kpi-value" style={{ fontSize: "14px" }}>
-                        {shipmentStatus}
-                      </div>
-                    )}
+                      {apiData?.latest_status == "CPTD" ? (
+                        <div className="kpi-value" style={{ fontSize: "14px" }}>
+                          {" "}
+                          {etaDelta.isLate
+                            ? `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
+                            : `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`}
+                        </div>
+                      ) : (
+                        <div className="kpi-value" style={{ fontSize: "14px" }}>
+                          {shipmentStatus}
+                        </div>
+                      )}
 
                     <div className="kpi-label">
                       {" "}
@@ -1693,68 +1805,67 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   </div>
                   {/* 
           <div className="kpi-card distance tooltip" onClick={() => handleKpiClick("distance-metrics")}> */}
-                  <div
-                    className={`kpi-card distance tooltip ${
-                      openTooltipId === "distance-metrics" ? "tooltip-open" : ""
-                    }`}
-                    onClick={() => handleKpiClick("distance-metrics")}
-                  >
-                    <div className="kpi-icon-badge">
-                      <Ruler className="kpi-icon" />
-                    </div>
-                    <div className="kpi-distance-metrics">
-                      <div className="distance-grid">
-                        <div className="distance-item">
-                          <div className="distance-value">
-                            {totalDistanceKm}
+                    <div
+                      className={`kpi-card distance tooltip ${openTooltipId === "distance-metrics" ? "tooltip-open" : ""
+                        }`}
+                      onClick={() => handleKpiClick("distance-metrics")}
+                    >
+                      <div className="kpi-icon-badge">
+                        <Ruler className="kpi-icon" />
+                      </div>
+                      <div className="kpi-distance-metrics">
+                        <div className="distance-grid">
+                          <div className="distance-item">
+                            <div className="distance-value">
+                              {totalDistanceKm}
+                            </div>
+                            <div className="distance-label">Total (km)</div>
                           </div>
-                          <div className="distance-label">Total (km)</div>
+                          <div className="distance-item">
+                            <div className="distance-value traveled">
+                              {travelledDistanceKm}
+                            </div>
+                            <div className="distance-label">Travelled (km)</div>
+                          </div>
+                          <div className="distance-item">
+                            <div className="distance-value remaining">
+                              {remainingDistanceKm}
+                            </div>
+                            <div className="distance-label">Remaining (km)</div>
+                          </div>
                         </div>
-                        <div className="distance-item">
-                          <div className="distance-value traveled">
-                            {travelledDistanceKm}
-                          </div>
-                          <div className="distance-label">Travelled (km)</div>
-                        </div>
-                        <div className="distance-item">
-                          <div className="distance-value remaining">
-                            {remainingDistanceKm}
-                          </div>
-                          <div className="distance-label">Remaining (km)</div>
+                        <div className="progress-bar">
+                          <div
+                            className="progress-bar-fill"
+                            style={{
+                              width: `${Math.min(progressPercentage, 100)}%`,
+                              transition: "width 0.8s ease-in-out",
+                              background:
+                                progressPercentage > 0
+                                  ? "linear-gradient(90deg, #22c55e 0%, #16a34a 50%, #15803d 100%)"
+                                  : "#e5e7eb",
+                              boxShadow:
+                                progressPercentage > 0
+                                  ? "0 0 10px rgba(34, 197, 94, 0.3)"
+                                  : "none",
+                              animation:
+                                progressPercentage > 0
+                                  ? "progressPulse 2s ease-in-out infinite alternate"
+                                  : "none",
+                            }}
+                          ></div>
                         </div>
                       </div>
-                      <div className="progress-bar">
-                        <div
-                          className="progress-bar-fill"
-                          style={{
-                            width: `${Math.min(progressPercentage, 100)}%`,
-                            transition: "width 0.8s ease-in-out",
-                            background:
-                              progressPercentage > 0
-                                ? "linear-gradient(90deg, #22c55e 0%, #16a34a 50%, #15803d 100%)"
-                                : "#e5e7eb",
-                            boxShadow:
-                              progressPercentage > 0
-                                ? "0 0 10px rgba(34, 197, 94, 0.3)"
-                                : "none",
-                            animation:
-                              progressPercentage > 0
-                                ? "progressPulse 2s ease-in-out infinite alternate"
-                                : "none",
-                          }}
-                        ></div>
+                      <div className="kpi-label">
+                        {apiData?.latest_status == "ITNS" ? (
+                          <>Distance Metrics ({progressPercentage.toFixed(0)}%)</>
+                        ) : (
+                          ""
+                        )}
                       </div>
-                    </div>
-                    <div className="kpi-label">
-                      {apiData?.latest_status == "ITNS" ? (
-                        <>Distance Metrics ({progressPercentage.toFixed(0)}%)</>
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                    {/* <span className="tooltip-content">Total journey: 1450km completed</span> */}
-                    <div className="tooltip-content tooltip-lg">
-                      <div className="tooltip-title">Distance Metrics</div>
+                      {/* <span className="tooltip-content">Total journey: 1450km completed</span> */}
+                      <div className="tooltip-content tooltip-lg">
+                        <div className="tooltip-title">Distance Metrics</div>
 
                       <div className="tooltip-row">
                         <span className="tooltip-key">Total:</span>
@@ -1804,25 +1915,24 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     </div>
                   </div> */}
 
-                  <div
-                    className={`kpi-card stoppages tooltip ${
-                      openTooltipId === "long-alerts" ? "tooltip-open" : ""
-                    }`}
-                    onClick={() => handleKpiClick("halt-alerts")}
-                  >
-                    <div className="kpi-icon-badge">
-                      <PauseCircle className="kpi-icon" />
-                    </div>
-                    <div className="kpi-value">{totalStoppagesCount || 0}</div>
-                    <div className="kpi-label">
-                      Stoppage{totalStoppagesCount === 1 ? "" : "s"}{" "}
-                      {parseInt(totalHaltDurationText, 10) > 9 && (
-                        <span> (&gt;9 hrs)</span>
-                      )}
-                    </div>
-                    {/* <span className="tooltip-content">3 extended stops during journey</span> */}
-                    <div className="tooltip-content tooltip-lg">
-                      <div className="tooltip-title">Halt Alerts</div>
+                    <div
+                      className={`kpi-card stoppages tooltip ${openTooltipId === "halt-alerts" ? "tooltip-open" : ""
+                        }`}
+                      onClick={() => handleKpiClick("halt-alerts")}
+                    >
+                      <div className="kpi-icon-badge">
+                        <PauseCircle className="kpi-icon" />
+                      </div>
+                      <div className="kpi-value">{totalStoppagesCount || 0}</div>
+                      <div className="kpi-label">
+                        Stoppage{totalStoppagesCount === 1 ? "" : "s"}{" "}
+                        {parseInt(totalHaltDurationText, 10) > 9 && (
+                          <span> (&gt;9 hrs)</span>
+                        )}
+                      </div>
+                      {/* <span className="tooltip-content">3 extended stops during journey</span> */}
+                      <div className="tooltip-content tooltip-lg">
+                        <div className="tooltip-title">Halt Alerts</div>
 
                       <div className="tooltip-row">
                         <span className="tooltip-key">
@@ -1858,76 +1968,72 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     </div>
                   </div>
 
-                  {/* <div className="kpi-card deviations tooltip" onClick={() => handleKpiClick("route-deviations")}> */}
-                  <div
-                    className={`kpi-card deviations tooltip ${
-                      openTooltipId === "route-deviations" ? "tooltip-open" : ""
-                    }`}
-                    onClick={() => handleKpiClick("route-deviations")}
-                  >
-                    <div className="kpi-icon-badge">
-                      <GitBranch className="kpi-icon" />
-                    </div>
-                    <div className="kpi-value">{deviationCount}</div>
-                    <div className="kpi-label">
-                      Route deviation{deviationCount === 1 ? "" : "s"}
-                    </div>
-                    <div className="tooltip-content tooltip-lg">
-                      <div className="tooltip-title">Route Deviations</div>
-
-                      <div className="tooltip-row">
-                        <span className="tooltip-key">
-                          Total deviation{deviationCount === 1 ? "" : "s"}:
-                        </span>
-                        <span className="tooltip-val">{deviationCount}</span>
+                    {/* <div className="kpi-card deviations tooltip" onClick={() => handleKpiClick("route-deviations")}> */}
+                    <div
+                      className={`kpi-card deviations tooltip ${openTooltipId === "route-deviations" ? "tooltip-open" : ""
+                        }`}
+                      onClick={() => handleKpiClick("route-deviations")}
+                    >
+                      <div className="kpi-icon-badge">
+                        <GitBranch className="kpi-icon" />
                       </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-key">Distance off-route:</span>
-                        <span className="tooltip-val">
-                          {totalDeviationDistance.toFixed(1)} km
-                        </span>
+                      <div className="kpi-value">{deviationCount}</div>
+                      <div className="kpi-label">
+                        Route deviation{deviationCount === 1 ? "" : "s"}
                       </div>
+                      <div className="tooltip-content tooltip-lg">
+                        <div className="tooltip-title">Route Deviations</div>
+
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">
+                            Total deviation{deviationCount === 1 ? "" : "s"}:
+                          </span>
+                          <span className="tooltip-val">{deviationCount}</span>
+                        </div>
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Distance off-route:</span>
+                          <span className="tooltip-val">
+                            {totalDeviationDistance.toFixed(1)} km
+                          </span>
+                        </div>
+                      </div>
+                      {/* <span className="tooltip-content">2 deviations from planned route</span> */}
                     </div>
-                    {/* <span className="tooltip-content">2 deviations from planned route</span> */}
+                    <div
+                      className={`kpi-card halt-alert tooltip ${openTooltipId === "overspeed" ? "tooltip-open" : ""
+                        }`}
+                      onClick={() => handleKpiClick("overspeed")}
+                    >
+                      <div className="kpi-icon-badge">
+                        <AlertOctagon className="kpi-icon" />
+                      </div>
+                      <div className="kpi-value">
+                        {apiData?.trip_tracker?.no_of_overspeeding ?? 0}
+                      </div>
+                      <div className="kpi-label">Over Speed</div>
+                      <div className="tooltip-content tooltip-lg">
+                        <div className="tooltip-title">Speed Details</div>
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Avg. Journey Speed :</span>
+                          <span className="tooltip-val">
+                            {apiData?.trip_tracker?.avg_speed ?? 'N/A'} km/hr
+                          </span>
+                        </div>
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Over Speed :</span>
+                          <span className="tooltip-val">
+                            {apiData?.trip_tracker?.no_of_overspeeding ?? 0} times
+                          </span>
+                        </div>
+                      </div>
+
+                    </div>
                   </div>
-                  <div
-                    className="kpi-card halt-alert tooltip"
-                    onClick={() => handleKpiClick("route-deviations")}
-                  >
-                    <div className="kpi-icon-badge">
-                      <AlertOctagon className="kpi-icon" />
-                    </div>
-                    <div className="kpi-value">
-                      {apiData?.trip_tracker?.no_of_overspeeding || 0}
-                    </div>
-                    <div className="kpi-label">Over Speed</div>
-                    {/* <span className="tooltip-content">3 extended stops during journey</span> */}
-                    {/* <div className="tooltip-content tooltip-lg">
-      <div className="tooltip-title">Halt Alerts</div>
-
-      <div className="tooltip-row">
-        <span className="tooltip-key">Total Stoppages:</span>
-        <span className="tooltip-val">3</span>
-      </div>
-      <div className="tooltip-row">
-        <span className="tooltip-key">Duration:</span>
-        <span className="tooltip-val">2h 45min total</span>
-      </div>
-      <div className="tooltip-row">
-        <span className="tooltip-key">Longest:</span>
-        <span className="tooltip-val">1h 30min at Nashik</span>
-      </div>
-
-
-    </div> */}
-                  </div>
-                </div>
-              )}
+                )}
 
                 <div
-                  className={`card map-card ${
-                    collapsedSections.liveTracking ? "collapsed" : ""
-                  }`}
+                  className={`card map-card ${collapsedSections.liveTracking ? "collapsed" : ""
+                    }`}
                 >
                   <div className="card-header">
                     <div className="card-title">
@@ -1960,9 +2066,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       <div className="map-buttons">
                         <button
                           // The className still changes, making the button blue or white
-                          className={`map-button ${
-                            mapMode === "map" ? "active" : "outline"
-                          }`}
+                          className={`map-button ${mapMode === "map" ? "active" : "outline"
+                            }`}
                           // The onClick handler still toggles the view
                           onClick={handleToggleMapView}
                         >
@@ -2072,6 +2177,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             showGeofence
                             isFullscreen={false}
                             isSatelliteView={isSatelliteViewLocal}
+                            onToggleSatellite={handleToggleTheme}
                             onToggleFullscreen={() => setIsMapFull(true)}
                             unique_code={uniqueCode}
                             geoFenceData={apiData?.geo_fence}
@@ -2405,35 +2511,41 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                 )}
 
                 <div
-                  className={`card timeline-card ${
-                    collapsedSections.timeline ? "collapsed" : ""
-                  }`}
+                  className={`card timeline-card ${collapsedSections.timeline ? "collapsed" : ""
+                    }`}
                 >
                   <div className="card-header timeline-header">
                     <div className="tab-container">
                       <button
-                        className={`tab-button ${
-                          activeTimelineTab === "timeline" ? "active" : ""
-                        }`}
+                        className={`tab-button ${activeTimelineTab === "timeline" ? "active" : ""
+                          }`}
                         onClick={() => setActiveTimelineTab("timeline")}
                       >
                         <Clock className="tab-icon" />
                         Timeline
                       </button>
                       <button
-                        className={`tab-button ${
-                          activeTimelineTab === "tollHistory" ? "active" : ""
-                        }`}
+                        className={`tab-button ${activeTimelineTab === "tollHistory" ? "active" : ""
+                          }`}
                         onClick={() => setActiveTimelineTab("tollHistory")}
                       >
                         <CreditCard className="tab-icon" />
                         Toll History
                       </button>
+                      {apiData?.trip_tracker?.methods?.includes("SIM") && (
+                        <button
+                          className={`tab-button ${activeTimelineTab === "simHistory" ? "active" : ""
+                            }`}
+                          onClick={() => setActiveTimelineTab("simHistory")}
+                        >
+                          <Smartphone className="tab-icon" />
+                          SIM History
+                        </button>
+                      )}
                       {!isSupplierView && (
                         <button
-                          className={`tab-button ${
-                            activeTimelineTab === "documents" ? "active" : ""
-                          }`}
+                          className={`tab-button ${activeTimelineTab === "documents" ? "active" : ""
+                            }`}
                           onClick={() => setActiveTimelineTab("documents")}
                         >
                           <FileText className="tab-icon" />
@@ -2556,6 +2668,77 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         </div>
                       )}
 
+                      {activeTimelineTab === "simHistory" && (
+                        <div className="toll-history-section scrollable-container">
+                          {simHistoryData && simHistoryData.length > 0 ? (
+                            simHistoryData.map((trail: any, index: number) => (
+                              <div key={index} className="toll-history-item">
+                                <div className="toll-date">
+                                  <div>
+                                    {new Date(
+                                      trail?.timestamp
+                                    ).toLocaleDateString()}
+                                  </div>
+                                  <div className="toll-time">
+                                    {new Date(
+                                      trail?.timestamp
+                                    ).toLocaleTimeString()}
+                                  </div>
+                                </div>
+                                <div className="toll-icon-container">
+                                  <div style={{
+                                    width: 28,
+                                    height: 28,
+                                    background: '#f3f4f6',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}>
+                                    <Smartphone size={16} className="text-gray-600" />
+                                  </div>
+
+                                  {index < simHistoryData.length - 1 && (
+                                    <div className="toll-line"></div>
+                                  )}
+                                </div>
+                                <div className="toll-info" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, marginLeft: '12px' }}>
+
+                                  <div
+                                    className="toll-name"
+                                    style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'default' }}
+                                    onMouseEnter={(e) => {
+                                      const address = trail?.details?.address || trail?.event;
+                                      if (!address) return;
+                                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                      const isRightSide = rect.left > window.innerWidth / 2;
+                                      setCustomTooltip({
+                                        x: isRightSide ? rect.right : rect.left,
+                                        y: rect.bottom + 6,
+                                        text: address,
+                                        align: isRightSide ? "right" : "left",
+                                      });
+                                    }}
+                                    onMouseLeave={() => setCustomTooltip(null)}
+                                  >
+                                    {trail?.details?.address || trail?.event || "N/A"}
+                                  </div>
+                                  {trail?.details?.milestone && (
+                                    <div style={{ fontSize: '11px', color: '#6b7280' }}>
+                                      {trail.details.milestone.replace(/_/g, ' ')}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="no-data-message">
+                              No SIM history data available.
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {activeTimelineTab === "documents" && (
                         <div className="documents-grid scrollable-container">
                           {/* HIGHLIGHT: Replaced static button with a dynamic map */}
@@ -2597,98 +2780,153 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
               </div>
             </div>
           </div>
-          {(showAllStops || showAllDests) && (
-            <div
-              className="side-panel-overlay"
-              onClick={() => {
-                setShowAllStops(false);
-                setShowAllDests(false);
-              }}
-            >
-              <div className="side-panel" onClick={(e) => e.stopPropagation()}>
-                <div className="side-panel-header">
-                  <div className="side-panel-title">
-                    <MapPin className="card-icon" />
-                    {showAllStops
-                      ? "Additional Pickups"
-                      : "Additional Destinations"}
-                  </div>
-                  <button
-                    className="side-panel-close"
-                    onClick={() => {
-                      setShowAllStops(false);
-                      setShowAllDests(false);
-                    }}
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-                <div className="side-panel-body">
-                  {showAllStops &&
-                    intermediates.map((s, index) => (
-                      <div
-                        key={s.id || `pickup-${index}`}
-                        className="location-item origin"
-                      >
-                        <div className="location-icon-wrapper1">
-                          <div className="location-icon origin-icon1">
-                            <div className="location-dot1"></div>
-                          </div>
-                        </div>
-                        <div className="location-details">
-                          {/* <div className="location-type">Origin</div> */}
-                          <div className="location-name">
-                            {toTitleCase(s.name)}
-                          </div>
-                          {s.date && s.date !== "N/A" && (
-                            <div className="location-time">
-                              <Clock className="time-icon" />
-                              <span>{s.date}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
 
-                  {showAllDests &&
-                    destinations.map((d, index) => (
-                      <div
-                        key={d.id || `destination-${index}`}
-                        className="location-item destination"
-                      >
-                        <div className="location-icon-wrapper1">
-                          <div className="location-icon destination-icon1">
-                            <div className="location-dot1"></div>
-                          </div>
-                        </div>
-                        <div className="location-details">
-                          <div className="location-name">
-                            {toTitleCase(d.name)}
-                          </div>
-                          {d.date && d.date !== "N/A" && (
-                            <div className="location-time">
-                              <Clock className="time-icon" />
-                              <span>{d.date}</span>
+          {
+            (showAllStops || showAllDests) && (
+              <div
+                className="side-panel-overlay"
+                onClick={() => {
+                  setShowAllStops(false);
+                  setShowAllDests(false);
+                }}
+              >
+                <div className="side-panel" onClick={(e) => e.stopPropagation()}>
+                  <div className="side-panel-header">
+                    <div className="side-panel-title">
+                      <MapPin className="card-icon" />
+                      {showAllStops
+                        ? "Additional Pickups"
+                        : "Additional Destinations"}
+                    </div>
+                    <button
+                      className="side-panel-close"
+                      onClick={() => {
+                        setShowAllStops(false);
+                        setShowAllDests(false);
+                      }}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="side-panel-body">
+                    {showAllStops &&
+                      intermediates.map((s, index) => (
+                        <div
+                          key={s.id || `pickup-${index}`}
+                          className="location-item origin"
+                        >
+                          <div className="location-icon-wrapper1">
+                            <div className="location-icon origin-icon1">
+                              <div className="location-dot1"></div>
                             </div>
-                          )}
+                          </div>
+                          <div className="location-details">
+                            {/* <div className="location-type">Origin</div> */}
+                            <div className="location-name">
+                              {[
+                                s.reference,
+                                toTitleCase(s.name),
+                                s.area
+                              ].filter(Boolean).join(" - ") || "N/A"}
+                            </div>
+                            {s.date && s.date !== "N/A" && (
+                              <div className="location-time">
+                                <Clock className="time-icon" />
+                                <span>{s.date}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+
+                    {showAllDests &&
+                      destinations.map((d, index) => (
+                        <div
+                          key={d.id || `destination-${index}`}
+                          className="location-item destination"
+                        >
+                          <div className="location-icon-wrapper1">
+                            <div className="location-icon destination-icon1">
+                              <div className="location-dot1"></div>
+                            </div>
+                          </div>
+                          <div className="location-details">
+                            <div className="location-name">
+                              {[
+                                d.reference,
+                                toTitleCase(d.name),
+                                d.area
+                              ].filter(Boolean).join(" - ") || "N/A"}
+                            </div>
+                            {d.date && d.date !== "N/A" && (
+                              <div className="location-time">
+                                <Clock className="time-icon" />
+                                <span>{d.date}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </>
-      )}
+            )
+          }
 
-      <div className="mobile-only-help">
-        <HelpModal shipmentId="UHR0002-8" driverPhone="8660578908">
-          <button className="help-fab-button">
-            <MessageCircle className="help-fab-icon" />
-          </button>
-        </HelpModal>
-      </div>
-    </div>
+          {/* Floating Tooltip Portal */}
+          {
+            customTooltip && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: customTooltip.y,
+                  left: customTooltip.x,
+                  transform: customTooltip.align === "right" ? "translateX(-100%)" : "translateX(0)",
+                  backgroundColor: "#1e293b",
+                  color: "white",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "0.75rem",
+                  fontWeight: 500,
+                  zIndex: 99999,
+                  maxWidth: "300px",
+                  width: "max-content",
+                  whiteSpace: "normal",
+                  wordWrap: "break-word",
+                  pointerEvents: "none",
+                  boxShadow:
+                    "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                {customTooltip.text}
+                {/* Beak/Arrow - adjusted logic */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "-4px",
+                    left: customTooltip.align === "right" ? "auto" : "20px",
+                    right: customTooltip.align === "right" ? "20px" : "auto",
+                    width: "8px",
+                    height: "8px",
+                    backgroundColor: "#1e293b",
+                    transform: "rotate(45deg)",
+                  }}
+                />
+              </div>
+            )
+          }
+
+          <div className="mobile-only-help">
+            <HelpModal shipmentId="UHR0002-8" driverPhone="8660578908">
+              <button className="help-fab-button">
+                <MessageCircle className="help-fab-icon" />
+              </button>
+            </HelpModal>
+          </div>
+        </>
+      )
+      }
+    </div >
   );
 }
 

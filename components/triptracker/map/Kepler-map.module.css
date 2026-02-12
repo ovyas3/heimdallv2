@@ -608,7 +608,7 @@
   border: 1px solid rgba(255, 255, 255, 0.25);
 
   /* Monospace Font */
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: "Arial", sans-serif;
 
   /* Strong Shadow */
   box-shadow:
@@ -767,7 +767,7 @@
   font-weight: 700;
   color: rgba(255, 255, 255, 0.95);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: "Arial", sans-serif;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
