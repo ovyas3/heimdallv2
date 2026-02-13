@@ -992,14 +992,15 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     >
                       {isSupplierView
                         ? (() => {
-                          const shortCode =
-                            apiData?.shipper?.parent?.short_code ||
-                            apiData?.supplier?.parent?.short_code ||
-                            apiData?.supplier?.short_code;
+                          // const shortCode =
+                          //   apiData?.shipper?.parent?.short_code ||
+                          //   apiData?.supplier?.parent?.short_code ||
+                          //   apiData?.supplier?.short_code;
                           return apiData?.supplier?.parent_name
-                            ? `${shortCode ? `${shortCode} - ` : ""}${toTitleCase(
-                              apiData.supplier.parent_name
-                            )}`
+                            ? toTitleCase(apiData.supplier.parent_name)
+                            // ? `${shortCode ? `${shortCode} - ` : ""}${toTitleCase(
+                            //   apiData.supplier.parent_name
+                            // )}`
                             : "N/A";
                         })()
                         : [
@@ -1509,12 +1510,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                   {isSupplierView
                                     ? apiData?.supplier?.parent_name
                                       ? (() => {
-                                        const shortCode =
-                                          apiData.shipper?.parent?.short_code ||
-                                          apiData.supplier?.parent?.short_code;
-                                        return `${shortCode ? `${shortCode} - ` : ""}${toTitleCase(
-                                          apiData.supplier.parent_name
-                                        )}`;
+                                        // const shortCode =
+                                        //   apiData.shipper?.parent?.short_code ||
+                                        //   apiData.supplier?.parent?.short_code;
+                                        return toTitleCase(apiData.supplier.parent_name);
+                                        // return `${shortCode ? `${shortCode} - ` : ""}${toTitleCase(
+                                        //   apiData.supplier.parent_name
+                                        // )}`;
                                       })()
                                       : "N/A"
                                     : [
