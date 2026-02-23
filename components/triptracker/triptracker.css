@@ -95,6 +95,9 @@ body {
   margin-bottom: 0.5rem;
   transition: all 0.3s ease;
   flex-shrink: 0;
+  z-index: 100;
+  /* HIGHLIGHT: Ensure header is above main content for tooltips */
+  position: relative;
 }
 
 .header:hover {
@@ -872,7 +875,7 @@ body {
 
 .kpi-strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: 1.5fr 1.5fr 1fr 1fr;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   flex-shrink: 0;
@@ -2054,6 +2057,8 @@ body {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-secondary);
+  min-width: 80px;
+  /* ADDED — fixed width for alignment */
 }
 
 .metadata-details .detail-value {
@@ -4947,4 +4952,35 @@ timeline-icon path {
   left: auto;
   right: 20%;
   margin-left: 0;
+}
+
+.current-location-header {
+  /* border: 1px dashed #6b8cff;
+  background: #f7f9ff; */
+  /* padding: 10px 12px; */
+  /* border-radius: 8px; */
+  margin-bottom: 12px;
+}
+
+.location-text {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.location-text .label {
+  color: #3b6ef5;
+  font-weight: 600;
+}
+
+.update-time {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #555;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.update-label {
+  font-weight: 500;
 }

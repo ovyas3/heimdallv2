@@ -7,6 +7,7 @@ import {
   Clock,
   CheckCircle,
   Eye,
+  EyeOff,
   Package,
   RefreshCw,
   ChevronDown,
@@ -81,6 +82,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     tracking: true,
     info: false,
   });
+  const [showInfoCards, setShowInfoCards] = useState(true);
 
   interface MapPoint {
     coordinates: number[];
@@ -221,7 +223,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   }, []);
   // This single state object controls the entire map's behavior
   const [mapState, setMapState] = useState({
-    mode: isSupplierView ? "map" : "location", // 'location' or 'map'
+    mode: "map", // 'location' or 'map' - DEFAULT TO MAP
     showHalts: false,
     showDeviations: false,
   });
@@ -339,6 +341,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     // Check the kind of confirmation to determine the action
     if (confirm.kind === "stoppage") {
       setMapState({ mode: "map", showHalts: true, showDeviations: false });
+      setShowHaltPointsOnMap(true);
+      setShowStoppagesOnMap(true);
     } else if (confirm.kind === "deviation") {
       setMapState({ mode: "map", showHalts: false, showDeviations: true });
       // Handle deviation confirmation
@@ -568,7 +572,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         if (!tollResponse.ok)
           throw new Error(`Toll API error! Status: ${tollResponse.status}`);
         const tollData = await tollResponse.json();
-        setTollHistoryData(tollData.data);
+        setTollHistoryData(tollData.data ? [...tollData.data].reverse() : []);
       } catch (err: any) {
         console.error("Failed to fetch toll data:", err);
       }
@@ -661,7 +665,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
         if (simHistoryResponse.ok) {
           const simData = await simHistoryResponse.json();
-          setSimHistoryData(simData.data || []);
+          setSimHistoryData(simData.data ? [...simData.data].reverse() : []);
         }
       } catch (err: any) {
         console.error("Failed to fetch SIM history data:", err);
@@ -1038,13 +1042,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   {apiData?.trip_tracker?.methods?.includes("GPS") && (
                     <div className="icon-wrapper bg-green tooltip">
                       <Satellite className="icon" />
-                      {/* <span className="tooltip-content">GPS Active</span> */}
+                      <span className="tooltip-content">GPS Active</span>
                     </div>
                   )}
                   {apiData?.trip_tracker?.methods?.includes("APP") && (
                     <div className="icon-wrapper bg-orange tooltip">
                       <Smartphone className="icon" />
-                      {/* <span className="tooltip-content">Mobile Tracking</span> */}
+                      <span className="tooltip-content">Mobile Tracking</span>
                     </div>
                   )}
                   {apiData?.trip_tracker?.methods?.includes("SIM") && (
@@ -1056,6 +1060,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       >
                         <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                       </svg>
+                      <span className="tooltip-content">SIM Tracking</span>
                     </div>
                   )}
                   {/* Replace your old phone icon block with this one */}
@@ -1069,11 +1074,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       <path d="M1 18h18v-1H1v1zm3-1v-8h1v8H4zm4 0v-8h1v8H8zm4 0v-8h1v8h-1z" />
                       <path d="M13.5 9.5l-11-4v-1l11 4v1z" />
                     </svg>
+                    <span className="tooltip-content">FASTag</span>
                   </div>
                 </div>
                 <span className={`status-badge ${statusClass} tooltip`}>
                   {shipmentStatus}
-                  {/* <span className="tooltip-content">Shipment Status</span> */}
+                  <span className="tooltip-content">Shipment Status</span>
                 </span>
                 <div className="desktop-only-help">
                   <HelpModal shipmentId="UHR0002-8" driverPhone="8660578908">
@@ -1254,11 +1260,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     tripTrackerMethods={apiData?.trip_tracker?.methods || []}
                     shipmentData={apiData}
                     isSupplier={isSupplierView}
-                    // apiData={apiData}
-                    // tollHistoryData={tollHistoryData}
-                    // haltData={haltData}
-                    // timelineData={timelineData}
-                    // mapPoints={mapPoints}
+                    showInfoCards={showInfoCards}
+                    setShowInfoCards={setShowInfoCards}
+                  // apiData={apiData}
+                  // tollHistoryData={tollHistoryData}
+                  // haltData={haltData}
+                  // timelineData={timelineData}
+                  // mapPoints={mapPoints}
                   />
                 </div>
               </div>
@@ -1476,7 +1484,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               <div className="detail-item">
                                 <span className="detail-label">GPS Provider</span>
                                 <span className="detail-value">
-                                  {toTitleCase(apiData?.driver?.gps?.provider) || "N/A"}
+                                  {toTitleCase(apiData?.driver?.vehicle?.gps?.provider) || "N/A"}
                                 </span>
                               </div>
                               <div className="detail-item">
@@ -2001,7 +2009,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       </div>
                       {/* <span className="tooltip-content">2 deviations from planned route</span> */}
                     </div>
-                    <div
+                    {/* <div
                       className={`kpi-card halt-alert tooltip ${openTooltipId === "overspeed" ? "tooltip-open" : ""
                         }`}
                       onClick={() => handleKpiClick("overspeed")}
@@ -2029,7 +2037,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         </div>
                       </div>
 
-                    </div>
+                    </div> */}
                   </div>
                 )}
 
@@ -2086,6 +2094,18 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           <Maximize className="button-icon" />
                           Full Screen Map
                         </button>
+
+                        {/* <button
+                          className={`map-button ${showInfoCards ? "active" : "outline"}`}
+                          onClick={() => setShowInfoCards(!showInfoCards)}
+                        >
+                          {showInfoCards ? (
+                            <Eye className="button-icon" />
+                          ) : (
+                            <EyeOff className="button-icon" />
+                          )}
+                          {showInfoCards ? "Hide Cards" : "Show Cards"}
+                        </button> */}
                       </div>
                       {mapState.mode === "location" && (
                         <div className="map-filter-buttons">
@@ -2165,7 +2185,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     ///>
   //</div>
 //)} */}
-                      {mapState.mode === "map" && (
+                      {mapState.mode === "map" && !isMapFull && (
                         <div
                           // style={{ marginTop: "1rem" }}
                           className="map-host"
@@ -2188,11 +2208,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             }
                             shipmentData={apiData}
                             isSupplier={isSupplierView}
-
-                            // optional callbacks if you want to control toggles from dashboard:
-                            // onToggleGPSRoute={() => {/* set some local state if needed */}}
-                            // onToggleDeviations={() => setShowDeviationsOnMap((s) => !s)}
-                            // onToggleSatellite={() => setIsSatelliteViewLocal((s) => !s)}
+                            showInfoCards={showInfoCards}
+                            setShowInfoCards={setShowInfoCards}
+                          // optional callbacks if you want to control toggles from dashboard:
+                          // onToggleGPSRoute={() => {/* set some local state if needed */}}
+                          // onToggleDeviations={() => setShowDeviationsOnMap((s) => !s)}
+                          // onToggleSatellite={() => setIsSatelliteViewLocal((s) => !s)}
                           />
                         </div>
                       )}
@@ -2570,10 +2591,34 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     <div className="card-content timeline-content">
                       {activeTimelineTab === "timeline" && (
                         <div className="timeline-section scrollable-container">
-                          {/* <div className="timeline-title-container">
-                            <h3>Timeline</h3>
-                            <p>Latest Events</p>
-                          </div> */}
+                          {apiData?.trip_tracker?.last_location_at && (
+                            <div className="current-location-header">
+                              <div className="location-text">
+                                <span className="label">Current Location:</span>{" "}
+                                {apiData.trip_tracker.last_location_address}
+                              </div>
+
+                              <div className="update-time">
+                                <span className="update-label">Last Updated At:</span>
+
+
+
+                                <span className="date" style={{ fontWeight: '600' }}>
+                                  {new Date(apiData.trip_tracker.last_location_at).toLocaleDateString(
+                                    "en-GB",
+                                    { day: "2-digit", month: "short", year: "numeric" }
+                                  )}
+                                </span>
+
+                                <span className="time" style={{ fontWeight: '600' }}>
+                                  {new Date(apiData.trip_tracker.last_location_at).toLocaleTimeString(
+                                    "en-GB",
+                                    { hour: "2-digit", minute: "2-digit" }
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          )}
 
                           {timelineData && timelineData.length > 0 ? (
                             timelineData.map((event: any, index: number) => (

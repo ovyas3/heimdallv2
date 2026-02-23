@@ -17,6 +17,8 @@ import {
   Shield,
   Layers,
   Satellite,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import styles from "./Kepler-map.module.css";
 import type {
@@ -117,6 +119,8 @@ interface KeplerMapProps {
     pick_finished_at?: string;
   };
   isSupplier?: boolean;
+  showInfoCards?: boolean;
+  setShowInfoCards?: (show: boolean) => void;
 }
 
 interface MagnifierSettings {
@@ -225,6 +229,8 @@ export default function KeplerMap({
   onToggleDeviations,
   shipmentData,
   isSupplier,
+  showInfoCards: showInfoCardsProp,
+  setShowInfoCards: setShowInfoCardsProp,
 }: KeplerMapProps) {
   const [isClient, setIsClient] = useState(false);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
@@ -260,6 +266,11 @@ export default function KeplerMap({
   const [activeMode, setActiveMode] = useState<"sim" | "app" | "gps" | null>(
     null
   );
+  // Internal fallback if props not provided, though we should provide them
+  const [internalShowInfoCards, setInternalShowInfoCards] = useState(true);
+  const showInfoCards = showInfoCardsProp ?? internalShowInfoCards;
+  const setShowInfoCards = setShowInfoCardsProp ?? setInternalShowInfoCards;
+
   const [activeRoute, setActiveRoute] = useState<[number, number][]>([]);
   const [isReplayings, setIsReplayings] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState(0);
@@ -816,11 +827,11 @@ export default function KeplerMap({
         <div class="${styles.popupBody}">Duration: <strong>${durationHours > 0 ? durationHours + " hour(s), " : ""
         }${durationMins} minute(s)</strong></div>
         <div class="${styles.popupBody}">Start: <strong>${new Date(
-        h.start_time
-      ).toLocaleString()}</strong></div>
-        <div class="${styles.popupBody}">End: <strong>${new Date(
-        h.end_time
-      ).toLocaleString()}</strong></div>
+          h.start_time
+        ).toLocaleString()}</strong></div>
+        <div class="${styles.popupBody}">End: <strong>${h.end_time ? new Date(
+          h.end_time
+        ).toLocaleString() : "-"}</strong></div>
         <div class="${styles.popupBody}">
           <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 4px; background: #4285F4; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; margin-top: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2909,9 +2920,9 @@ export default function KeplerMap({
                       <div className={styles.popupBody}>
                         End:{" "}
                         <strong>
-                          {new Date(
+                          {haltPoints[currentReplayHaltIndex].end_time ? new Date(
                             haltPoints[currentReplayHaltIndex].end_time
-                          ).toLocaleString()}
+                          ).toLocaleString() : "Still in Halt"}
                         </strong>
                       </div>
                     </div>
@@ -3175,7 +3186,7 @@ export default function KeplerMap({
                         End:
                         <strong>
                           {" "}
-                          {new Date(halt.end_time).toLocaleString()}
+                          {halt.end_time ? new Date(halt.end_time).toLocaleString() : "-"}
                         </strong>
                       </div>
                       <div className={styles.popupBody}>
@@ -3837,7 +3848,7 @@ export default function KeplerMap({
         )}
 
         {/* Shipment Details */}
-        {shipmentData && (
+        {shipmentData && showInfoCards && (
           <div
             className={`${styles.shipmentDetailsOverlay} ${showMagnifierSettings ? styles.statusShift : ""
               } ${!isFullscreen ? styles.smallText : ""} ${showMagnifierSettings ? styles.hideOnSettings : ""
@@ -3865,7 +3876,7 @@ export default function KeplerMap({
 
         {/* Live Tracking Status */}
         {/* <div className={`${styles.statusOverlay} ${showMagnifierSettings ? styles.statusShift : ""} ${!isFullscreen ? styles.smallText : ""}`}> */}
-        {!isSupplier && (
+        {!isSupplier && showInfoCards && (
           <div
             className={`${styles.statusOverlay} ${showMagnifierSettings ? styles.statusShift : ""
               } ${!isFullscreen ? styles.smallText : ""} ${showMagnifierSettings ? styles.hideOnSettings : ""
@@ -4010,6 +4021,19 @@ export default function KeplerMap({
                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
+          </button>
+
+          <button
+            onClick={() => setShowInfoCards(!showInfoCards)}
+            className={`${styles.iconBtn} ${showInfoCards ? styles.iconBtnActivePurple : ""
+              }`}
+            title={showInfoCards ? "Hide Info Cards" : "Show Info Cards"}
+          >
+            {showInfoCards ? (
+              <Eye className={styles.iconSm} />
+            ) : (
+              <EyeOff className={styles.iconSm} />
+            )}
           </button>
 
           <button
