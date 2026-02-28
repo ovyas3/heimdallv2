@@ -2041,6 +2041,37 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   </div>
                 )}
 
+                {apiData?.trip_tracker?.last_location_at && (
+                  <div className="card mobile-only-card" style={{ background: "linear-gradient(135deg, #fefce8, #fef9c3)", border: "#fef08a" }}>
+                    <div className="card-content">
+                      <div className="current-location-header">
+                        <div className="location-text">
+                          <span className="label">Current Location:</span>{" "}
+                          <span style={{ fontWeight: '600', marginLeft: '8px', color: "black" }}>
+                            {apiData?.trip_tracker?.last_location_address?.startsWith("in ")
+                              ? apiData.trip_tracker.last_location_address.substring(3)
+                              : apiData?.trip_tracker?.last_location_address}
+                          </span>
+                        </div>
+
+                        <div className="update-time">
+                          <span className="update-label">Last Updated:</span>
+
+                          <span className="date-time" style={{ fontWeight: '600', marginLeft: '8px' }}>
+                            {new Date(apiData.trip_tracker.last_location_at).toLocaleDateString(
+                              "en-GB",
+                              { day: "2-digit", month: "short" }
+                            )}, {new Date(apiData.trip_tracker.last_location_at).toLocaleTimeString(
+                              "en-GB",
+                              { hour: "2-digit", minute: "2-digit" }
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div
                   className={`card map-card ${collapsedSections.liveTracking ? "collapsed" : ""
                     }`}
@@ -2595,23 +2626,21 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <div className="current-location-header">
                               <div className="location-text">
                                 <span className="label">Current Location:</span>{" "}
-                                {apiData.trip_tracker.last_location_address}
+                                <span style={{ fontWeight: '600', marginLeft: '8px' }}>
+                                  {apiData.trip_tracker.last_location_address}
+                                </span>
                               </div>
 
                               <div className="update-time">
-                                <span className="update-label">Last Updated At:</span>
+                                <span className="update-label">Last Updated:</span>
 
 
 
-                                <span className="date" style={{ fontWeight: '600' }}>
+                                <span className="date-time" style={{ fontWeight: '600', marginLeft: '8px' }}>
                                   {new Date(apiData.trip_tracker.last_location_at).toLocaleDateString(
                                     "en-GB",
-                                    { day: "2-digit", month: "short", year: "numeric" }
-                                  )}
-                                </span>
-
-                                <span className="time" style={{ fontWeight: '600' }}>
-                                  {new Date(apiData.trip_tracker.last_location_at).toLocaleTimeString(
+                                    { day: "2-digit", month: "short" }
+                                  )}, {new Date(apiData.trip_tracker.last_location_at).toLocaleTimeString(
                                     "en-GB",
                                     { hour: "2-digit", minute: "2-digit" }
                                   )}

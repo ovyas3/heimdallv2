@@ -2724,7 +2724,7 @@ export default function KeplerMap({
           style={{ height: "100%", width: "100%" }}
           zoomControl={false}
           attributionControl={false}
-          key={isFullscreen ? "fullscreen" : "normal"}
+          key={`${unique_code}-${isFullscreen}-${selectedMapStyle}`}
         >
           <MapController mapRef={mapRef} />
           <Pane name="shipmentMarkers" style={{ zIndex: 650 }} />
@@ -3867,7 +3867,7 @@ export default function KeplerMap({
               <div className={styles.statusItem}>
                 <span className={`${styles.dot} ${styles.dotPurple}`}></span>
                 <span>
-                  Driver: {toTitleCase(shipmentData.driver?.name) || "N/A"}
+                  Driver: {toTitleCase(shipmentData.driver?.name) || "N/A"} - {shipmentData.driver?.mobile || "N/A"}
                 </span>
               </div>
             </div>

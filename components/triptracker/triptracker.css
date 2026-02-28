@@ -385,9 +385,20 @@ body {
   border: 1px solid var(--border-color);
 }
 
-@media (min-width: 640px) {
-  .header-eta {
-    display: flex;
+@media (max-width: 640px) {
+  .map-host {
+    height: 400px !important;
+    /* Force height on mobile */
+    min-height: 400px !important;
+    display: block !important;
+    position: relative;
+    width: 100%;
+  }
+
+  .mapfs-shell {
+    height: 100vh !important;
+    width: 100vw !important;
+    z-index: 9999 !important;
   }
 }
 
@@ -609,12 +620,18 @@ body {
     display: none !important;
   }
 
-  .mobile-only-help {
+  .mobile-only-help,
+  .mobile-only-card {
     display: block !important;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
   }
 }
 
-.mobile-only-help {
+.mobile-only-help,
+.mobile-only-card {
   display: none;
 }
 
@@ -1202,7 +1219,7 @@ body {
 .kpi-card {
   position: relative;
   text-align: center;
-  padding: 2.5rem 0.75rem 0.75rem 0.75rem;
+  /* padding: 2.5rem 0.75rem 0.75rem 0.75rem; */
   border-radius: 0.75rem;
   border: 1px solid var(--border-color);
   cursor: pointer;
@@ -1254,6 +1271,11 @@ body {
   border-color: #47d9fd;
 }
 
+.kpi-card.location {
+  background: linear-gradient(135deg, #fefce8, #fef9c3);
+  border-color: #fef08a;
+}
+
 .kpi-value {
   font-size: 1.35rem;
   font-weight: 700;
@@ -1280,6 +1302,10 @@ body {
 
 .kpi-card.halt-alert .kpi-value {
   color: #1a6ae3;
+}
+
+.kpi-card.location .kpi-value {
+  color: #854d0e;
 }
 
 .kpi-label {
@@ -2342,7 +2368,7 @@ body {
 
 @media (max-width: 640px) {
   .tab-container {
-    margin-right: 0.25rem;
+    margin-right: 120px;
     gap: 0.15rem;
   }
 
@@ -4270,6 +4296,7 @@ timeline-icon path {
     gap: 0.75rem !important;
     padding: 0 0.75rem 0.5rem !important;
     margin: 0 -0.75rem 1rem -0.75rem !important;
+    overflow-y: hidden;
   }
 
   .kpi-card {
@@ -4371,6 +4398,11 @@ timeline-icon path {
     gap: 0.5rem !important;
     padding: 0 0.5rem 0.5rem !important;
     margin: 0 -0.5rem 0.75rem -0.5rem !important;
+    overflow-y: hidden;
+  }
+
+  .kpi-card.early {
+    display: none !important;
   }
 
   .kpi-card {
@@ -4977,7 +5009,7 @@ timeline-icon path {
   font-size: 12px;
   color: #555;
   display: flex;
-  gap: 8px;
+  /* gap: 8px; */
   align-items: center;
 }
 

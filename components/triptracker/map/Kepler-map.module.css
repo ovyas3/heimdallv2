@@ -2,7 +2,7 @@
 .container {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: 55vh;
 }
 
 /* Generic center helpers */
@@ -999,8 +999,8 @@
 /* Top-right controls */
 .topRightControls {
   position: absolute;
-  top: 60px;
-  right: 10px;
+  top: 0px;
+  right: 0px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1493,7 +1493,7 @@
 }
 
 .sideControlsMobile {
-  top: 270px;
+  top: 422px;
   bottom: auto;
   right: 16px;
   transform: none;
@@ -1502,6 +1502,9 @@
   gap: 8px;
   border-radius: 0;
   pointer-events: none;
+  display: flex;
+  flex-direction: row;
+  padding-right: 10px;
 }
 
 .sideControlsMobile>* {
