@@ -4,6 +4,9 @@
   width: 100%;
   height: 55vh;
 }
+.fullscreenContainer {
+  height: 100% !important;
+}
 
 /* Generic center helpers */
 .centerCol {
@@ -1007,6 +1010,11 @@
   z-index: 1000;
 }
 
+.topRightControlsFullscreen {
+  top: 60px;
+}
+
+
 .iconBtn {
   width: 40px;
   height: 40px;
@@ -1439,13 +1447,13 @@
 /* ... add this new class at the end of the file ... */
 
 .sideControlsFullscreen {
-  /* Reposition to the top right */
-  top: 250px;
-  bottom: auto;
-  /* Remove the bottom positioning */
-  right: 12px;
-  /* Stack the buttons vertically */
-  flex-direction: column;
+  /* Reposition to the bottom right */
+  top: auto;
+  bottom: 25px;
+  right: 15px;
+  
+  /* OVERRIDE INLINE CSS: Stack the buttons vertically ALWAYS */
+  flex-direction: column !important;
 
   /* Remove the panel styling for a floating look */
   background: none;

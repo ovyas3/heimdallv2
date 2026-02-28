@@ -2580,7 +2580,7 @@ export default function KeplerMap({
     <div className={styles.mapWrapper}>
       <div
         ref={mapContainerRef}
-        className={styles.container}
+        className={`${styles.container} ${isFullscreen ? styles.fullscreenContainer : ""}`}
         onMouseMove={handleMouseMove}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
@@ -3959,7 +3959,7 @@ export default function KeplerMap({
       )}
 
         {/* Top-right icon buttons */}
-        <div className={styles.topRightControls}>
+        <div className={`${styles.topRightControls} ${isFullscreen ? styles.topRightControlsFullscreen : ""}`}>
           <button
             onClick={() => {
               if (onToggleSatellite) {
