@@ -13,8 +13,15 @@ export async function GET(request: NextRequest) {
         if (!response.ok) {
             return NextResponse.json({ error: `Failed to fetch from url: ${response.statusText}` }, { status: response.status });
         }
-        const data = await response.json();
-        return NextResponse.json(data);
+        const text = await response.text();
+        try {
+            const data = JSON.parse(text);
+            return NextResponse.json(data);
+        } catch (e) {
+            // If it's not valid JSON, it might be a raw polyline string or other text data.
+            // Returning it as a JSON string so the client-side .json() call still works.
+            return NextResponse.json(text);
+        }
     } catch (error) {
         console.error('Proxy fetch error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -473,7 +473,10 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             `Shipment API error! Status: ${shipmentResponse.status}`
           );
         const shipmentData = await shipmentResponse.json();
-        setApiData(shipmentData.shipment);
+        setApiData({
+          ...shipmentData.shipment,
+          gps: shipmentData.gps,
+        });
         setPickGateInTime(shipmentData.shipment.pick_arrived_at || null);
         setPickGateOutTime(shipmentData.shipment.pick_finished_at || null);
         setDropGateInTime(shipmentData.shipment.drop_arrived_at || null);
@@ -1484,7 +1487,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               <div className="detail-item">
                                 <span className="detail-label">GPS Provider</span>
                                 <span className="detail-value">
-                                  {toTitleCase(apiData?.driver?.vehicle?.gps?.provider) || "N/A"}
+                                  {toTitleCase(
+                                    apiData?.driver?.gps?.provider ||
+                                    apiData?.gps?.provider ||
+                                    apiData?.driver?.vehicle?.gps?.provider
+                                  ) || "N/A"}
                                 </span>
                               </div>
                               <div className="detail-item">
