@@ -355,6 +355,10 @@ export default function KeplerMap({
 
   const decodePolyline = useCallback((encoded: string): [number, number][] => {
     if (!encoded) return [];
+    
+    // Improved sanitization: ONLY strip quotes, NOT backslashes
+    // Backslashes are valid polyline bytes. Quotes are not.
+    const sanitized = encoded.replace(/^"+|"+$/g, "");
     let index = 0,
       lat = 0,
       lng = 0;
@@ -365,14 +369,14 @@ export default function KeplerMap({
         shift = 0,
         b: number;
       do {
-        b = encoded.charCodeAt(index++) - 63;
+        b = sanitized.charCodeAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
       return result & 1 ? ~(result >> 1) : result >> 1;
     };
 
-    while (index < encoded.length) {
+    while (index < sanitized.length) {
       lat += shift5();
       lng += shift5();
       coordinates.push([lat * 1e-5, lng * 1e-5]); // [lat, lng]
@@ -1358,12 +1362,12 @@ export default function KeplerMap({
         throw new Error(`Failed to fetch fence data: ${fenceResponse.status}`);
       const fetchedFenceData = await fenceResponse.json();
 
-      // Assuming the response is a LineString GeoJSON
-      let coordinates = null;
-      const decodedPolylines: [number, number][] =
-        decodePolyline(fetchedFenceData);
+      const decodedPolylines = decodePolyline(fetchedFenceData);
+      let coordinates: [number, number][] | null = null;
       if (decodedPolylines) {
-        coordinates = decodedPolylines;
+        // We store internal fence data as [lng, lat] to match 
+        // the fencePathData prop format and renderer expectations
+        coordinates = decodedPolylines.map((p: [number, number]) => [p[1], p[0]]);
       } else {
         console.warn("No coordinates found in fence data", fetchedFenceData);
       }
@@ -3081,7 +3085,7 @@ export default function KeplerMap({
               shouldShowFence && (
                 <Polyline
                   key="fence-path-polyline"
-                  positions={pathToUse.map((coord) => [coord[1], coord[0]])} // Convert lng,lat to lat,lng
+                  positions={pathToUse.map((coord) => [coord[1], coord[0]])} // Convert [lng, lat] from sources to [lat, lng] for Leaflet
                   pathOptions={{
                     color: "#000",
                     weight: 3,
