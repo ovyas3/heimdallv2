@@ -111,6 +111,7 @@ interface KeplerMapProps {
     trip_tracker?: {
       last_location_address?: string;
       polyline_sim?: string;
+      last_location_at?: string;
     };
     deliveries?: Array<{
       finished_at?: string;
@@ -355,7 +356,7 @@ export default function KeplerMap({
 
   const decodePolyline = useCallback((encoded: string): [number, number][] => {
     if (!encoded) return [];
-    
+
     // Improved sanitization: ONLY strip quotes, NOT backslashes
     // Backslashes are valid polyline bytes. Quotes are not.
     const sanitized = encoded.replace(/^"+|"+$/g, "");
@@ -501,10 +502,10 @@ export default function KeplerMap({
       activeMode === "app"
         ? appPath
         : activeMode === "sim"
-        ? simPath
-        : activeMode === "gps"
-        ? gpsPath
-        : [];
+          ? simPath
+          : activeMode === "gps"
+            ? gpsPath
+            : [];
 
     if (!path?.length) return;
 
@@ -1151,7 +1152,7 @@ export default function KeplerMap({
           const totalDistanceKm = Math.round(
             ((shipment?.trip_tracker?.travelled_distance || 0) +
               (shipment?.trip_tracker?.remaining_distance || 0)) /
-              1000
+            1000
           );
           const travelledDistanceKm = Math.round(
             (shipment?.trip_tracker?.travelled_distance || 0) / 1000
@@ -1173,8 +1174,8 @@ export default function KeplerMap({
 
             time: run.travel_time
               ? `${Math.floor(run.travel_time / 3600)}h ${Math.floor(
-                  (run.travel_time % 3600) / 60
-                )}m`
+                (run.travel_time % 3600) / 60
+              )}m`
               : "N/A",
             // Include any other details you want to display
           }));
@@ -1448,74 +1449,74 @@ export default function KeplerMap({
 
   // Add this useEffect to fetch the path data
   const fetchPathData = useCallback(async () => {
-      try {
-        const response = await fetch(
-          `https://live-api.instavans.com/api/raccoon/path?unique_code=${encodeURIComponent(
-            unique_code ?? ""
-          )}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch path data");
-        }
-        const data: PathData = await response.json();
-        // Handle the different data types for the path
-        // let decodedPath = [];
-        // let decodedPath: [number, number][];
-        let decodedPath: [number, number][] = [];
+    try {
+      const response = await fetch(
+        `https://live-api.instavans.com/api/raccoon/path?unique_code=${encodeURIComponent(
+          unique_code ?? ""
+        )}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch path data");
+      }
+      const data: PathData = await response.json();
+      // Handle the different data types for the path
+      // let decodedPath = [];
+      // let decodedPath: [number, number][];
+      let decodedPath: [number, number][] = [];
 
-        if (data.sim) {
-          let decodedSim: [number, number][] = [];
-          if (typeof data.sim === "string") {
-            decodedSim = decodePolyline(data.sim);
-          } else if (Array.isArray(data.sim) && data.sim.length > 0) {
-            decodedSim = data.sim.map(
-              (p) =>
-                [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
-                  number,
-                  number
-                ]
-            );
-          }
-          setSimPath(decodedSim);
-        }
-
-        if (data.app && data.app.length > 0) {
-          const decodedApp = data.app.map(
+      if (data.sim) {
+        let decodedSim: [number, number][] = [];
+        if (typeof data.sim === "string") {
+          decodedSim = decodePolyline(data.sim);
+        } else if (Array.isArray(data.sim) && data.sim.length > 0) {
+          decodedSim = data.sim.map(
             (p) =>
               [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
                 number,
                 number
               ]
           );
-          // const decodedApp = data.app.map(point => point.geo_point.coordinates);
-          setAppPath(decodedApp);
         }
-
-        if (data.gps) {
-          let decodedGps: [number, number][] = [];
-          if (typeof data.gps === "string") {
-            // Decode the polyline string for GPS
-            decodedGps = decodePolyline(data.gps);
-          } else if (Array.isArray(data.gps) && data.gps.length > 0) {
-            // Handle the case where GPS data is an array of points
-            decodedGps = data.gps.map(
-              (point) =>
-                [
-                  point.geo_point.coordinates[1],
-                  point.geo_point.coordinates[0],
-                ] as [number, number]
-            );
-          }
-          setGpsPath(decodedGps);
-        }
-
-        setPathData(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setIsLoadingPath(false);
+        setSimPath(decodedSim);
       }
-    }, [unique_code, decodePolyline, setSimPath, setAppPath, setGpsPath, setPathData, setIsLoadingPath]);
+
+      if (data.app && data.app.length > 0) {
+        const decodedApp = data.app.map(
+          (p) =>
+            [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
+              number,
+              number
+            ]
+        );
+        // const decodedApp = data.app.map(point => point.geo_point.coordinates);
+        setAppPath(decodedApp);
+      }
+
+      if (data.gps) {
+        let decodedGps: [number, number][] = [];
+        if (typeof data.gps === "string") {
+          // Decode the polyline string for GPS
+          decodedGps = decodePolyline(data.gps);
+        } else if (Array.isArray(data.gps) && data.gps.length > 0) {
+          // Handle the case where GPS data is an array of points
+          decodedGps = data.gps.map(
+            (point) =>
+              [
+                point.geo_point.coordinates[1],
+                point.geo_point.coordinates[0],
+              ] as [number, number]
+          );
+        }
+        setGpsPath(decodedGps);
+      }
+
+      setPathData(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoadingPath(false);
+    }
+  }, [unique_code, decodePolyline, setSimPath, setAppPath, setGpsPath, setPathData, setIsLoadingPath]);
 
   useEffect(() => {
     fetchPathData();
@@ -1997,7 +1998,7 @@ export default function KeplerMap({
       const lng =
         center[1] +
         ((radius / earthRadius) * (180 / Math.PI) * Math.sin(angleRad)) /
-          Math.cos((center[0] * Math.PI) / 180);
+        Math.cos((center[0] * Math.PI) / 180);
       points.push([lat, lng]);
     }
     return points;
@@ -2592,8 +2593,8 @@ export default function KeplerMap({
           cursor: isDraggingMagnifier
             ? "grabbing"
             : isMagnifierEnabled
-            ? "grab"
-            : "default",
+              ? "grab"
+              : "default",
         }}
       >
         {showReplayPanel && (
@@ -2839,13 +2840,13 @@ export default function KeplerMap({
                   {(isSupplier && i === 0
                     ? meta?.location?.city
                     : meta?.location?.name) && (
-                    <div className={styles.popupBody}>
-                      {(isSupplier && i === 0
-                        ? meta?.location?.city
-                        : meta?.location?.name
-                      )?.trim()}
-                    </div>
-                  )}
+                      <div className={styles.popupBody}>
+                        {(isSupplier && i === 0
+                          ? meta?.location?.city
+                          : meta?.location?.name
+                        )?.trim()}
+                      </div>
+                    )}
                   {meta?.location?.locality && (
                     <div className={styles.popupBody}>
                       {meta.location.locality}
@@ -2905,7 +2906,7 @@ export default function KeplerMap({
                         <strong>
                           {Math.floor(
                             haltPoints[currentReplayHaltIndex].halt_duration /
-                              60
+                            60
                           )}{" "}
                           hour(s),{" "}
                           {haltPoints[currentReplayHaltIndex].halt_duration %
@@ -3322,7 +3323,7 @@ export default function KeplerMap({
                         <div className={styles.replayTitle}>Replay Route</div>
                         <div className={styles.replayRow}>
                           {selectedDeviationForReplay === route.id &&
-                          isReplaying ? (
+                            isReplaying ? (
                             <button
                               onClick={() => setIsReplaying(false)}
                               className={`${styles.btn} ${styles.btnRedSm}`}
@@ -3445,9 +3446,9 @@ export default function KeplerMap({
                 doubleClickZoom={false}
                 touchZoom={false}
                 keyboard={false}
-                // whenCreated={(mapInstance) => {
-                //   setMagnifierMapRef(mapInstance)
-                // }}
+              // whenCreated={(mapInstance) => {
+              //   setMagnifierMapRef(mapInstance)
+              // }}
               >
                 {/* <MapController mapRef={mapRef} /> */}
                 <MagnifierMapController setMap={setMagnifierMap} />
@@ -3886,81 +3887,95 @@ export default function KeplerMap({
               } ${!isFullscreen ? styles.smallText : ""} ${showMagnifierSettings ? styles.hideOnSettings : ""
               }`}
           >
-          <div className={styles.statusTitle}>Live Tracking Status</div>
-          <div className={styles.statusList}>
-            {shipmentData?.latest_status && (
+            <div className={styles.statusTitle}>Live Tracking Status</div>
+            <div className={styles.statusList}>
+              {shipmentData?.latest_status && (
+                <div className={styles.statusItem}>
+                  <span className={`${styles.dot} ${styles.dotGreen}`}></span>
+                  <span>
+                    Status: {getShipmentStatus(shipmentData.latest_status).status}
+                  </span>
+                </div>
+              )}
+              {progressPercentage > 0 && (
+                <div className={styles.statusItem}>
+                  <span className={`${styles.dot} ${styles.dotBlue}`}></span>
+                  <span>Route Progress: {progressPercentage.toFixed(0)}%</span>
+                </div>
+              )}
               <div className={styles.statusItem}>
-                <span className={`${styles.dot} ${styles.dotGreen}`}></span>
+                <span className={`${styles.dot} ${styles.dotOrange}`}></span>
                 <span>
-                  Status: {getShipmentStatus(shipmentData.latest_status).status}
-                </span>
-              </div>
-            )}
-            {progressPercentage > 0 && (
-              <div className={styles.statusItem}>
-                <span className={`${styles.dot} ${styles.dotBlue}`}></span>
-                <span>Route Progress: {progressPercentage.toFixed(0)}%</span>
-              </div>
-            )}
-            <div className={styles.statusItem}>
-              <span className={`${styles.dot} ${styles.dotOrange}`}></span>
-              <span>
-                {(() => {
-                  const lastDelivery =
-                    shipmentData?.deliveries?.[
+                  {(() => {
+                    const lastDelivery =
+                      shipmentData?.deliveries?.[
                       shipmentData.deliveries.length - 1
-                    ];
-                  const finishedAt = lastDelivery?.finished_at;
+                      ];
+                    const finishedAt = lastDelivery?.finished_at;
 
-                  if (
-                    shipmentData?.latest_status
-                      ?.toLowerCase()
-                      .includes("delivered") ||
-                    finishedAt
-                  ) {
-                    if (finishedAt) {
-                      return `Delivered on: ${new Date(
-                        finishedAt
-                      ).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}`;
+                    if (
+                      shipmentData?.latest_status
+                        ?.toLowerCase()
+                        .includes("delivered") ||
+                      finishedAt
+                    ) {
+                      if (finishedAt) {
+                        return `Delivered on: ${new Date(
+                          finishedAt
+                        ).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}`;
+                      }
+                      return "Delivered on: N/A";
                     }
-                    return "Delivered on: N/A";
-                  }
-                  return `ETA: ${eta || "N/A"}`;
-                })()}
-              </span>
+                    return `ETA: ${eta || "N/A"}`;
+                  })()}
+                </span>
+              </div>
+              {shipmentData?.trip_tracker?.last_location_address && (
+                <div className={styles.statusItem}>
+                  <span className={`${styles.dot} ${styles.dotPurple}`}></span>
+                  <span>
+                    Location: {shipmentData.trip_tracker.last_location_address}
+                  </span>
+                </div>
+              )}
+              {shipmentData?.trip_tracker?.last_location_at && (
+                <div className={styles.statusItem}>
+                  <span className={`${styles.dot} ${styles.dotBlue}`}></span>
+                  <span>
+                    Last Updated: {new Date(shipmentData.trip_tracker.last_location_at).toLocaleDateString(
+                      "en-GB",
+                      { day: "2-digit", month: "short" }
+                    )}, {new Date(shipmentData.trip_tracker.last_location_at).toLocaleTimeString(
+                      "en-GB",
+                      { hour: "2-digit", minute: "2-digit" }
+                    )}
+                  </span>
+                </div>
+              )}
+              {isMagnifierEnabled && (
+                <div className={`${styles.statusItem} ${styles.statusSplit}`}>
+                  <span className={`${styles.dot} ${styles.dotBluePulse}`}></span>
+                  <span>
+                    Magnifier: {magnifierCenter[0].toFixed(2)},{" "}
+                    {magnifierCenter[1].toFixed(2)}
+                  </span>
+                </div>
+              )}
+              {isReplaying && (
+                <div className={`${styles.statusItem} ${styles.statusSplit}`}>
+                  <span
+                    className={`${styles.dot} ${styles.dotPurplePulse}`}
+                  ></span>
+                  <span>Replaying Route</span>
+                </div>
+              )}
             </div>
-            {shipmentData?.trip_tracker?.last_location_address && (
-              <div className={styles.statusItem}>
-                <span className={`${styles.dot} ${styles.dotPurple}`}></span>
-                <span>
-                  Location: {shipmentData.trip_tracker.last_location_address}
-                </span>
-              </div>
-            )}
-            {isMagnifierEnabled && (
-              <div className={`${styles.statusItem} ${styles.statusSplit}`}>
-                <span className={`${styles.dot} ${styles.dotBluePulse}`}></span>
-                <span>
-                  Magnifier: {magnifierCenter[0].toFixed(2)},{" "}
-                  {magnifierCenter[1].toFixed(2)}
-                </span>
-              </div>
-            )}
-            {isReplaying && (
-              <div className={`${styles.statusItem} ${styles.statusSplit}`}>
-                <span
-                  className={`${styles.dot} ${styles.dotPurplePulse}`}
-                ></span>
-                <span>Replaying Route</span>
-              </div>
-            )}
           </div>
-        </div>
-      )}
+        )}
 
         {/* Top-right icon buttons */}
         <div className={`${styles.topRightControls} ${isFullscreen ? styles.topRightControlsFullscreen : ""}`}>
