@@ -714,11 +714,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   };
 
   const calculateTotalHaltDuration = (data: any[]) => {
-    const totalSeconds = data.reduce(
+    const totalMinutes = data.reduce(
       (sum, halt) => sum + (halt.halt_duration || 0),
       0
     );
-    const totalMinutes = Math.floor(totalSeconds / 60); // Convert seconds to minutes
+    // Remove the "totalSeconds / 60" line
     const hours = Math.floor(totalMinutes / 60);
     const minutes = Math.floor(totalMinutes % 60);
     return `${hours}h ${minutes}m total`;
@@ -732,7 +732,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         : longest;
     }, data[0]);
 
-    const durationInMinutes = Math.floor(longestHalt.halt_duration / 60); // Convert seconds to minutes
+    const durationInMinutes = longestHalt.halt_duration; // Convert seconds to minutes
     const durationHours = Math.floor(durationInMinutes / 60);
 
     // FIX: Using Math.floor() to prevent rounding up and get the correct minute value.
@@ -812,8 +812,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       averageDistanceDayRun > 0
         ? averageDistanceDayRun
         : traveled_distance > 0 && numberOfDays > 0
-        ? traveled_distance / 1000 / numberOfDays
-        : 0;
+          ? traveled_distance / 1000 / numberOfDays
+          : 0;
 
     // Calculate remaining distance
     const remaining_distance = Math.max(
@@ -1134,21 +1134,35 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                 <hr className="modal-separator" />
 
                 {/* Fixed-height image frame */}
-                <div className="doc-image-frame">
+                {/* Fixed-height image frame */}
+                <div className="doc-image-frame" style={{ position: "relative" }}>
                   {isPdfLoading && (
                     <div className="pdf-loader">
                       <div className="spinner"></div>
                       <span>Loading ePOD...</span>
                     </div>
                   )}
-                  <iframe
-                    // HIGHLIGHT: Changed src to use Google Docs Viewer
-                    src={`https://docs.google.com/gview?url=${docModal.doc?.url}&embedded=true`}
-                    width="100%"
-                    height="100%"
-                    title={docModal.doc?.name}
-                    style={{ border: "none" }}
-                  />
+
+                  {docModal.doc?.url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                    <Image
+                      src={docModal.doc.url}
+                      alt={docModal.doc.name || "Document"}
+                      onLoad={() => setIsPdfLoading(false)}
+                      fill
+                      style={{
+                        objectFit: "contain",
+                        display: isPdfLoading ? "none" : "block",
+                      }}
+                    />
+                  ) : (
+                    <iframe
+                      // HIGHLIGHT: Changed src to use Google Docs Viewer
+                      src={`https://docs.google.com/gview?url=${docModal.doc?.url}&embedded=true`}
+                      width="100%"
+                      height="100%"
+                      title={docModal.doc?.name}
+                      style={{ border: "none" }}
+                    />)}
                 </div>
 
                 {/* Centered download button */}
@@ -1695,7 +1709,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             </div>
                           </div>
                           <div className="location-details">
-                             <div className="location-type">
+                            <div className="location-type">
                               {isSupplierView ? "Destination city" : "Destination"}
                             </div>
                             <div className="location-name">
@@ -1779,48 +1793,48 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         </div>
                       )}
 
-                    <div className="kpi-label">
-                      {" "}
-                      {apiData?.latest_status == "CPTD" ? "Delivered" : ""}
-                    </div>
-                    <div className="kpi-label">
-                      {finalDestination?.finished_at
-                        ? formatTimestamp(finalDestination?.finished_at)
-                        : `ETA: ${formatTimestamp(apiData?.delivery_date)}`}
-                    </div>
-
-                    {finalDestination?.finished_at ? (
-                      <div className="tooltip-content tooltip-lg">
-                        <div className="tooltip-title">ETA Delta</div>
-
-                        <div className="tooltip-row">
-                          <span className="tooltip-key">Planned delivery:</span>
-                          <span className="tooltip-val">
-                            {formatEta(apiData?.delivery_date)}
-                          </span>
-                        </div>
-
-                        <div className="tooltip-row">
-                          <span className="tooltip-key">Actual delivery:</span>
-                          <span className="tooltip-val">
-                            {formatEta(finalDestination?.finished_at)}
-                          </span>
-                        </div>
-
-                        <div className="tooltip-row">
-                          <span className="tooltip-key">Delta:</span>
-                          <span className="tooltip-val">
-                            {etaDelta.isLate
-                              ? `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
-                              : `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`}
-                          </span>
-                        </div>
+                      <div className="kpi-label">
+                        {" "}
+                        {apiData?.latest_status == "CPTD" ? "Delivered" : ""}
                       </div>
-                    ) : (
-                      <></>
-                    )}
-                  </div>
-                  {/* 
+                      <div className="kpi-label">
+                        {finalDestination?.finished_at
+                          ? formatTimestamp(finalDestination?.finished_at)
+                          : `ETA: ${formatTimestamp(apiData?.delivery_date)}`}
+                      </div>
+
+                      {finalDestination?.finished_at ? (
+                        <div className="tooltip-content tooltip-lg">
+                          <div className="tooltip-title">ETA Delta</div>
+
+                          <div className="tooltip-row">
+                            <span className="tooltip-key">Planned delivery:</span>
+                            <span className="tooltip-val">
+                              {formatEta(apiData?.delivery_date)}
+                            </span>
+                          </div>
+
+                          <div className="tooltip-row">
+                            <span className="tooltip-key">Actual delivery:</span>
+                            <span className="tooltip-val">
+                              {formatEta(finalDestination?.finished_at)}
+                            </span>
+                          </div>
+
+                          <div className="tooltip-row">
+                            <span className="tooltip-key">Delta:</span>
+                            <span className="tooltip-val">
+                              {etaDelta.isLate
+                                ? `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
+                                : `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <></>
+                      )}
+                    </div>
+                    {/* 
           <div className="kpi-card distance tooltip" onClick={() => handleKpiClick("distance-metrics")}> */}
                     <div
                       className={`kpi-card distance tooltip ${openTooltipId === "distance-metrics" ? "tooltip-open" : ""
@@ -1884,29 +1898,29 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       <div className="tooltip-content tooltip-lg">
                         <div className="tooltip-title">Distance Metrics</div>
 
-                      <div className="tooltip-row">
-                        <span className="tooltip-key">Total:</span>
-                        <span className="tooltip-val">
-                          {totalDistanceKm} km
-                        </span>
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-key">Travelled:</span>
-                        <span className="tooltip-val">
-                          {travelledDistanceKm} km
-                        </span>
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-key">Remaining:</span>
-                        <span className="tooltip-val">
-                          {remainingDistanceKm} km
-                        </span>
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Total:</span>
+                          <span className="tooltip-val">
+                            {totalDistanceKm} km
+                          </span>
+                        </div>
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Travelled:</span>
+                          <span className="tooltip-val">
+                            {travelledDistanceKm} km
+                          </span>
+                        </div>
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Remaining:</span>
+                          <span className="tooltip-val">
+                            {remainingDistanceKm} km
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* <div className="kpi-card on-time tooltip"> */}
-                  {/* <div
+                    {/* <div className="kpi-card on-time tooltip"> */}
+                    {/* <div
                     className={`kpi-card on-time tooltip ${openTooltipId === "on-time" ? "tooltip-open" : ""}`}
                     onClick={() => handleKpiClick("on-time")}
                   >
@@ -1951,39 +1965,39 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       <div className="tooltip-content tooltip-lg">
                         <div className="tooltip-title">Halt Alerts</div>
 
-                      <div className="tooltip-row">
-                        <span className="tooltip-key">
-                          Total Stoppage{totalStoppagesCount === 1 ? "" : "s"}:
-                        </span>
-                        <span className="tooltip-val">
-                          {totalStoppagesCount}
-                        </span>
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-key">Duration:</span>
-                        <span className="tooltip-val">
-                          {totalHaltDurationText}
-                        </span>
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-key">Longest:</span>
-                        <div className="tooltip-col">
-                          {longestHaltData !== "N/A" ? (
-                            <>
-                              <span className="tooltip-val">
-                                {longestHaltData.duration}
-                              </span>
-                              <span className="tooltip-sub-val tooltip-ellipsis">
-                                {toTitleCase(longestHaltData.address)}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="tooltip-val">N/A</span>
-                          )}
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">
+                            Total Stoppage{totalStoppagesCount === 1 ? "" : "s"}:
+                          </span>
+                          <span className="tooltip-val">
+                            {totalStoppagesCount}
+                          </span>
+                        </div>
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Duration:</span>
+                          <span className="tooltip-val">
+                            {totalHaltDurationText}
+                          </span>
+                        </div>
+                        <div className="tooltip-row">
+                          <span className="tooltip-key">Longest:</span>
+                          <div className="tooltip-col">
+                            {longestHaltData !== "N/A" ? (
+                              <>
+                                <span className="tooltip-val">
+                                  {longestHaltData.duration}
+                                </span>
+                                <span className="tooltip-sub-val tooltip-ellipsis">
+                                  {toTitleCase(longestHaltData.address)}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="tooltip-val">N/A</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
                     {/* <div className="kpi-card deviations tooltip" onClick={() => handleKpiClick("route-deviations")}> */}
                     <div
@@ -2187,8 +2201,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 "in "
                               )
                                 ? apiData.trip_tracker.last_location_address.substring(
-                                    3
-                                  )
+                                  3
+                                )
                                 : apiData?.trip_tracker?.last_location_address}
                             </div>
                             {/* <div className="location-sub-address">Gate 3, Delivery Bay A-2</div> */}
