@@ -1135,7 +1135,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                 {/* Fixed-height image frame */}
                 {/* Fixed-height image frame */}
-                <div className="doc-image-frame" style={{ position: "relative" }}>
+                <div className="doc-image-frame">
                   {isPdfLoading && (
                     <div className="pdf-loader">
                       <div className="spinner"></div>
@@ -1144,12 +1144,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   )}
 
                   {docModal.doc?.url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                    <Image
+                    <img
                       src={docModal.doc.url}
-                      alt={docModal.doc.name || "Document"}
+                      alt={docModal.doc.name}
                       onLoad={() => setIsPdfLoading(false)}
-                      fill
                       style={{
+                        width: "100%",
+                        height: "100%",
                         objectFit: "contain",
                         display: isPdfLoading ? "none" : "block",
                       }}
@@ -1987,9 +1988,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 <span className="tooltip-val">
                                   {longestHaltData.duration}
                                 </span>
-                                <span className="tooltip-sub-val tooltip-ellipsis">
-                                  {toTitleCase(longestHaltData.address)}
-                                </span>
+                                
                               </>
                             ) : (
                               <span className="tooltip-val">N/A</span>
