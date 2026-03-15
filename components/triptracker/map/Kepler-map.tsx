@@ -268,7 +268,7 @@ export default function KeplerMap({
     null
   );
   // Internal fallback if props not provided, though we should provide them
-  const [internalShowInfoCards, setInternalShowInfoCards] = useState(true);
+  const [internalShowInfoCards, setInternalShowInfoCards] = useState(false);
   const showInfoCards = showInfoCardsProp ?? internalShowInfoCards;
   const setShowInfoCards = setShowInfoCardsProp ?? setInternalShowInfoCards;
 
@@ -3979,131 +3979,144 @@ export default function KeplerMap({
 
         {/* Top-right icon buttons */}
         <div className={`${styles.topRightControls} ${isFullscreen ? styles.topRightControlsFullscreen : ""}`}>
-          <button
-            onClick={() => {
-              if (onToggleSatellite) {
-                onToggleSatellite();
-              } else {
-                setSelectedMapStyle((prev) => (prev === "satellite" ? "osm-light" : "satellite"));
-              }
-            }}
-            className={`${styles.iconBtn} ${selectedMapStyle === "satellite" ? styles.iconBtnActivePurple : ""
-              }`}
-            title={selectedMapStyle === "satellite" ? "Switch to Light View" : "Switch to Satellite View"}
-          >
-            <Layers className={styles.iconSm} />
-          </button>
-
-          <button
-            onClick={() => setShowMapStyleSelector(!showMapStyleSelector)}
-            className={`${styles.iconBtn} ${showMapStyleSelector ? styles.iconBtnActivePurple : ""
-              }`}
-            title="Map Style"
-          >
-            <svg
-              className={styles.iconSm}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className={styles.iconBtnWrapper}>
+            <button
+              onClick={() => setShowMapStyleSelector(!showMapStyleSelector)}
+              className={`${styles.iconBtn} ${showMapStyleSelector ? styles.iconBtnActivePurple : ""
+                }`}
+              title="Map Style"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-              />
-            </svg>
-          </button>
+              <svg
+                className={styles.iconSm}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                />
+              </svg>
+              <span className={styles.btnLabel}>Map Style</span>
+            </button>
+          </div>
 
-          <button
-            onClick={navigateToVehicle}
-            className={`${styles.iconBtn} ${isNavigating ? styles.iconBtnActivePurple : ""
-              }`}
-            title="Go to Vehicle Location"
-          >
-            <svg
-              className={styles.iconSm}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className={styles.iconBtnWrapper}>
+            <button
+              onClick={navigateToVehicle}
+              className={`${styles.iconBtn} ${isNavigating ? styles.iconBtnActivePurple : ""
+                }`}
+              title="Go to Vehicle Location"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </button>
+              <svg
+                className={styles.iconSm}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span className={styles.btnLabel}>Go to Vehicle</span>
+            </button>
+          </div>
 
-          <button
-            onClick={() => setShowInfoCards(!showInfoCards)}
-            className={`${styles.iconBtn} ${showInfoCards ? styles.iconBtnActivePurple : ""
-              }`}
-            title={showInfoCards ? "Hide Info Cards" : "Show Info Cards"}
-          >
-            {showInfoCards ? (
-              <Eye className={styles.iconSm} />
-            ) : (
-              <EyeOff className={styles.iconSm} />
-            )}
-          </button>
-
-          <button
-            onClick={() => setIsMagnifierEnabled(!isMagnifierEnabled)}
-            className={`${styles.iconBtn} ${isMagnifierEnabled ? styles.iconBtnActivePurple : ""
-              }`}
-            title="Toggle Magnifier"
-          >
-            <svg
-              className={styles.iconSm}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className={styles.iconBtnWrapper}>
+            <button
+              onClick={() => setShowInfoCards(!showInfoCards)}
+              className={`${styles.iconBtn} ${showInfoCards ? styles.iconBtnActivePurple : ""
+                }`}
+              title={showInfoCards ? "Hide Info Cards" : "Show Info Cards"}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </button>
+              {showInfoCards ? (
+                <Eye className={styles.iconSm} />
+              ) : (
+                <EyeOff className={styles.iconSm} />
+              )}
+              <span className={styles.btnLabel}>{showInfoCards ? "Hide Info" : "Show Info"}</span>
+            </button>
+          </div>
 
-          <button
-            onClick={() => setShowMagnifierSettings(!showMagnifierSettings)}
-            className={`${styles.iconBtn} ${showMagnifierSettings ? styles.iconBtnActivePurple : ""
-              }`}
-            title="Magnifier Settings"
-          >
-            <svg
-              className={styles.iconSm}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className={styles.iconBtnWrapper}>
+            <button
+              onClick={() => setIsMagnifierEnabled(!isMagnifierEnabled)}
+              className={`${styles.iconBtn} ${isMagnifierEnabled ? styles.iconBtnActivePurple : ""
+                }`}
+              title="Toggle Magnifier"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-.426-1.756-2.924-1.756-3.35 0a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </button>
+              <svg
+                className={styles.iconSm}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <span className={styles.btnLabel}>{isMagnifierEnabled ? "Disable Magnifier" : "Enable Magnifier"}</span>
+            </button>
+          </div>
 
-          {/* <button
+          <div className={styles.iconBtnWrapper}>
+            <button
+              onClick={() => setShowMagnifierSettings(!showMagnifierSettings)}
+              className={`${styles.iconBtn} ${showMagnifierSettings ? styles.iconBtnActivePurple : ""
+                }`}
+              title="Magnifier Settings"
+            >
+              <svg
+                className={styles.iconSm}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-.426-1.756-2.924-1.756-3.35 0a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span className={styles.btnLabel}>Magnifier Settings</span>
+            </button>
+          </div>
+
+          <div className={styles.iconBtnWrapper}>
+            <button
+              onClick={onToggleSatellite}
+              className={`${styles.iconBtn} ${isSatelliteView ? styles.iconBtnActivePurple : ""
+                }`}
+              title={isSatelliteView ? "Switch to Light View" : "Switch to Satellite View"}
+            >
+              <Layers className={styles.iconSm} />
+              <span className={styles.btnLabel}>Map Layers</span>
+            </button>
+          </div>
+        </div>
+
+        {/* <button
           onClick={() => {
             if (internalFencePathData.length === 0 && !isLoadingFence) {
               fetchInternalFencePathData();
@@ -4118,7 +4131,6 @@ export default function KeplerMap({
               d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
         </button> */}
-        </div>
 
         {/* Map Style Selector */}
         {showMapStyleSelector && (

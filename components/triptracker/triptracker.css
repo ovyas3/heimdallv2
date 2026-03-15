@@ -1570,13 +1570,13 @@ body {
 }
 
 .location-item.origin {
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
-  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #bbf7d0;
 }
 
 .location-item.destination {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  border: 1px solid #bbf7d0;
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 1px solid #fed7aa;
 }
 
 .location-icon-wrapper {
@@ -1587,11 +1587,11 @@ body {
 }
 
 .location-item.origin .location-icon-wrapper {
-  background-color: #dbeafe;
+  background-color: #d1fae5;
 }
 
 .location-item.destination .location-icon-wrapper {
-  background-color: #d1fae5;
+  background-color: #ffedd5;
 }
 
 .location-icon-wrapper1 {
@@ -1602,11 +1602,11 @@ body {
 }
 
 .location-item.origin .location-icon-wrapper1 {
-  background-color: #dbeafe;
+  background-color: #d1fae5;
 }
 
 .location-item.destination .location-icon-wrapper1 {
-  background-color: #d1fae5;
+  background-color: #ffedd5;
 }
 
 .location-icon {
@@ -1619,11 +1619,11 @@ body {
 }
 
 .location-icon.origin-icon {
-  background-color: var(--brand-blue);
+  background-color: #22c55e;
 }
 
 .location-icon.destination-icon {
-  background-color: var(--brand-green);
+  background-color: #f97316;
 }
 
 .location-dot {
@@ -1634,11 +1634,11 @@ body {
 }
 
 .location-icon.origin-icon1 {
-  background-color: var(--brand-blue);
+  background-color: #22c55e;
 }
 
 .location-icon.destination-icon1 {
-  background-color: var(--brand-green);
+  background-color: #f97316;
 }
 
 .location-dot1 {
@@ -1646,6 +1646,13 @@ body {
   width: 0.5rem;
   border-radius: 50%;
   background-color: white;
+}
+
+.location-label {
+  color: white;
+  font-weight: 800;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .check-icon {
@@ -1666,11 +1673,11 @@ body {
 }
 
 .location-item.origin .location-type {
-  color: #1e40af;
+  color: #166534;
 }
 
 .location-item.destination .location-type {
-  color: #065f46;
+  color: #9a3412;
 }
 
 .location-name {
@@ -3697,13 +3704,13 @@ timeline-icon path {
 
 /* NEW: color variants to match your themes */
 .origin-badge {
-  background: var(--brand-blue);
-  /* same vibe as origin */
+  background: #22c55e;
+  /* Green to match P1 */
 }
 
 .dest-badge {
-  background: var(--brand-green);
-  /* same vibe as destination */
+  background: #f97316;
+  /* Orange to match D1 */
 }
 
 /* optional: small hover pop */

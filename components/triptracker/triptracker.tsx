@@ -82,7 +82,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     tracking: true,
     info: false,
   });
-  const [showInfoCards, setShowInfoCards] = useState(true);
+  const [showInfoCards, setShowInfoCards] = useState(false);
 
   interface MapPoint {
     coordinates: number[];
@@ -148,6 +148,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const [epodLinks, setEpodLinks] = useState<string[]>([]);
   const [etaDelta, setEtaDelta] = useState({
     isLate: false,
+    days: 0,
     hours: 0,
     minutes: 0,
   });
@@ -216,10 +217,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     const isLate = diffInMs > 0;
     const absDiff = Math.abs(diffInMs);
 
-    const hours = Math.floor(absDiff / (1000 * 60 * 60));
+    const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
 
-    setEtaDelta({ isLate, hours, minutes });
+    setEtaDelta({ isLate, days, hours, minutes });
   }, []);
   // This single state object controls the entire map's behavior
   const [mapState, setMapState] = useState({
@@ -515,11 +517,16 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             time: formatTimestamp(d.finished_at),
           }))
         );
+        const lastDelStatus = shipmentData.shipment.latest_status;
+        const actualDelTime = lastDelStatus === "CPTD" 
+          ? shipmentData.shipment.drop_finished_at 
+          : (lastDelStatus === "ALD" 
+              ? shipmentData.shipment.drop_arrived_at 
+              : shipmentData.shipment.deliveries[shipmentData.shipment.deliveries.length - 1]?.finished_at);
+
         calculateEtaDelta(
           shipmentData.shipment.delivery_date,
-          shipmentData.shipment.deliveries[
-            shipmentData.shipment.deliveries.length - 1
-          ]?.finished_at
+          actualDelTime
         );
 
         if (shipmentData.shipment?.latest_status) {
@@ -718,10 +725,14 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       (sum, halt) => sum + (halt.halt_duration || 0),
       0
     );
-    // Remove the "totalSeconds / 60" line
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.floor(totalMinutes % 60);
-    return `${hours}h ${minutes}m total`;
+    const d = Math.floor(totalMinutes / (60 * 24));
+    const h = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const m = Math.floor(totalMinutes % 60);
+
+    let res = "";
+    if (d > 0) res += `${d}d `;
+    res += `${h}h ${m}m total`;
+    return res;
   };
 
   const findLongestHalt = (data: any[]) => {
@@ -747,9 +758,21 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     };
   };
 
-  const totalStoppagesCount = haltData.length;
-  const totalHaltDurationText = calculateTotalHaltDuration(haltData);
-  const longestHaltData = findLongestHalt(haltData);
+  const isJSL = apiData?.shipper?._id === "694b847f2a7c87efd3fe4f09";
+  const displayHaltData = useMemo(() => {
+    if (isJSL) {
+      return haltData.filter((halt: any) => (halt.halt_duration || 0) >= 20);
+    }
+    return haltData;
+  }, [haltData, isJSL]);
+
+  const totalStoppagesCount = displayHaltData.length;
+  const totalHaltMinutes = displayHaltData.reduce(
+    (sum, halt) => sum + (halt.halt_duration || 0),
+    0
+  );
+  const totalHaltDurationText = calculateTotalHaltDuration(displayHaltData);
+  const longestHaltData = findLongestHalt(displayHaltData);
   const pickupLocations = apiData?.pickups || [];
   const deliveryLocations = apiData?.deliveries || [];
   const originLocation = pickupLocations?.[0];
@@ -1362,7 +1385,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <div className="detail-item">
                               <span className="detail-label">Transporter</span>
                               <span className="detail-value">
-                                {apiData?.carrier?.parent_name || "N/A"}
+                                {apiData?.carrier?.parent_name || apiData?.carrier?.name || "N/A"}
                               </span>
                             </div>
                           )}
@@ -1482,7 +1505,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             /* MOVED FROM OLD "Vehicle & Driver" CARD — no changes inside */
                             <div className="vehicle-driver-details">
                               <div className="detail-item">
-                                <span className="detail-label">Name</span>
+                                <span className="detail-label">Driver Name</span>
                                 <span className="detail-value">
                                   {toTitleCase(apiData?.driver?.name) || "N/A"}
                                 </span>
@@ -1522,7 +1545,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                     ? `${apiData.carrier.parent_name} - ${toTitleCase(
                                       apiData.carrier.name
                                     )}`
-                                    : "N/A"}
+                                    : (apiData?.carrier?.name || "N/A")}
                                 </span>
                               </div>
                             </div>
@@ -1638,7 +1661,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       >
                         <div className="location-icon-wrapper">
                           <div className="location-icon origin-icon">
-                            <div className="location-dot"></div>
+                            <span className="location-label">P1</span>
                           </div>
                         </div>
                         <div className="location-details">
@@ -1706,7 +1729,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         >
                           <div className="location-icon-wrapper">
                             <div className="location-icon destination-icon">
-                              <CheckCircle className="check-icon" />
+                              <span className="location-label">D{deliveryLocations.length}</span>
                             </div>
                           </div>
                           <div className="location-details">
@@ -1781,12 +1804,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       <div className="kpi-icon-badge">
                         <Clock className="kpi-icon" />
                       </div>
-                      {apiData?.latest_status == "CPTD" ? (
+                      {(apiData?.latest_status === "CPTD" || apiData?.latest_status === "ALD") ? (
                         <div className="kpi-value" style={{ fontSize: "14px" }}>
                           {" "}
-                          {etaDelta.isLate
-                            ? `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
-                            : `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`}
+                          {etaDelta.isLate ? "Late by " : "Early by "}
+                          {etaDelta.days > 0 && `${etaDelta.days}d `}
+                          {etaDelta.hours}h {etaDelta.minutes}m
                         </div>
                       ) : (
                         <div className="kpi-value" style={{ fontSize: "14px" }}>
@@ -1796,15 +1819,17 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                       <div className="kpi-label">
                         {" "}
-                        {apiData?.latest_status == "CPTD" ? "Delivered" : ""}
+                        {apiData?.latest_status === "CPTD" ? "Delivered" : (apiData?.latest_status === "ALD" ? "At Delivery" : "")}
                       </div>
                       <div className="kpi-label">
-                        {finalDestination?.finished_at
-                          ? formatTimestamp(finalDestination?.finished_at)
-                          : `ETA: ${formatTimestamp(apiData?.delivery_date)}`}
+                        {apiData?.latest_status === "CPTD"
+                          ? (apiData?.drop_finished_at ? formatTimestamp(apiData.drop_finished_at) : (finalDestination?.finished_at ? formatTimestamp(finalDestination.finished_at) : "N/A"))
+                          : (apiData?.latest_status === "ALD"
+                            ? (apiData?.drop_arrived_at ? `Arrived: ${formatTimestamp(apiData.drop_arrived_at)}` : "At Delivery")
+                            : `ETA: ${formatTimestamp(apiData?.delivery_date)}`)}
                       </div>
 
-                      {finalDestination?.finished_at ? (
+                      {(apiData?.latest_status === "CPTD" || apiData?.latest_status === "ALD") ? (
                         <div className="tooltip-content tooltip-lg">
                           <div className="tooltip-title">ETA Delta</div>
 
@@ -1816,18 +1841,24 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           </div>
 
                           <div className="tooltip-row">
-                            <span className="tooltip-key">Actual delivery:</span>
+                            <span className="tooltip-key">
+                              {apiData?.latest_status === "ALD" ? "Arrival time:" : "Actual delivery:"}
+                            </span>
                             <span className="tooltip-val">
-                              {formatEta(finalDestination?.finished_at)}
+                              {formatEta(
+                                apiData?.latest_status === "CPTD"
+                                  ? (apiData?.drop_finished_at || finalDestination?.finished_at)
+                                  : apiData?.drop_arrived_at
+                              )}
                             </span>
                           </div>
 
                           <div className="tooltip-row">
                             <span className="tooltip-key">Delta:</span>
                             <span className="tooltip-val">
-                              {etaDelta.isLate
-                                ? `Late by ${etaDelta.hours}h ${etaDelta.minutes}m`
-                                : `Early by ${etaDelta.hours}h ${etaDelta.minutes}m`}
+                              {etaDelta.isLate ? "Late by " : "Early by "}
+                              {etaDelta.days > 0 && `${etaDelta.days}d `}
+                              {etaDelta.hours}h {etaDelta.minutes}m
                             </span>
                           </div>
                         </div>
@@ -1958,8 +1989,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       <div className="kpi-value">{totalStoppagesCount || 0}</div>
                       <div className="kpi-label">
                         Stoppage{totalStoppagesCount === 1 ? "" : "s"}{" "}
-                        {parseInt(totalHaltDurationText, 10) > 9 && (
-                          <span> (&gt;9 hrs)</span>
+                        {apiData?.shipper?._id === "694b847f2a7c87efd3fe4f09" ? (
+                          totalHaltMinutes >= 20 && <span> (&gt;20 min)</span>
+                        ) : (
+                          parseInt(totalHaltDurationText, 10) >= 9 && (
+                            <span> (&gt;9 hrs)</span>
+                          )
                         )}
                       </div>
                       {/* <span className="tooltip-content">3 extended stops during journey</span> */}
@@ -2913,7 +2948,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         >
                           <div className="location-icon-wrapper1">
                             <div className="location-icon origin-icon1">
-                              <div className="location-dot1"></div>
+                              <span className="location-label">P{index + 2}</span>
                             </div>
                           </div>
                           <div className="location-details">
@@ -2943,7 +2978,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         >
                           <div className="location-icon-wrapper1">
                             <div className="location-icon destination-icon1">
-                              <div className="location-dot1"></div>
+                              <span className="location-label">D{index + 1}</span>
                             </div>
                           </div>
                           <div className="location-details">
