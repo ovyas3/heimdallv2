@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
     title: "TripTracker - SmartTruck",
-    description: "Real-time shipment tracking with Kepler map integration",
+    description: "Shipment No: SIN",
 };
 
 export default function RootLayout({

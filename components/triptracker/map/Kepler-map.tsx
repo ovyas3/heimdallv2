@@ -421,37 +421,14 @@ export default function KeplerMap({
   useEffect(() => {
     const fetchBoundary = async () => {
       try {
-        // NOTE: Using the same URL that returned your successful data structure
-        const geoJsonUrl =
-          "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
+        const geoJsonUrl = "/india.json";
 
         const response = await fetch(geoJsonUrl);
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch boundary data: HTTP ${response.status}`
-          );
+          throw new Error(`Failed to fetch boundary data: HTTP ${response.status}`);
         }
-
         const data = await response.json();
-
-        // *** FINAL CORRECTED FILTERING LOGIC ***
-        // Use the exact property key found in your console log
-        const indiaFeature = data.features.find((f: any) => {
-          // Check for the most reliable identifier: the ISO 3-letter code 'IND'
-          return f.properties["ISO3166-1-Alpha-3"] === "IND";
-        });
-        // ***************************************
-
-        if (indiaFeature) {
-          setIndiaBoundary({
-            type: "FeatureCollection",
-            features: [indiaFeature],
-          });
-        } else {
-          console.warn(
-            "India feature not found in GeoJSON file. The filter failed."
-          );
-        }
+        setIndiaBoundary(data);
       } catch (error) {
         console.error("Error fetching India boundary GeoJSON:", error);
       }
@@ -1728,7 +1705,7 @@ export default function KeplerMap({
     return { status, statusClass };
   };
 
-  const [selectedMapStyle, setSelectedMapStyle] = useState("osm-light");
+  const [selectedMapStyle, setSelectedMapStyle] = useState("satellite");
 
   // Load theme from localStorage
   useEffect(() => {
@@ -1759,7 +1736,18 @@ export default function KeplerMap({
 
   const [showMapStyleSelector, setShowMapStyleSelector] = useState(false);
   const mapStyles = [
-    { id: "none", name: "No Basemap", url: "", color: "#000000" },
+    {
+      id: "osm-light",
+      name: "Light",
+      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      color: "#ffffff",
+    },
+    {
+      id: "satellite",
+      name: "Satellite With Streets",
+      url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      color: "#4a5568",
+    },
     {
       id: "dark",
       name: "DarkMatter",
@@ -1778,23 +1766,12 @@ export default function KeplerMap({
       url: "https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png",
       color: "#e8f4f8",
     },
-    {
-      id: "satellite",
-      name: "Satellite With Streets",
-      url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
-      color: "#4a5568",
-    },
+    { id: "none", name: "No Basemap", url: "", color: "#000000" },
     {
       id: "osm-dark",
       name: "Dark",
       url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
       color: "#1a202c",
-    },
-    {
-      id: "osm-light",
-      name: "Light",
-      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      color: "#ffffff",
     },
     {
       id: "muted-light",
@@ -1810,16 +1787,42 @@ export default function KeplerMap({
     },
   ];
 
+  const handleStyleSelect = (styleId: string) => {
+    setSelectedMapStyle(styleId);
+    // Sync with the parent's satellite toggle if needed
+    if (styleId === "satellite") {
+      if (!isSatelliteView) onToggleSatellite?.();
+    } else {
+      if (isSatelliteView) onToggleSatellite?.();
+    }
+  };
+
   const getCurrentMapUrl = () => {
     if (selectedMapStyle === "none") return "";
-    if (isSatelliteView)
-      return mapStyles.find((s) => s.id === "satellite")?.url || "";
     return (
       mapStyles.find((s) => s.id === selectedMapStyle)?.url ||
-      mapStyles.find((s) => s.id === "light")?.url ||
+      mapStyles.find((s) => s.id === "osm-light")?.url ||
       ""
     );
   };
+
+
+  const fitToIndia = useCallback(() => {
+    if (indiaBoundary && mapRef.current) {
+      const geoJsonLayer = L.geoJSON(indiaBoundary);
+      mapRef.current.fitBounds(geoJsonLayer.getBounds(), {
+        padding: [20, 20],
+        animate: true,
+      });
+    }
+  }, [indiaBoundary]);
+
+  // Auto-fit to India when data loads if no other focal point
+  useEffect(() => {
+    if (indiaBoundary && mapRef.current && !shipmentData) {
+      fitToIndia();
+    }
+  }, [indiaBoundary, shipmentData, fitToIndia]);
 
   // Delhi
   const center: [number, number] = [28.6139, 77.209];
@@ -2733,7 +2736,7 @@ export default function KeplerMap({
         >
           <MapController mapRef={mapRef} />
           <Pane name="shipmentMarkers" style={{ zIndex: 650 }} />
-          {selectedMapStyle !== "none" && (
+          {(selectedMapStyle !== "none" || isSatelliteView) && (
             <TileLayer
               url={getCurrentMapUrl()}
               attribution={
@@ -2745,17 +2748,14 @@ export default function KeplerMap({
           )}
           {indiaBoundary && (
             <GeoJSON
-              key="india-boundary"
+              key={`india-boundary-${selectedMapStyle}`}
               data={indiaBoundary as any}
               style={{
-                fillColor: "transparent", // 1. Set the fill color to transparent
-                fillOpacity: 0.0, // 2. Set the fill opacity to zero
-                // --- END OF CORRECTION ---
-
-                color: "black", // Purple line for the border
-                weight: 0.5, // Thicker border line
-                opacity: 1.0, // Solid border line
-                dashArray: "none",
+                fillColor: "#e2e8f0",
+                fillOpacity: selectedMapStyle === "none" ? 0.15 : 0.0,
+                color: "#475569",
+                weight: 0.8,
+                opacity: 0.6,
               }}
             />
           )}
@@ -4105,6 +4105,17 @@ export default function KeplerMap({
 
           <div className={styles.iconBtnWrapper}>
             <button
+              onClick={fitToIndia}
+              className={styles.iconBtn}
+              title="Show Full Map"
+            >
+              <MapPin className={styles.iconSm} />
+              <span className={styles.btnLabel}>View India</span>
+            </button>
+          </div>
+
+          <div className={styles.iconBtnWrapper}>
+            <button
               onClick={onToggleSatellite}
               className={`${styles.iconBtn} ${isSatelliteView ? styles.iconBtnActivePurple : ""
                 }`}
@@ -4148,7 +4159,7 @@ export default function KeplerMap({
               {mapStyles.map((style) => (
                 <button
                   key={style.id}
-                  onClick={() => setSelectedMapStyle(style.id)}
+                   onClick={() => handleStyleSelect(style.id)}
                   className={`${styles.styleItem} ${selectedMapStyle === style.id ? styles.styleItemActive : ""
                     }`}
                 >

@@ -157,16 +157,17 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   const isSupplierView = apiData?.shipper?._id === "694b847f2a7c87efd3fe4f09" && !!apiData?.supplier?._id;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSatelliteViewLocal, setIsSatelliteViewLocal] = useState(false);
+  const [isSatelliteViewLocal, setIsSatelliteViewLocal] = useState(true);
 
   // Initialize from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("map-theme");
-      if (saved === "satellite") {
-        setIsSatelliteViewLocal(true);
-      } else if (saved === "osm-light") {
+      if (saved === "osm-light") {
         setIsSatelliteViewLocal(false);
+      } else {
+        // Default to satellite if nothing saved or satellite saved
+        setIsSatelliteViewLocal(true);
       }
     }
   }, []);
@@ -589,6 +590,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     };
     fetchTollHistory();
   }, [refreshTrigger, uniqueCode, apiData]);
+
+
 
   // This useEffect handles the trails data
   useEffect(() => {
