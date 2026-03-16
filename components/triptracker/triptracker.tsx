@@ -12,6 +12,8 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   Building2,
   Satellite,
@@ -83,6 +85,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     info: false,
   });
   const [showInfoCards, setShowInfoCards] = useState(false);
+  const [isTimelineDocked, setIsTimelineDocked] = useState(false);
 
   interface MapPoint {
     coordinates: number[];
@@ -519,11 +522,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
           }))
         );
         const lastDelStatus = shipmentData.shipment.latest_status;
-        const actualDelTime = lastDelStatus === "CPTD" 
-          ? shipmentData.shipment.drop_finished_at 
-          : (lastDelStatus === "ALD" 
-              ? shipmentData.shipment.drop_arrived_at 
-              : shipmentData.shipment.deliveries[shipmentData.shipment.deliveries.length - 1]?.finished_at);
+        const actualDelTime = lastDelStatus === "CPTD"
+          ? shipmentData.shipment.drop_finished_at
+          : (lastDelStatus === "ALD"
+            ? shipmentData.shipment.drop_arrived_at
+            : shipmentData.shipment.deliveries[shipmentData.shipment.deliveries.length - 1]?.finished_at);
 
         calculateEtaDelta(
           shipmentData.shipment.delivery_date,
@@ -590,8 +593,6 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     };
     fetchTollHistory();
   }, [refreshTrigger, uniqueCode, apiData]);
-
-
 
   // This useEffect handles the trails data
   useEffect(() => {
@@ -980,7 +981,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
 
   return (
-    <div className="dashboard-container">
+    <div className={`dashboard-container ${isTimelineDocked ? "collapsed-sidebar" : ""}`}>
       {loading ? (
         <div className="loading-overlay">
           <div className="spinner"></div>
@@ -1592,23 +1593,21 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                   )})` || "N/A"}
                                 </div>
                               </div>
-                              <div className="detail-grid">
-                                <div className="detail-item">
-                                  <div className="detail-label">Material</div>
-                                  <div className="detail-value">
-                                    {apiData?.materials?.[0]?.name ||
-                                      "N/A"}
-                                  </div>
+                              <div className="detail-item">
+                                <div className="detail-label">Material</div>
+                                <div className="detail-value">
+                                  {apiData?.materials?.[0]?.name ||
+                                    "N/A"}
                                 </div>
-                                <div className="detail-item">
-                                  <div className="detail-label">Weight</div>
-                                  <div className="detail-value">
-                                    {" "}
-                                    {totalWeight !== null
-                                      ? totalWeight.toFixed(2)
-                                      : "N/A"}
-                                    {" MT"}
-                                  </div>
+                              </div>
+                              <div className="detail-item">
+                                <div className="detail-label">Weight</div>
+                                <div className="detail-value">
+                                  {" "}
+                                  {totalWeight !== null
+                                    ? totalWeight.toFixed(2)
+                                    : "N/A"}
+                                  {" MT"}
                                 </div>
                               </div>
                               <div className="detail-item">
@@ -1664,20 +1663,32 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       >
                         <div className="location-icon-wrapper">
                           <div className="location-icon origin-icon">
-                            <span className="location-label">P1</span>
+                            <span style={{ fontSize: "11px", fontWeight: "800", color: "white" }}>P1</span>
                           </div>
                         </div>
                         <div className="location-details">
                           <div className="location-type">{isSupplierView ? "Source city" : "Origin"}</div>
-                          <div className="location-name">
+                          <div className="location-name-bold">
                             {isSupplierView
                               ? toTitleCase(originLocation?.location?.city || "N/A")
-                              : [
-                                originLocation?.location?.reference,
-                                toTitleCase(originLocation?.location?.name || ""),
-                                originLocation?.location?.area
-                              ].filter(Boolean).join(" - ") || "N/A"}
+                              : (
+                                <>
+                                  {originLocation?.location?.reference && (
+                                    <span>{originLocation.location.reference} - </span>
+                                  )}
+                                  {toTitleCase(originLocation?.location?.name || "N/A")}
+                                </>
+                              )}
                           </div>
+                          {!isSupplierView && (
+                            <div className="location-address">
+                              {[
+                                originLocation?.location?.area,
+                                originLocation?.location?.city,
+                                originLocation?.location?.pincode || originLocation?.location?.pin_code
+                              ].filter(Boolean).join(", ")}
+                            </div>
+                          )}
 
                           {/* Gate In Time */}
                           {pickGateInTime && (
@@ -1732,22 +1743,34 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         >
                           <div className="location-icon-wrapper">
                             <div className="location-icon destination-icon">
-                              <span className="location-label">D{deliveryLocations.length}</span>
+                              <span style={{ fontSize: "11px", fontWeight: "800", color: "white" }}>D{deliveryLocations.length}</span>
                             </div>
                           </div>
                           <div className="location-details">
                             <div className="location-type">
                               {isSupplierView ? "Destination city" : "Destination"}
                             </div>
-                            <div className="location-name">
+                            <div className="location-name-bold">
                               {isSupplierView
                                 ? "JSL Jajpur"
-                                : [
-                                  finalDestination?.location?.reference,
-                                  toTitleCase(finalDestination?.location?.name || ""),
-                                  finalDestination?.location?.area
-                                ].filter(Boolean).join(" - ") || "N/A"}
+                                : (
+                                  <>
+                                    {finalDestination?.location?.reference && (
+                                      <span>{finalDestination.location.reference} - </span>
+                                    )}
+                                    {toTitleCase(finalDestination?.location?.name || "N/A")}
+                                  </>
+                                )}
                             </div>
+                            {!isSupplierView && (
+                              <div className="location-address">
+                                {[
+                                  finalDestination?.location?.area,
+                                  finalDestination?.location?.city,
+                                  finalDestination?.location?.pincode || finalDestination?.location?.pin_code
+                                ].filter(Boolean).join(", ")}
+                              </div>
+                            )}
 
                             {dropGateInTime && (
                               <div className="location-time">
@@ -2026,7 +2049,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 <span className="tooltip-val">
                                   {longestHaltData.duration}
                                 </span>
-                                
+
                               </>
                             ) : (
                               <span className="tooltip-val">N/A</span>
@@ -2622,292 +2645,346 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   </div>
                 )}
 
-                <div
-                  className={`card timeline-card ${collapsedSections.timeline ? "collapsed" : ""
-                    }`}
-                >
+                <div className={`card timeline-card ${isTimelineDocked ? "collapsed-sidebar" : ""}`}>
                   <div className="card-header timeline-header">
-                    <div className="tab-container">
-                      <button
-                        className={`tab-button ${activeTimelineTab === "timeline" ? "active" : ""
-                          }`}
-                        onClick={() => setActiveTimelineTab("timeline")}
-                      >
-                        <Clock className="tab-icon" />
-                        Timeline
-                      </button>
-                      <button
-                        className={`tab-button ${activeTimelineTab === "tollHistory" ? "active" : ""
-                          }`}
-                        onClick={() => setActiveTimelineTab("tollHistory")}
-                      >
-                        <CreditCard className="tab-icon" />
-                        Toll History
-                      </button>
-                      {apiData?.trip_tracker?.methods?.includes("SIM") && (
+                    {!isTimelineDocked && (
+                      <div className="tab-container horizontal-tabs">
                         <button
-                          className={`tab-button ${activeTimelineTab === "simHistory" ? "active" : ""
-                            }`}
-                          onClick={() => setActiveTimelineTab("simHistory")}
+                          className={`tab-button ${activeTimelineTab === "timeline" ? "active" : ""}`}
+                          onClick={() => setActiveTimelineTab("timeline")}
                         >
-                          <Smartphone className="tab-icon" />
-                          SIM History
+                          <Clock className="tab-icon" />
+                          <span>Timeline</span>
                         </button>
-                      )}
-                      {!isSupplierView && (
+
                         <button
-                          className={`tab-button ${activeTimelineTab === "documents" ? "active" : ""
-                            }`}
-                          onClick={() => setActiveTimelineTab("documents")}
+                          className={`tab-button ${activeTimelineTab === "tollHistory" ? "active" : ""}`}
+                          onClick={() => setActiveTimelineTab("tollHistory")}
                         >
-                          <FileText className="tab-icon" />
-                          ePOD
+                          <CreditCard className="tab-icon" />
+                          <span>Toll History</span>
                         </button>
-                      )}
-                    </div>
+
+                        {apiData?.trip_tracker?.methods?.includes("SIM") && (
+                          <button
+                            className={`tab-button ${activeTimelineTab === "simHistory" ? "active" : ""}`}
+                            onClick={() => setActiveTimelineTab("simHistory")}
+                          >
+                            <Smartphone className="tab-icon" />
+                            <span>SIM History</span>
+                          </button>
+                        )}
+                        {!isSupplierView && (
+                          <button
+                            className={`tab-button ${activeTimelineTab === "documents" ? "active" : ""}`}
+                            onClick={() => setActiveTimelineTab("documents")}
+                          >
+                            <FileText className="tab-icon" />
+                            <span>ePOD</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {/* Toggle button to switch states */}
                     <button
                       className="collapse-button"
-                      onClick={() => toggleSection("timeline")}
+                      onClick={() => {
+                        const newState = !isTimelineDocked;
+                        setIsTimelineDocked(newState);
+                        setTimeout(() => window.dispatchEvent(new Event('resize')), 400);
+                      }}
                     >
-                      {collapsedSections.timeline ? (
-                        <ChevronDown className="collapse-icon" />
-                      ) : (
-                        <ChevronUp className="collapse-icon" />
-                      )}
+                      {isTimelineDocked ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
                     </button>
                   </div>
-                  {!collapsedSections.timeline && (
+
+                  {/* DYNAMIC CONTENT: Vertical Bar when docked, Tabs/Timeline when open */}
+                  {isTimelineDocked ? (
+                    <div className="vertical-tab-bar">
+                      <div
+                        className={`vertical-label ${activeTimelineTab === "timeline" ? "active" : ""}`}
+                        onClick={() => {
+                          setActiveTimelineTab("timeline");
+                          setIsTimelineDocked(false);
+                          setTimeout(() => window.dispatchEvent(new Event('resize')), 400);
+                        }}
+                      >
+                        <Clock size={14} className="vertical-icon" />
+                        <span>Timeline</span>
+                      </div>
+                      <div
+                        className={`vertical-label ${activeTimelineTab === "tollHistory" ? "active" : ""}`}
+                        onClick={() => {
+                          setActiveTimelineTab("tollHistory");
+                          setIsTimelineDocked(false);
+                          setTimeout(() => window.dispatchEvent(new Event('resize')), 400);
+                        }}
+                      >
+                        <CreditCard size={14} className="vertical-icon" />
+                        <span>Toll History</span>
+                      </div>
+                      {apiData?.trip_tracker?.methods?.includes("SIM") && (
+                        <div
+                          className={`vertical-label ${activeTimelineTab === "simHistory" ? "active" : ""}`}
+                          onClick={() => {
+                            setActiveTimelineTab("simHistory");
+                            setIsTimelineDocked(false);
+                            setTimeout(() => window.dispatchEvent(new Event('resize')), 400);
+                          }}
+                        >
+                          <Smartphone size={14} className="vertical-icon" />
+                          <span>SIM History</span>
+                        </div>
+                      )}
+                      {!isSupplierView && (
+                        <div
+                          className={`vertical-label ${activeTimelineTab === "documents" ? "active" : ""}`}
+                          onClick={() => {
+                            setActiveTimelineTab("documents");
+                            setIsTimelineDocked(false);
+                            setTimeout(() => window.dispatchEvent(new Event('resize')), 400);
+                          }}
+                        >
+                          <FileText size={14} className="vertical-icon" />
+                          <span>ePOD</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
                     <div className="card-content timeline-content">
-                      {activeTimelineTab === "timeline" && (
-                        <div className="timeline-section scrollable-container">
-                          {apiData?.trip_tracker?.last_location_at && (
-                            <div className="current-location-header">
-                              <div className="location-text">
-                                <span className="label">Current Location:</span>{" "}
-                                <span style={{ fontWeight: '600', marginLeft: '8px' }}>
-                                  {apiData.trip_tracker.last_location_address}
-                                </span>
-                              </div>
-
-                              <div className="update-time">
-                                <span className="update-label">Last Updated:</span>
-
-
-
-                                <span className="date-time" style={{ fontWeight: '600', marginLeft: '8px' }}>
-                                  {new Date(apiData.trip_tracker.last_location_at).toLocaleDateString(
-                                    "en-GB",
-                                    { day: "2-digit", month: "short" }
-                                  )}, {new Date(apiData.trip_tracker.last_location_at).toLocaleTimeString(
-                                    "en-GB",
-                                    { hour: "2-digit", minute: "2-digit" }
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-
-                          {timelineData && timelineData.length > 0 ? (
-                            timelineData.map((event: any, index: number) => (
-                              <div key={index} className="timeline-item">
-                                <div className="timeline-icon-container">
-                                  {/* <div className="timeline-icon-wrapper"> */}
-                                  {/* <Mapmark className="timeline-icon" /> */}
-                                  <Image
-                                    src="/mapMarker.svg"
-                                    alt=""
-                                    width={20}
-                                    height={20}
-                                  />
-                                </div>
-                                <div className="timeline-details">
-                                  <div className="timeline-time-row">
-                                    <span className="timeline-time">
-                                      {new Date(
-                                        event.created_at
-                                      ).toLocaleTimeString("en-GB", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}
-                                    </span>
-                                    {/* <div className="timeline-dot"></div> */}
-                                    <div className="timeline-date">
-                                      {new Date(
-                                        event.created_at
-                                      ).toLocaleDateString("en-GB", {
-                                        day: "2-digit",
-                                        month: "short",
-                                        year: "numeric",
-                                      })}
-                                    </div>
-                                  </div>
-                                  <div className="timeline-event">
-                                    {event.comments}
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="no-data-message">
-                              No timeline events available.
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {activeTimelineTab === "tollHistory" && (
-                        <div className="toll-history-section scrollable-container">
-                          {tollHistoryData && tollHistoryData.length > 0 ? (
-                            tollHistoryData.map((toll: any, index: number) => (
-                              <div key={index} className="toll-history-item">
-                                <div className="toll-date">
-                                  <div>
-                                    {new Date(
-                                      toll?.time_stamp
-                                    ).toLocaleDateString()}
-                                  </div>
-                                  <div className="toll-time">
-                                    {new Date(
-                                      toll?.time_stamp
-                                    ).toLocaleTimeString()}
-                                  </div>
-                                </div>
-                                <div className="toll-icon-container">
-                                  <Image
-                                    src="/toll_gate_icon_passed.svg"
-                                    alt=""
-                                    width={28}
-                                    height={28}
-                                  />
-                                  {/* <img src={TollGateIcon} className="toll-icon" alt="Toll Gate" /> */}
-                                  {/* <Building2 className="toll-icon" /> */}
-                                  {/* </div> */}
-                                  {index < tollHistoryData.length - 1 && (
-                                    <div className="toll-line"></div>
-                                  )}
-                                </div>
-                                <div
-                                  className="toll-name tooltip-ellipsis"
-                                  data-title={toll?.tollPlazaName}
-                                >
-                                  {toll?.tollPlazaName || "N/A"}
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="no-data-message">
-                              No toll history available.
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {activeTimelineTab === "simHistory" && (
-                        <div className="toll-history-section scrollable-container">
-                          {simHistoryData && simHistoryData.length > 0 ? (
-                            simHistoryData.map((trail: any, index: number) => (
-                              <div key={index} className="toll-history-item">
-                                <div className="toll-date">
-                                  <div>
-                                    {new Date(
-                                      trail?.timestamp
-                                    ).toLocaleDateString()}
-                                  </div>
-                                  <div className="toll-time">
-                                    {new Date(
-                                      trail?.timestamp
-                                    ).toLocaleTimeString()}
-                                  </div>
-                                </div>
-                                <div className="toll-icon-container">
-                                  <div style={{
-                                    width: 28,
-                                    height: 28,
-                                    background: '#f3f4f6',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}>
-                                    <Smartphone size={16} className="text-gray-600" />
-                                  </div>
-
-                                  {index < simHistoryData.length - 1 && (
-                                    <div className="toll-line"></div>
-                                  )}
-                                </div>
-                                <div className="toll-info" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, marginLeft: '12px' }}>
-
-                                  <div
-                                    className="toll-name"
-                                    style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'default' }}
-                                    onMouseEnter={(e) => {
-                                      const address = trail?.details?.address || trail?.event;
-                                      if (!address) return;
-                                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                      const isRightSide = rect.left > window.innerWidth / 2;
-                                      setCustomTooltip({
-                                        x: isRightSide ? rect.right : rect.left,
-                                        y: rect.bottom + 6,
-                                        text: address,
-                                        align: isRightSide ? "right" : "left",
-                                      });
-                                    }}
-                                    onMouseLeave={() => setCustomTooltip(null)}
-                                  >
-                                    {trail?.details?.address || trail?.event || "N/A"}
-                                  </div>
-                                  {trail?.details?.milestone && (
-                                    <div style={{ fontSize: '11px', color: '#6b7280' }}>
-                                      {trail.details.milestone.replace(/_/g, ' ')}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="no-data-message">
-                              No SIM history data available.
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {activeTimelineTab === "documents" && (
-                        <div className="documents-grid scrollable-container">
-                          {/* HIGHLIGHT: Replaced static button with a dynamic map */}
-                          {epodLinks && epodLinks.length > 0 ? (
-                            epodLinks.map((url, index) => (
-                              <button
-                                key={index}
-                                className="doc-tile"
-                                onClick={() => {
-                                  setIsPdfLoading(true);
-                                  setDocModal({
-                                    open: true,
-                                    doc: {
-                                      id: `epod${index + 1}`,
-                                      name: `ePOD Document ${index + 1}`,
-                                      url: url,
-                                    },
-                                  });
-                                }}
-                              >
-                                <span className="doc-name">
-                                  <span className="doc-flex">
-                                    <FileText className="doc-icon" />
-                                    <span>ePOD {index + 1}</span>
+                      {/* Conditional Content Sections (Timeline, Tolls, SIM, Docs) */}
+                      <div className="scrollable-container">
+                        {activeTimelineTab === "timeline" && (
+                          <div className="timeline-section scrollable-container">
+                            {apiData?.trip_tracker?.last_location_at && (
+                              <div className="current-location-header">
+                                <div className="location-text">
+                                  <span className="label">Current Location:</span>{" "}
+                                  <span style={{ fontWeight: '600', marginLeft: '8px' }}>
+                                    {apiData.trip_tracker.last_location_address}
                                   </span>
-                                </span>
-                              </button>
-                            ))
-                          ) : (
-                            <div className="no-data-message">
-                              No ePODs available.
-                            </div>
-                          )}
-                        </div>
-                      )}
+                                </div>
+
+                                <div className="update-time">
+                                  <span className="update-label">Last Updated:</span>
+
+
+
+                                  <span className="date-time" style={{ fontWeight: '600', marginLeft: '8px' }}>
+                                    {new Date(apiData.trip_tracker.last_location_at).toLocaleDateString(
+                                      "en-GB",
+                                      { day: "2-digit", month: "short" }
+                                    )}, {new Date(apiData.trip_tracker.last_location_at).toLocaleTimeString(
+                                      "en-GB",
+                                      { hour: "2-digit", minute: "2-digit" }
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {timelineData && timelineData.length > 0 ? (
+                              timelineData.map((event: any, index: number) => (
+                                <div key={index} className="timeline-item">
+                                  <div className="timeline-icon-container">
+                                    {/* <div className="timeline-icon-wrapper"> */}
+                                    {/* <Mapmark className="timeline-icon" /> */}
+                                    <Image
+                                      src="/mapMarker.svg"
+                                      alt=""
+                                      width={20}
+                                      height={20}
+                                    />
+                                  </div>
+                                  <div className="timeline-details">
+                                    <div className="timeline-time-row">
+                                      <span className="timeline-time">
+                                        {new Date(
+                                          event.created_at
+                                        ).toLocaleTimeString("en-GB", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </span>
+                                      {/* <div className="timeline-dot"></div> */}
+                                      <div className="timeline-date">
+                                        {new Date(
+                                          event.created_at
+                                        ).toLocaleDateString("en-GB", {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                        })}
+                                      </div>
+                                    </div>
+                                    <div className="timeline-event">
+                                      {event.comments}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-data-message">
+                                No timeline events available.
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {activeTimelineTab === "tollHistory" && (
+                          <div className="toll-history-section scrollable-container">
+                            {tollHistoryData && tollHistoryData.length > 0 ? (
+                              tollHistoryData.map((toll: any, index: number) => (
+                                <div key={index} className="toll-history-item">
+                                  <div className="toll-date">
+                                    <div>
+                                      {new Date(
+                                        toll?.time_stamp
+                                      ).toLocaleDateString()}
+                                    </div>
+                                    <div className="toll-time">
+                                      {new Date(
+                                        toll?.time_stamp
+                                      ).toLocaleTimeString()}
+                                    </div>
+                                  </div>
+                                  <div className="toll-icon-container">
+                                    <Image
+                                      src="/toll_gate_icon_passed.svg"
+                                      alt=""
+                                      width={28}
+                                      height={28}
+                                    />
+                                    {/* <img src={TollGateIcon} className="toll-icon" alt="Toll Gate" /> */}
+                                    {/* <Building2 className="toll-icon" /> */}
+                                    {/* </div> */}
+                                    {index < tollHistoryData.length - 1 && (
+                                      <div className="toll-line"></div>
+                                    )}
+                                  </div>
+                                  <div
+                                    className="toll-name tooltip-ellipsis"
+                                    data-title={toll?.tollPlazaName}
+                                  >
+                                    {toll?.tollPlazaName || "N/A"}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-data-message">
+                                No toll history available.
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {activeTimelineTab === "simHistory" && (
+                          <div className="toll-history-section scrollable-container">
+                            {simHistoryData && simHistoryData.length > 0 ? (
+                              simHistoryData.map((trail: any, index: number) => (
+                                <div key={index} className="toll-history-item">
+                                  <div className="toll-date">
+                                    <div>
+                                      {new Date(
+                                        trail?.timestamp
+                                      ).toLocaleDateString()}
+                                    </div>
+                                    <div className="toll-time">
+                                      {new Date(
+                                        trail?.timestamp
+                                      ).toLocaleTimeString()}
+                                    </div>
+                                  </div>
+                                  <div className="toll-icon-container">
+                                    <div style={{
+                                      width: 28,
+                                      height: 28,
+                                      background: '#f3f4f6',
+                                      borderRadius: '50%',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}>
+                                      <Smartphone size={16} className="text-gray-600" />
+                                    </div>
+
+                                    {index < simHistoryData.length - 1 && (
+                                      <div className="toll-line"></div>
+                                    )}
+                                  </div>
+                                  <div className="toll-info" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, marginLeft: '12px' }}>
+
+                                    <div
+                                      className="toll-name"
+                                      style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'default' }}
+                                      onMouseEnter={(e) => {
+                                        const address = trail?.details?.address || trail?.event;
+                                        if (!address) return;
+                                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                        const isRightSide = rect.left > window.innerWidth / 2;
+                                        setCustomTooltip({
+                                          x: isRightSide ? rect.right : rect.left,
+                                          y: rect.bottom + 6,
+                                          text: address,
+                                          align: isRightSide ? "right" : "left",
+                                        });
+                                      }}
+                                      onMouseLeave={() => setCustomTooltip(null)}
+                                    >
+                                      {trail?.details?.address || trail?.event || "N/A"}
+                                    </div>
+                                    {trail?.details?.milestone && (
+                                      <div style={{ fontSize: '11px', color: '#6b7280' }}>
+                                        {trail.details.milestone.replace(/_/g, ' ')}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="no-data-message">
+                                No SIM history data available.
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {activeTimelineTab === "documents" && (
+                          <div className="documents-grid scrollable-container">
+                            {/* HIGHLIGHT: Replaced static button with a dynamic map */}
+                            {epodLinks && epodLinks.length > 0 ? (
+                              epodLinks.map((url, index) => (
+                                <button
+                                  key={index}
+                                  className="doc-tile"
+                                  onClick={() => {
+                                    setIsPdfLoading(true);
+                                    setDocModal({
+                                      open: true,
+                                      doc: {
+                                        id: `epod${index + 1}`,
+                                        name: `ePOD Document ${index + 1}`,
+                                        url: url,
+                                      },
+                                    });
+                                  }}
+                                >
+                                  <span className="doc-name">
+                                    <span className="doc-flex">
+                                      <FileText className="doc-icon" />
+                                      <span>ePOD {index + 1}</span>
+                                    </span>
+                                  </span>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="no-data-message">
+                                No ePODs available.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2951,7 +3028,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         >
                           <div className="location-icon-wrapper1">
                             <div className="location-icon origin-icon1">
-                              <span className="location-label">P{index + 2}</span>
+                              <div className="location-dot1"></div>
                             </div>
                           </div>
                           <div className="location-details">

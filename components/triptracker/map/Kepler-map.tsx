@@ -784,7 +784,7 @@ export default function KeplerMap({
       if (haltPopupRef.current) {
         try {
           currentMap.closePopup(haltPopupRef.current);
-        } catch {}
+        } catch { }
         haltPopupRef.current = null;
       }
     };
@@ -847,14 +847,14 @@ export default function KeplerMap({
             animate: true,
             duration: 0.4,
           });
-        } catch {}
+        } catch { }
 
         // set timer to close popup and resume replay
         haltPopupTimerRef.current = setTimeout(() => {
           if (haltPopupRef.current) {
             try {
               currentMap.closePopup(haltPopupRef.current);
-            } catch {}
+            } catch { }
             haltPopupRef.current = null;
           }
           setIsPausedAtHalt(false);
@@ -876,7 +876,7 @@ export default function KeplerMap({
       if (haltPopupRef.current) {
         try {
           currentMap.closePopup(haltPopupRef.current);
-        } catch {}
+        } catch { }
         haltPopupRef.current = null;
       }
     };
@@ -899,7 +899,7 @@ export default function KeplerMap({
       if (deviationPopupRef.current) {
         try {
           currentMap.closePopup(deviationPopupRef.current);
-        } catch {}
+        } catch { }
         deviationPopupRef.current = null;
       }
     };
@@ -948,13 +948,13 @@ export default function KeplerMap({
             animate: true,
             duration: 0.4,
           });
-        } catch {}
+        } catch { }
 
         deviationPopupTimerRef.current = setTimeout(() => {
           if (deviationPopupRef.current) {
             try {
               currentMap.closePopup(deviationPopupRef.current);
-            } catch {}
+            } catch { }
             deviationPopupRef.current = null;
           }
           setIsPausedAtDeviation(false);
@@ -974,7 +974,7 @@ export default function KeplerMap({
       if (deviationPopupRef.current) {
         try {
           currentMap.closePopup(deviationPopupRef.current);
-        } catch {}
+        } catch { }
         deviationPopupRef.current = null;
       }
     };
@@ -2094,7 +2094,7 @@ export default function KeplerMap({
       const constrainedX = Math.max(0, Math.min(point.x, rect.width));
       const constrainedY = Math.max(0, Math.min(point.y, rect.height));
       setMagnifierPosition({ x: constrainedX, y: constrainedY });
-    } catch {}
+    } catch { }
   }, [isMagnifierEnabled, magnifierCenter, setMagnifierPosition]);
 
   useEffect(() => {
@@ -2205,7 +2205,7 @@ export default function KeplerMap({
             position.y,
           ]);
           setMagnifierCenter([latLng.lat, latLng.lng]);
-        } catch {}
+        } catch { }
       }
     }
   }, [
@@ -2370,7 +2370,7 @@ export default function KeplerMap({
       if (haltPopupRef.current && mapRef.current) {
         try {
           mapRef.current.closePopup(haltPopupRef.current);
-        } catch {}
+        } catch { }
         haltPopupRef.current = null;
       }
       if (deviationPopupTimerRef.current) {
@@ -2380,7 +2380,7 @@ export default function KeplerMap({
       if (deviationPopupRef.current && mapRef.current) {
         try {
           mapRef.current.closePopup(deviationPopupRef.current);
-        } catch {}
+        } catch { }
         deviationPopupRef.current = null;
       }
     }
@@ -2417,13 +2417,13 @@ export default function KeplerMap({
     if (haltPopupRef.current && mapRef.current) {
       try {
         mapRef.current.closePopup(haltPopupRef.current);
-      } catch {}
+      } catch { }
       haltPopupRef.current = null;
     }
     if (deviationPopupRef.current && mapRef.current) {
       try {
         mapRef.current.closePopup(deviationPopupRef.current);
-      } catch {}
+      } catch { }
       deviationPopupRef.current = null;
     }
   };
@@ -2447,7 +2447,7 @@ export default function KeplerMap({
     if (haltPopupRef.current && mapRef.current) {
       try {
         mapRef.current.closePopup(haltPopupRef.current);
-      } catch {}
+      } catch { }
       haltPopupRef.current = null;
     }
 
@@ -4159,7 +4159,7 @@ export default function KeplerMap({
               {mapStyles.map((style) => (
                 <button
                   key={style.id}
-                   onClick={() => handleStyleSelect(style.id)}
+                  onClick={() => handleStyleSelect(style.id)}
                   className={`${styles.styleItem} ${selectedMapStyle === style.id ? styles.styleItemActive : ""
                     }`}
                 >
