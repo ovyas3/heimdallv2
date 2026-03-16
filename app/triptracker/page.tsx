@@ -31,13 +31,13 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
             title: `SmarTruck - TripTracker`,
             description: `Shipment No: ${sin}`,
             openGraph: {
-                title: `Track Shipment ${sin}`,
-                description: `Real-time tracking for Shipment ${sin}`,
+                title: `SmarTruck - TripTracker`,
+                description: `Real-time tracking for Shipment: ${sin}`,
             }
         };
     } catch (err) {
         return {
-            title: "TripTracker - SmartTruck",
+            title: "SmarTruck - TripTracker",
             description: "Shipment No: SIN",
         };
     }
