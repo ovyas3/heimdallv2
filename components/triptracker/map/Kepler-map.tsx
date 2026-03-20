@@ -60,6 +60,9 @@ const Marker = dynamic(
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
   ssr: false,
 });
+const Circle = dynamic(() => import("react-leaflet").then((mod) => mod.Circle), {
+  ssr: false,
+});
 // Add this line
 const GeoJSON = dynamic(
   () => import("react-leaflet").then((mod) => mod.GeoJSON),
@@ -2976,26 +2979,52 @@ export default function KeplerMap({
             </Marker>
           ))}
 
-          {/* === Delivery Polylines from API (if provided) === */}
-          {deliveryPolylines.map((coords, i) => (
-            <Polyline
-              key={`ship-delivery-poly-${i}`}
-              positions={coords}
-              pathOptions={{
-                color: "#ef4444",
-                weight: 2,
-                opacity: 0.9,
-                dashArray: "2, 2",
-                fill: true,
-              }}
-            />
-          ))}
+          {/* === Delivery Polylines and Circular Fallback (0.5km from destination if no polyline) === */}
+          {showGeofence &&
+            deliveryPolylines.map((coords, i) => (
+              <Polyline
+                key={`ship-delivery-poly-${i}`}
+                positions={coords}
+                pathOptions={{
+                  color: "#ef4444",
+                  weight: 2,
+                  opacity: 0.9,
+                  dashArray: "2, 2",
+                  fill: true,
+                }}
+              />
+            ))}
+
+          {/* Circular Geofence for deliveries without polylines (0.5km) */}
+          {showGeofence &&
+            shipmentDeliveries.map(({ pos, meta }, i) => {
+              const polylines = meta?.location?.polylines;
+              const hasPolylines =
+                polylines &&
+                Array.isArray(polylines) &&
+                polylines.some((p: string) => p && p.trim().length > 0);
+              if (!hasPolylines) {
+                return (
+                  <Circle
+                    key={`ship-delivery-circle-${i}`}
+                    center={pos}
+                    radius={500} // 0.5km = 500 meters
+                    pathOptions={{
+                      color: "#ef4444",
+                      fillColor: "#ef4444",
+                      fillOpacity: 0.1,
+                      weight: 2,
+                      dashArray: "5, 5",
+                    }}
+                  />
+                );
+              }
+              return null;
+            })}
+
           {/* === PICKUP Polylines from API (NEW BLOCK) === */}
-          {pickupPolylines.map(
-            (
-              coords,
-              i // <--- RENDER NEW STATE
-            ) => (
+          {showGeofence &&
+            pickupPolylines.map((coords, i) => (
               <Polyline
                 key={`ship-pickup-poly-${i}`}
                 positions={coords}
@@ -3005,10 +3034,9 @@ export default function KeplerMap({
                   opacity: 0.9,
                   dashArray: "5, 1",
                   fill: true,
-                }} // Green color, distinct dash
+                }}
               />
-            )
-          )}
+            ))}
 
           {/* === Deviation Polylines (in red) === */}
           {showDeviations && !isSupplier &&

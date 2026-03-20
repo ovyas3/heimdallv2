@@ -1622,11 +1622,11 @@ body {
 }
 
 .location-item.origin .location-icon-wrapper1 {
-  background-color: #dbeafe;
+  background-color: #d1fae5;
 }
 
 .location-item.destination .location-icon-wrapper1 {
-  background-color: #d1fae5;
+  background-color: #ffedd5;
 }
 
 .location-icon {
@@ -1665,11 +1665,11 @@ body {
 }
 
 .location-icon.origin-icon1 {
-  background-color: var(--brand-blue);
+  background-color: var(--brand-green);
 }
 
 .location-icon.destination-icon1 {
-  background-color: var(--brand-green);
+  background-color: var(--brand-orange);
 }
 
 .location-dot1 {
@@ -1677,6 +1677,12 @@ body {
   width: 0.5rem;
   border-radius: 50%;
   background-color: white;
+}
+
+.location-label {
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
 }
 
 .check-icon {
