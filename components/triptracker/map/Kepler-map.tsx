@@ -1222,6 +1222,7 @@ export default function KeplerMap({
           // Set the state with the extracted coordinates
           setMainRouteFromApi(wayCoordinates);
           const pickupMarkers = pickups
+            .filter(p => p.location?.geo_point?.coordinates) // Only include if coordinates exist
             .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
             .map((p, i) => {
               const [lng, lat] = p.location.geo_point.coordinates;
@@ -1242,6 +1243,7 @@ export default function KeplerMap({
           setPickupPolylines(decodedPickupPolys);
 
           const deliveryMarkers = deliveries
+            .filter(d => d.location?.geo_point?.coordinates) // This prevents D2 from breaking the map
             .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
             .map((d, i) => {
               const [lng, lat] = d.location.geo_point.coordinates;
@@ -1382,7 +1384,7 @@ export default function KeplerMap({
       ];
       if (currentLocation) all.push(currentLocation); // include live point
       if (all.length > 0) {
-        map.fitBounds(L.latLngBounds(all), { padding: [40, 40] });
+        map.fitBounds(L.latLngBounds(all), { padding: [50, 50] });
       }
     }
   }, [shipmentPickups, shipmentDeliveries, isReplaying, replayProgress, currentLocation]);
