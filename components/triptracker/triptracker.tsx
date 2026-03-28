@@ -106,6 +106,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     area?: string;
     date: string;
     time: string;
+    arrived_at?: string;
+    finished_at?: string;
   }
   // Add this interface along with your other interfaces
   interface FormattedStop {
@@ -116,6 +118,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     area?: string;
     date: string;
     time: string;
+    arrived_at?: string;
+    finished_at?: string;
   }
   interface Location {
     id: string;
@@ -483,10 +487,15 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
           ...shipmentData.shipment,
           gps: shipmentData.gps,
         });
-        setPickGateInTime(shipmentData.shipment.pick_arrived_at || null);
-        setPickGateOutTime(shipmentData.shipment.pick_finished_at || null);
-        setDropGateInTime(shipmentData.shipment.drop_arrived_at || null);
-        setDropGateOutTime(shipmentData.shipment.drop_finished_at || null);
+        const pickups = shipmentData.shipment.pickups || [];
+        const firstPick = pickups[0];
+        setPickGateInTime(firstPick?.arrived_at || null);
+        setPickGateOutTime(firstPick?.finished_at || null);
+
+        const deliveries = shipmentData.shipment.deliveries || [];
+        const lastDrop = deliveries[deliveries.length - 1];
+        setDropGateInTime(lastDrop?.arrived_at || null);
+        setDropGateOutTime(lastDrop?.finished_at || null);
         // Extract deviation count and total distance
         const deviations = shipmentData.shipment.deviation?.deviations || [];
         const deviationCountFromApi = deviations.length;
@@ -505,6 +514,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             name: p.location.name,
             reference: p.location.reference,
             area: p.location.area,
+            arrived_at: p.arrived_at,
+            finished_at: p.finished_at,
             date: formatTimestamp(p.finished_at),
             time: formatTimestamp(p.finished_at),
           }))
@@ -517,16 +528,18 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             name: d.location.name,
             reference: d.location.reference,
             area: d.location.area,
+            arrived_at: d.arrived_at,
+            finished_at: d.finished_at,
             date: formatTimestamp(d.finished_at),
             time: formatTimestamp(d.finished_at),
           }))
         );
         const lastDelStatus = shipmentData.shipment.latest_status;
         const actualDelTime = lastDelStatus === "CPTD"
-          ? shipmentData.shipment.drop_finished_at
+          ? (lastDrop?.finished_at || shipmentData.shipment.drop_finished_at)
           : (lastDelStatus === "ALD"
-            ? shipmentData.shipment.drop_arrived_at
-            : shipmentData.shipment.deliveries[shipmentData.shipment.deliveries.length - 1]?.finished_at);
+            ? (lastDrop?.arrived_at || shipmentData.shipment.drop_arrived_at)
+            : lastDrop?.finished_at);
 
         calculateEtaDelta(
           shipmentData.shipment.delivery_date,
@@ -1065,7 +1078,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   <span>ETA: {formatEta(apiData?.delivery_date)}</span>
                 </div>
                 <div className="shipment-id tooltip">
-                  <span>{apiData?.SIN || "N/A"}</span>
+                  <span>{apiData?.others?.sap_shipment_no || apiData?.SIN || "N/A"}</span>
                   {/* <span className="tooltip-content">Shipment ID</span> */}
                 </div>
                 <div className="tracking-icons">
@@ -1402,7 +1415,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           <div className="detail-item">
                             <span className="detail-label">Mobile Number</span>
                             <span className="detail-value">
-                              {apiData?.driver?.mobile || "N/A"}
+                              {apiData?.driver?.mobile2 || apiData?.driver?.mobile || "N/A"}
                             </span>
                           </div>
                           <div className="detail-item-group">
@@ -1517,7 +1530,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               <div className="detail-item">
                                 <span className="detail-label">Mobile No</span>
                                 <span className="detail-value">
-                                  {apiData?.driver?.mobile || "N/A"}
+                                  {apiData?.driver?.mobile2 || apiData?.driver?.mobile || "N/A"}
                                 </span>
                               </div>
                               <div className="detail-item">
@@ -1691,26 +1704,26 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           )}
 
                           {/* Gate In Time */}
-                          {pickGateInTime && (
-                            <div className="location-time">
-                              <Clock className="time-icon" />
-                              <span>
-                                {isSupplierView ? "Arrived at Source: " : "Gate In: "}
-                                {formatTimestamp(pickGateInTime)}
-                              </span>
-                            </div>
-                          )}
+
+                          <div className="location-time">
+                            <Clock className="time-icon" />
+                            <span>
+                              {isSupplierView ? "Arrived at Source: " : "Gate In: "}
+                              {pickGateInTime ? formatTimestamp(pickGateInTime) : "N/A"}
+                            </span>
+                          </div>
+
 
                           {/* Gate Out Time */}
-                          {pickGateOutTime && (
-                            <div className="location-time">
-                              <Clock className="time-icon" />
-                              <span>
-                                {isSupplierView ? "Dispatched from Source: " : "Gate Out: "}
-                                {formatTimestamp(pickGateOutTime)}
-                              </span>
-                            </div>
-                          )}
+
+                          <div className="location-time">
+                            <Clock className="time-icon" />
+                            <span>
+                              {isSupplierView ? "Dispatched from Source: " : "Gate Out: "}
+                              {pickGateOutTime ? formatTimestamp(pickGateOutTime) : "N/A"}
+                            </span>
+                          </div>
+
 
                           {/* <div className="location-time">
                             <Clock className="time-icon" />
@@ -1772,25 +1785,34 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               </div>
                             )}
 
-                            {dropGateInTime && (
+                            {/* {dropGateInTime && (
                               <div className="location-time">
                                 <Clock className="time-icon" />
                                 <span>
-                                  {isSupplierView ? "Reached Destination: " : "Gate In: "}
-                                  {formatTimestamp(dropGateInTime)}
+                                  {isSupplierView ? "Reached Destination: " : "Customer Location In: "}
+                                  {formatTimestamp(dropGateInTime) || "N/A"}
                                 </span>
                               </div>
-                            )}
+                            )} */}
+
+                            <div className="location-time">
+                              <Clock className="time-icon" />
+                              <span>
+                                {isSupplierView ? "Reached Destination: " : "Customer Location In: "}
+                                {dropGateInTime ? formatTimestamp(dropGateInTime) : "N/A"}
+                              </span>
+                            </div>
 
                             {/* Gate Out Time */}
-                            {dropGateOutTime && (
-                              <div className="location-time">
-                                <Clock className="time-icon" />
-                                <span>
-                                  Gate Out: {formatTimestamp(dropGateOutTime)}
-                                </span>
-                              </div>
-                            )}
+
+                            <div className="location-time">
+                              <Clock className="time-icon" />
+                              <span>
+                                Customer Location Out:
+                                {dropGateOutTime ? formatTimestamp(dropGateOutTime) : "N/A"}
+                              </span>
+                            </div>
+
                           </div>
                           {destinations.length > 0 && !showAllDests && (
                             <button
@@ -1849,9 +1871,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       </div>
                       <div className="kpi-label">
                         {apiData?.latest_status === "CPTD"
-                          ? (apiData?.drop_finished_at ? formatTimestamp(apiData.drop_finished_at) : (finalDestination?.finished_at ? formatTimestamp(finalDestination.finished_at) : "N/A"))
+                          ? (lastDelivery?.finished_at ? formatTimestamp(lastDelivery.finished_at) : (apiData?.drop_finished_at ? formatTimestamp(apiData.drop_finished_at) : "N/A"))
                           : (apiData?.latest_status === "ALD"
-                            ? (apiData?.drop_arrived_at ? `Arrived: ${formatTimestamp(apiData.drop_arrived_at)}` : "At Delivery")
+                            ? (lastDelivery?.arrived_at ? `Arrived: ${formatTimestamp(lastDelivery.arrived_at)}` : "At Delivery")
                             : `ETA: ${formatTimestamp(apiData?.delivery_date)}`)}
                       </div>
 
@@ -1873,8 +1895,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <span className="tooltip-val">
                               {formatEta(
                                 apiData?.latest_status === "CPTD"
-                                  ? (apiData?.drop_finished_at || finalDestination?.finished_at)
-                                  : apiData?.drop_arrived_at
+                                  ? (lastDelivery?.finished_at || apiData?.drop_finished_at || finalDestination?.finished_at)
+                                  : (lastDelivery?.arrived_at || apiData?.drop_arrived_at)
                               )}
                             </span>
                           </div>
@@ -3028,11 +3050,10 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                         >
                           <div className="location-icon-wrapper1">
                             <div className="location-icon origin-icon1">
-                              <div className="location-dot1"></div>
+                              <span style={{ fontSize: "11px", fontWeight: "800", color: "white" }}>P{index + 2}</span>
                             </div>
                           </div>
                           <div className="location-details">
-                            {/* <div className="location-type">Origin</div> */}
                             <div className="location-name">
                               {[
                                 s.reference,
@@ -3040,10 +3061,16 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 s.area
                               ].filter(Boolean).join(" - ") || "N/A"}
                             </div>
-                            {s.date && s.date !== "N/A" && (
+                            {s.arrived_at && (
                               <div className="location-time">
                                 <Clock className="time-icon" />
-                                <span>{s.date}</span>
+                                <span>Gate In: {formatTimestamp(s.arrived_at)}</span>
+                              </div>
+                            )}
+                            {s.finished_at && (
+                              <div className="location-time">
+                                <Clock className="time-icon" />
+                                <span>Gate Out: {formatTimestamp(s.finished_at)}</span>
                               </div>
                             )}
                           </div>
@@ -3069,10 +3096,16 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                 d.area
                               ].filter(Boolean).join(" - ") || "N/A"}
                             </div>
-                            {d.date && d.date !== "N/A" && (
+                            {d.arrived_at && (
                               <div className="location-time">
                                 <Clock className="time-icon" />
-                                <span>{d.date}</span>
+                                <span>{isSupplierView ? "Reached Destination: " : "Customer Location In: "}{formatTimestamp(d.arrived_at)}</span>
+                              </div>
+                            )}
+                            {d.finished_at && (
+                              <div className="location-time">
+                                <Clock className="time-icon" />
+                                <span>Customer Location Out: {formatTimestamp(d.finished_at)}</span>
                               </div>
                             )}
                           </div>

@@ -114,13 +114,54 @@ interface KeplerMapProps {
     trip_tracker?: {
       last_location_address?: string;
       polyline_sim?: string;
+      polyline?: string;
       last_location_at?: string;
+      methods?: string[];
     };
     deliveries?: Array<{
+      location?: {
+        geo_point?: {
+          coordinates?: [number, number];
+        };
+        name?: string;
+        city?: string;
+        reference?: string;
+        polylines?: string[];
+      };
+      sequence?: number;
       finished_at?: string;
+      arrived_at?: string;
     }>;
+    pickups?: Array<{
+      location?: {
+        geo_point?: {
+          coordinates?: [number, number];
+        };
+        name?: string;
+        city?: string;
+        reference?: string;
+        polylines?: string[];
+      };
+      sequence?: number;
+      finished_at?: string;
+      arrived_at?: string;
+    }>;
+    dayrun?: {
+      dayRuns?: Array<{
+        start: string;
+        day: number;
+        distance: number;
+        travel_time: number;
+        polyline: string;
+      }>;
+    };
+    deviation?: {
+      deviations?: any[];
+    };
     pick_arrived_at?: string;
     pick_finished_at?: string;
+    waypoints?: any[];
+    geo_fence?: any;
   };
   isSupplier?: boolean;
   showInfoCards?: boolean;
@@ -283,6 +324,7 @@ export default function KeplerMap({
     []
   );
   const [showDayRun, setShowDayRun] = useState(false);
+  const [showDayRunTableSmall, setShowDayRunTableSmall] = useState(false);
   const [dayRunDetails, setDayRunDetails] = useState<any[]>([]);
   const [deviationData, setDeviationData] = useState<any[]>([]);
   const [indiaBoundary, setIndiaBoundary] = useState<any>(null);
@@ -460,9 +502,9 @@ export default function KeplerMap({
   // Close day run table when exiting fullscreen
   useEffect(() => {
     if (!isFullscreen && showDayRun) {
-      setShowDayRun(false);
+      setShowDayRunTableSmall(false);
     }
-  }, [isFullscreen, showDayRun]);
+  }, [isFullscreen]);
 
   useEffect(() => {
     if (activeMode) return;
@@ -1292,6 +1334,46 @@ export default function KeplerMap({
       setProgressPercentage,
     ]
   ); // This dependency is correct
+
+  // Keep state sync from props
+  useEffect(() => {
+    if (shipmentData) {
+      if (shipmentData.dayrun?.dayRuns) {
+        const decodedDayRuns = shipmentData.dayrun.dayRuns
+          .filter((run) => run.polyline)
+          .map((run) => decodePolyline(run.polyline));
+        setDayRunPolylines(decodedDayRuns);
+
+        const extractedDetails = shipmentData.dayrun.dayRuns.map((run) => ({
+          startTime: convertUtcToIst24hr(run.start),
+          distance: run.distance ? `${run.distance.toFixed(2)} km` : "N/A",
+          time: run.travel_time
+            ? `${Math.floor(run.travel_time / 3600)}h ${Math.floor(
+              (run.travel_time % 3600) / 60
+            )}m`
+            : "N/A",
+        }));
+        setDayRunDetails(extractedDetails);
+      }
+
+      if (shipmentData.deviation?.deviations) {
+        const processedDeviations = shipmentData.deviation.deviations.map((deviation: any, index: number) => ({
+          id: index + 1,
+          path: decodePolyline(deviation.polyline),
+          reason: "Route deviation detected",
+          location: `Deviation ${index + 1}`,
+          startTime: convertUtcToIst24hr(deviation.start_time),
+          endTime: convertUtcToIst24hr(deviation.end_time),
+          distance: `${deviation.distance?.toFixed(2)} km`,
+          duration: Math.floor(deviation.duration / 60) > 0
+            ? `${Math.floor(deviation.duration / 60)}h ${deviation.duration % 60}m`
+            : `${deviation.duration % 60}m`,
+          polyline: deviation.polyline,
+        }));
+        setDeviationData(processedDeviations);
+      }
+    }
+  }, [shipmentData]);
 
   const deviationRoutes = useMemo(
     () => (deviationData.length > 0 ? deviationData : []),
@@ -2804,7 +2886,7 @@ export default function KeplerMap({
                   key={`dayrun-${i}`}
                   positions={coords}
                   pathOptions={{
-                    color: polylineColors[i],
+                    color: polylineColors[i % polylineColors.length],
                     weight: 4,
                     opacity: 1,
                   }}
@@ -4376,53 +4458,71 @@ export default function KeplerMap({
           )}
 
           {!isSupplier && (
-            <button
-              onClick={() => {
-                if (isFullscreen) {
-                  setShowDayRun((prev) => !prev);
-                }
-              }}
-              className={`${styles.sideBtn} ${showDayRun ? styles.sideBtnPink : styles.sideBtnGray
-                } ${!isFullscreen ? styles.disabled : ""}`}
-              disabled={!isFullscreen}
-              title={
-                !isFullscreen
-                  ? "Day Run details available only in fullscreen mode"
-                  : "Toggle Day Run details"
-              }
-            >
-              {/* <div className={styles.sideDotBox}></div> */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="11"
-                height="11"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+            <div className={styles.iconBtnWrapper} style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowDayRun((v) => !v);
+                  if (showDayRun) setShowDayRunTableSmall(false);
+                }}
+                className={`${styles.sideBtn} ${showDayRun ? styles.sideBtnPink : styles.sideBtnGray
+                  }`}
+                title="Toggle Day Run details"
               >
-                <path d="M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20z"></path>
-                <path d="M12 6L12 12"></path>
-                <path d="M12 12H18"></path>
-                <path d="M5 12h-3"></path>
-                <path d="M22 12h-2"></path>
-                <path d="M12 2v2"></path>
-                <path d="M12 20v2"></path>
-                <path d="M4.22 4.22l1.42 1.42"></path>
-                <path d="M18.36 18.36l1.42 1.42"></path>
-              </svg>
-              <span>Day run</span>
-            </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20z"></path>
+                  <path d="M12 6L12 12"></path>
+                  <path d="M12 12H18"></path>
+                  <path d="M5 12h-3"></path>
+                  <path d="M22 12h-2"></path>
+                  <path d="M12 2v2"></path>
+                  <path d="M12 20v2"></path>
+                  <path d="M4.22 4.22l1.42 1.42"></path>
+                  <path d="M18.36 18.36l1.42 1.42"></path>
+                </svg>
+                <span>Day run</span>
+              </button>
+
+              {!isFullscreen && showDayRun && (
+                <button
+                  onClick={() => setShowDayRunTableSmall(!showDayRunTableSmall)}
+                  className={styles.btnGreenSm}
+                  style={{
+                    padding: '2px 6px',
+                    fontSize: '10px',
+                    height: '24px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {showDayRunTableSmall ? "Hide Table" : "Show Table"}
+                </button>
+              )}
+            </div>
           )}
         </div>
 
         {/* Day Run Table */}
-        {showDayRun && !isSupplier && (
+        {showDayRun && !isSupplier && (isFullscreen || showDayRunTableSmall) && (
           <div
             className={`${styles.dayRunTable} ${showMagnifierSettings ? styles.statusShift : ""
               } ${!isFullscreen ? styles.smallText : ""}`}
+            style={!isFullscreen ? {
+              top: '110px',
+
+              width: '100%',
+              maxHeight: '400px'
+            } : {}}
           >
             <div className={styles.tableHeader}>
               <h3>Day Run Details</h3>
@@ -4470,7 +4570,7 @@ export default function KeplerMap({
                             style={{
                               width: "20px",
                               height: "20px",
-                              backgroundColor: polylineColors[index] || "#999",
+                              backgroundColor: polylineColors[index % polylineColors.length],
                               borderRadius: "4px",
                               margin: "0 auto",
                               border: "2px solid #fff",
