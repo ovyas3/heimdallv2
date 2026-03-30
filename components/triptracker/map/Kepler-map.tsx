@@ -199,6 +199,28 @@ interface PathPoint {
   created_at: string;
 }
 
+const isValidLatLng = (latlng: any): boolean => {
+  if (!latlng) return false;
+  if (Array.isArray(latlng)) {
+    return (
+      latlng.length >= 2 &&
+      typeof latlng[0] === "number" &&
+      typeof latlng[1] === "number" &&
+      !isNaN(latlng[0]) &&
+      !isNaN(latlng[1])
+    );
+  }
+  if (typeof latlng === "object") {
+    return (
+      typeof latlng.lat === "number" &&
+      typeof latlng.lng === "number" &&
+      !isNaN(latlng.lat) &&
+      !isNaN(latlng.lng)
+    );
+  }
+  return false;
+};
+
 // Define the overall shape of the path data object
 interface PathData {
   sim?: string | PathPoint[];
@@ -436,7 +458,9 @@ export default function KeplerMap({
 
       const coords = dayRunPolylines[dayIndex];
       if (coords.length > 0) {
-        const bounds = L.latLngBounds(coords as LatLngExpression[]);
+        const validCoords = (coords as any[]).filter(isValidLatLng);
+        if (validCoords.length === 0) return;
+        const bounds = L.latLngBounds(validCoords as LatLngExpression[]);
         mapRef.current.fitBounds(bounds, {
           padding: [50, 50],
           maxZoom: 15,
@@ -649,6 +673,7 @@ export default function KeplerMap({
           h.geo_point.coordinates[1],
           h.geo_point.coordinates[0],
         ];
+        if (!isValidLatLng(nextPosition) || !isValidLatLng(haltCoords)) return false;
         return (
           L.latLng(nextPosition).distanceTo(L.latLng(haltCoords)) <=
           toleranceMeters
@@ -672,6 +697,7 @@ export default function KeplerMap({
         const startCoords: [number, number] = deviation.path[0]; // First point of deviation path
         const endCoords: [number, number] =
           deviation.path[deviation.path.length - 1]; // Last point of deviation path
+        if (!isValidLatLng(nextPosition) || !isValidLatLng(startCoords) || !isValidLatLng(endCoords)) return false;
         const distanceToStart = L.latLng(nextPosition).distanceTo(
           L.latLng(startCoords)
         );
@@ -793,18 +819,10 @@ export default function KeplerMap({
   //   }
   // }, [isPausedAtHalt,currentReplayHaltIndex, currentReplayPosition]);
 
-  {
-    currentReplayPosition && customIcons.vehicle && (
-      <Marker
-        position={currentReplayPosition}
-        icon={customIcons.vehicle}
-        ref={vehicleMarkerRef}
-      />
-    );
-  }
+  // Loose marker code removed
 
   useEffect(() => {
-    if (mapRef.current && currentReplayPosition) {
+    if (mapRef.current && currentReplayPosition && isValidLatLng(currentReplayPosition)) {
       if (isReplaying) {
         mapRef.current.setView(currentReplayPosition, mapRef.current.getZoom());
       } else if (isPausedAtHalt) {
@@ -1262,7 +1280,8 @@ export default function KeplerMap({
           });
 
           // Set the state with the extracted coordinates
-          setMainRouteFromApi(wayCoordinates);
+          const validWayCoordinates = wayCoordinates.filter(isValidLatLng);
+          setMainRouteFromApi(validWayCoordinates);
           const pickupMarkers = pickups
             .filter(p => p.location?.geo_point?.coordinates) // Only include if coordinates exist
             .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
@@ -1273,7 +1292,9 @@ export default function KeplerMap({
                 label: `P${i + 1}`,
                 meta: p,
               };
-            });
+            })
+            .filter(p => isValidLatLng(p.pos));
+
           const decodedPickupPolys: [number, number][][] = [];
           for (const p of pickups) {
             const enc = p.location.polylines || [];
@@ -1294,7 +1315,8 @@ export default function KeplerMap({
                 label: `D${i + 1}`,
                 meta: d,
               };
-            });
+            })
+            .filter(d => isValidLatLng(d.pos));
 
           const decodedPolys: [number, number][][] = [];
           for (const d of deliveries) {
@@ -1463,10 +1485,10 @@ export default function KeplerMap({
       const all = [
         ...shipmentPickups.map((p) => p.pos),
         ...shipmentDeliveries.map((d) => d.pos),
-      ];
-      if (currentLocation) all.push(currentLocation); // include live point
+      ].filter(isValidLatLng);
+      if (currentLocation && isValidLatLng(currentLocation)) all.push(currentLocation); // include live point
       if (all.length > 0) {
-        map.fitBounds(L.latLngBounds(all), { padding: [50, 50] });
+        map.fitBounds(L.latLngBounds(all as L.LatLngExpression[]), { padding: [50, 50] });
       }
     }
   }, [shipmentPickups, shipmentDeliveries, isReplaying, replayProgress, currentLocation]);
@@ -1488,7 +1510,9 @@ export default function KeplerMap({
         if (data?.data && Array.isArray(data.data)) {
           // API returns [lng, lat], Leaflet expects [lat, lng]
           const [lng, lat] = data.data;
-          setCurrentLocation([lat, lng]);
+          if (typeof lat === "number" && typeof lng === "number" && !isNaN(lat) && !isNaN(lng)) {
+            setCurrentLocation([lat, lng]);
+          }
         }
       } catch (err) {
         if ((err as any)?.name !== "AbortError") {
@@ -1533,25 +1557,29 @@ export default function KeplerMap({
         if (typeof data.sim === "string") {
           decodedSim = decodePolyline(data.sim);
         } else if (Array.isArray(data.sim) && data.sim.length > 0) {
-          decodedSim = data.sim.map(
-            (p) =>
-              [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
-                number,
-                number
-              ]
-          );
+          decodedSim = data.sim
+            .map(
+              (p) =>
+                [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
+                  number,
+                  number
+                ]
+            )
+            .filter(isValidLatLng);
         }
         setSimPath(decodedSim);
       }
 
       if (data.app && data.app.length > 0) {
-        const decodedApp = data.app.map(
-          (p) =>
-            [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
-              number,
-              number
-            ]
-        );
+        const decodedApp = data.app
+          .map(
+            (p) =>
+              [p.geo_point.coordinates[1], p.geo_point.coordinates[0]] as [
+                number,
+                number
+              ]
+          )
+          .filter(isValidLatLng);
         // const decodedApp = data.app.map(point => point.geo_point.coordinates);
         setAppPath(decodedApp);
       }
@@ -1563,13 +1591,15 @@ export default function KeplerMap({
           decodedGps = decodePolyline(data.gps);
         } else if (Array.isArray(data.gps) && data.gps.length > 0) {
           // Handle the case where GPS data is an array of points
-          decodedGps = data.gps.map(
-            (point) =>
-              [
-                point.geo_point.coordinates[1],
-                point.geo_point.coordinates[0],
-              ] as [number, number]
-          );
+          decodedGps = data.gps
+            .map(
+              (point) =>
+                [
+                  point.geo_point.coordinates[1],
+                  point.geo_point.coordinates[0],
+                ] as [number, number]
+            )
+            .filter(isValidLatLng);
         }
         setGpsPath(decodedGps);
       }
@@ -2910,7 +2940,7 @@ export default function KeplerMap({
               </>
             ))}
 
-          {shipmentPickups.map(({ pos, label, meta }, i) => (
+          {shipmentPickups.filter(p => isValidLatLng(p.pos)).map(({ pos, label, meta }, i) => (
             <Marker
               key={`ship-pickup-${i}`}
               pane="shipmentMarkers"
@@ -2964,7 +2994,7 @@ export default function KeplerMap({
           ))}
 
           {/* Always render the vehicle marker and its popup */}
-          {currentReplayPosition && customIcons.vehicle && (
+          {currentReplayPosition && isValidLatLng(currentReplayPosition) && customIcons.vehicle && (
             <Marker
               position={currentReplayPosition}
               icon={customIcons.vehicle}
@@ -3024,7 +3054,7 @@ export default function KeplerMap({
           )}
 
           {/* === Shipment: Deliveries (D1, D2, ...) === */}
-          {shipmentDeliveries.map(({ pos, label, meta }, i) => (
+          {shipmentDeliveries.filter(d => isValidLatLng(d.pos)).map(({ pos, label, meta }, i) => (
             <Marker
               key={`ship-delivery-${i}`}
               pane="shipmentMarkers"
@@ -3087,7 +3117,7 @@ export default function KeplerMap({
                 polylines &&
                 Array.isArray(polylines) &&
                 polylines.some((p: string) => p && p.trim().length > 0);
-              if (!hasPolylines) {
+              if (!hasPolylines && isValidLatLng(pos)) {
                 return (
                   <Circle
                     key={`ship-delivery-circle-${i}`}
@@ -3227,7 +3257,7 @@ export default function KeplerMap({
             );
           })()}
 
-          {currentLocation && !isReplaying && (
+          {currentLocation && isValidLatLng(currentLocation) && !isReplaying && (
             <Marker position={currentLocation} icon={customIcons.vehicle} />
           )}
 
@@ -3239,6 +3269,7 @@ export default function KeplerMap({
               const icon = isTollPassed(p)
                 ? customIcons.tollPassed
                 : customIcons.tollPending; // ✅
+              if (!isValidLatLng([lat, lng])) return null;
               return (
                 <Marker key={`toll-${idx}`} position={[lat, lng]} icon={icon}>
                   <Popup>
@@ -3267,6 +3298,7 @@ export default function KeplerMap({
               const durationHours = Math.floor(halt.halt_duration / 60);
               const durationMins = halt.halt_duration % 60;
 
+              if (!isValidLatLng([lat, lng])) return null;
               return (
                 <Marker
                   key={`halt-${halt._id}-${idx}`}
@@ -3347,7 +3379,7 @@ export default function KeplerMap({
             })}
 
           {customIcons.waypoint &&
-            mainRouteFromApi.slice(1, -1).map((position, index) => (
+            mainRouteFromApi.slice(1, -1).filter(isValidLatLng).map((position, index) => (
               <Marker
                 key={`waypoint-${index}`}
                 position={position}
@@ -3364,7 +3396,7 @@ export default function KeplerMap({
               </Marker>
             ))}
 
-          {currentReplayPosition && customIcons.vehicle && (
+          {currentReplayPosition && isValidLatLng(currentReplayPosition) && customIcons.vehicle && (
             <Marker position={currentReplayPosition} icon={customIcons.vehicle}>
               <Popup>
                 <div className={styles.popup}>
@@ -3383,148 +3415,152 @@ export default function KeplerMap({
             customIcons.deviation &&
             deviationRoutes.map((route) => (
               <div key={`deviation-markers-${route.id}`}>
-                <Marker position={route.path[0]} icon={customIcons.deviation}>
-                  <Popup>
-                    <div className={styles.popup}>
-                      <div
-                        className={`${styles.popupTitle} ${styles.titleRed} ${styles.popupTitleDivider}`}
-                      >
-                        Deviation Alert
-                      </div>
-
-                      <div className={styles.metricRow}>
-                        <span className={styles.metricKey}>Location:</span>
-                        <span className={styles.metricVal}>
-                          {route.location}
-                        </span>
-                      </div>
-                      <div className={styles.metricRow}>
-                        <span className={styles.metricKey}>Start Time:</span>
-                        <span className={styles.metricVal}>
-                          {route.startTime}
-                        </span>
-                      </div>
-                      <div className={styles.metricRow}>
-                        <span className={styles.metricKey}>End Time:</span>
-                        <span className={styles.metricVal}>
-                          {route.endTime}
-                        </span>
-                      </div>
-                      <div className={styles.metricRow}>
-                        <span className={styles.metricKey}>Distance:</span>
-                        <span className={styles.metricVal}>
-                          {route.distance}
-                        </span>
-                      </div>
-                      <div className={styles.metricRow}>
-                        <span className={styles.metricKey}>Reason:</span>
-                        <span className={styles.metricVal}>{route.reason}</span>
-                      </div>
-                      <div
-                        className={`${styles.metricRow} ${styles.metricRowTop}`}
-                      >
-                        <span className={styles.metricKey}>
-                          Total Duration:
-                        </span>
-                        <span className={styles.metricVal}>
-                          {route.duration}
-                        </span>
-                      </div>
-
-                      <div className={styles.replayBlock}>
-                        <div className={styles.replayTitle}>Replay Route</div>
-                        <div className={styles.replayRow}>
-                          {selectedDeviationForReplay === route.id &&
-                            isReplaying ? (
-                            <button
-                              onClick={() => setIsReplaying(false)}
-                              className={`${styles.btn} ${styles.btnRedSm}`}
-                            >
-                              <Pause className={styles.iconXs} /> Pause
-                            </button>
-                          ) : selectedDeviationForReplay === route.id &&
-                            replayProgress > 0 ? (
-                            <button
-                              onClick={() => resumeReplay()}
-                              className={`${styles.btn} ${styles.btnBlueSm}`}
-                            >
-                              <Play className={styles.iconXs} /> Resume
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setSelectedDeviationForReplay(route.id);
-                                setIsReplaying(true);
-                                setReplayProgress(0);
-                              }}
-                              className={`${styles.btn} ${styles.btnGreenSm}`}
-                            >
-                              <Play className={styles.iconXs} /> Play
-                            </button>
-                          )}
-                          <button
-                            onClick={() => resetReplay()}
-                            className={`${styles.btn} ${styles.btnGraySm}`}
-                          >
-                            <RotateCcw className={styles.iconXs} /> Reset
-                          </button>
+                {isValidLatLng(route.path[0]) && (
+                  <Marker position={route.path[0]} icon={customIcons.deviation}>
+                    <Popup>
+                      <div className={styles.popup}>
+                        <div
+                          className={`${styles.popupTitle} ${styles.titleRed} ${styles.popupTitleDivider}`}
+                        >
+                          Deviation Alert
                         </div>
 
-                        {selectedDeviationForReplay === route.id && (
-                          <div className={styles.replayControls}>
-                            <div className={styles.replaySpeed}>
-                              <span className={styles.mutedXs}>Speed:</span>
-                              <select
-                                value={replaySpeed}
-                                onChange={(e) =>
-                                  setReplaySpeed(Number(e.target.value))
-                                }
-                                className={styles.selectXs}
-                              >
-                                <option value={0.1}>0.1x</option>
-                                <option value={0.3}>0.3X</option>
-                                <option value={0.5}>0.5x</option>
-                                <option value={1}>1x</option>
-                                <option value={2}>2x</option>
-                                <option value={4}>4x</option>
-                              </select>
-                            </div>
-                            <div className={styles.progressTrack}>
-                              <div
-                                className={styles.progressBar}
-                                style={{ width: `${replayProgress}%` }}
-                              />
-                            </div>
-                            <div className={styles.progressText}>
-                              Progress: {Math.round(replayProgress)}%
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
+                        <div className={styles.metricRow}>
+                          <span className={styles.metricKey}>Location:</span>
+                          <span className={styles.metricVal}>
+                            {route.location}
+                          </span>
+                        </div>
+                        <div className={styles.metricRow}>
+                          <span className={styles.metricKey}>Start Time:</span>
+                          <span className={styles.metricVal}>
+                            {route.startTime}
+                          </span>
+                        </div>
+                        <div className={styles.metricRow}>
+                          <span className={styles.metricKey}>End Time:</span>
+                          <span className={styles.metricVal}>
+                            {route.endTime}
+                          </span>
+                        </div>
+                        <div className={styles.metricRow}>
+                          <span className={styles.metricKey}>Distance:</span>
+                          <span className={styles.metricVal}>
+                            {route.distance}
+                          </span>
+                        </div>
+                        <div className={styles.metricRow}>
+                          <span className={styles.metricKey}>Reason:</span>
+                          <span className={styles.metricVal}>{route.reason}</span>
+                        </div>
+                        <div
+                          className={`${styles.metricRow} ${styles.metricRowTop}`}
+                        >
+                          <span className={styles.metricKey}>
+                            Total Duration:
+                          </span>
+                          <span className={styles.metricVal}>
+                            {route.duration}
+                          </span>
+                        </div>
 
-                <Marker
-                  position={route.path[route.path.length - 1]}
-                  icon={customIcons.deviation}
-                >
-                  <Popup>
-                    <div className={styles.popup}>
-                      <div
-                        className={`${styles.popupTitle} ${styles.titleOrange}`}
-                      >
-                        Deviation End
+                        <div className={styles.replayBlock}>
+                          <div className={styles.replayTitle}>Replay Route</div>
+                          <div className={styles.replayRow}>
+                            {selectedDeviationForReplay === route.id &&
+                              isReplaying ? (
+                              <button
+                                onClick={() => setIsReplaying(false)}
+                                className={`${styles.btn} ${styles.btnRedSm}`}
+                              >
+                                <Pause className={styles.iconXs} /> Pause
+                              </button>
+                            ) : selectedDeviationForReplay === route.id &&
+                              replayProgress > 0 ? (
+                              <button
+                                onClick={() => resumeReplay()}
+                                className={`${styles.btn} ${styles.btnBlueSm}`}
+                              >
+                                <Play className={styles.iconXs} /> Resume
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setSelectedDeviationForReplay(route.id);
+                                  setIsReplaying(true);
+                                  setReplayProgress(0);
+                                }}
+                                className={`${styles.btn} ${styles.btnGreenSm}`}
+                              >
+                                <Play className={styles.iconXs} /> Play
+                              </button>
+                            )}
+                            <button
+                              onClick={() => resetReplay()}
+                              className={`${styles.btn} ${styles.btnGraySm}`}
+                            >
+                              <RotateCcw className={styles.iconXs} /> Reset
+                            </button>
+                          </div>
+
+                          {selectedDeviationForReplay === route.id && (
+                            <div className={styles.replayControls}>
+                              <div className={styles.replaySpeed}>
+                                <span className={styles.mutedXs}>Speed:</span>
+                                <select
+                                  value={replaySpeed}
+                                  onChange={(e) =>
+                                    setReplaySpeed(Number(e.target.value))
+                                  }
+                                  className={styles.selectXs}
+                                >
+                                  <option value={0.1}>0.1x</option>
+                                  <option value={0.3}>0.3X</option>
+                                  <option value={0.5}>0.5x</option>
+                                  <option value={1}>1x</option>
+                                  <option value={2}>2x</option>
+                                  <option value={4}>4x</option>
+                                </select>
+                              </div>
+                              <div className={styles.progressTrack}>
+                                <div
+                                  className={styles.progressBar}
+                                  style={{ width: `${replayProgress}%` }}
+                                />
+                              </div>
+                              <div className={styles.progressText}>
+                                Progress: {Math.round(replayProgress)}%
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className={styles.popupBody}>
-                        Returned to main route
+                    </Popup>
+                  </Marker>
+                )}
+
+                {isValidLatLng(route.path[route.path.length - 1]) && (
+                  <Marker
+                    position={route.path[route.path.length - 1]}
+                    icon={customIcons.deviation}
+                  >
+                    <Popup>
+                      <div className={styles.popup}>
+                        <div
+                          className={`${styles.popupTitle} ${styles.titleOrange}`}
+                        >
+                          Deviation End
+                        </div>
+                        <div className={styles.popupBody}>
+                          Returned to main route
+                        </div>
+                        <div className={styles.popupMeta}>
+                          End: {route.endTime}
+                        </div>
                       </div>
-                      <div className={styles.popupMeta}>
-                        End: {route.endTime}
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
+                    </Popup>
+                  </Marker>
+                )}
               </div>
             ))}
         </MapContainer>
@@ -3702,6 +3738,7 @@ export default function KeplerMap({
                     const icon = isTollPassed(toll)
                       ? customIcons.tollPassed
                       : customIcons.tollPending;
+                    if (!isValidLatLng([lat, lng])) return null;
                     return (
                       <Marker
                         key={`magnifier-toll-${idx}`}
@@ -3717,6 +3754,7 @@ export default function KeplerMap({
                   haltPoints.map((halt, idx) => {
                     const lat = halt.geo_point.coordinates[1];
                     const lng = halt.geo_point.coordinates[0];
+                    if (!isValidLatLng([lat, lng])) return null;
                     return (
                       <Marker
                         key={`magnifier-halt-${idx}`}
@@ -3727,7 +3765,7 @@ export default function KeplerMap({
                   })}
 
                 {/* Show pickup markers in magnifier */}
-                {shipmentPickups.map(({ pos, label }: any, i: number) => (
+                {shipmentPickups.filter(p => isValidLatLng(p.pos)).map(({ pos, label }: any, i: number) => (
                   <Marker
                     key={`magnifier-pickup-${i}`}
                     position={pos}
@@ -3736,7 +3774,7 @@ export default function KeplerMap({
                 ))}
 
                 {/* Show delivery markers in magnifier */}
-                {shipmentDeliveries.map(({ pos, label }: any, i: number) => (
+                {shipmentDeliveries.filter(d => isValidLatLng(d.pos)).map(({ pos, label }: any, i: number) => (
                   <Marker
                     key={`magnifier-delivery-${i}`}
                     position={pos}
@@ -3749,6 +3787,7 @@ export default function KeplerMap({
                 {customIcons.waypoint &&
                   mainRoute
                     .slice(1, -1)
+                    .filter(isValidLatLng)
                     .map((position, index) => (
                       <Marker
                         key={`magnifier-waypoint-${index}`}
@@ -3756,13 +3795,13 @@ export default function KeplerMap({
                         icon={customIcons.waypoint}
                       />
                     ))}
-                {customIcons.vehicle && (
+                {customIcons.vehicle && vehiclePosition && isValidLatLng(vehiclePosition) && (
                   <Marker
                     position={vehiclePosition}
                     icon={customIcons.vehicle}
                   />
                 )}
-                {currentReplayPosition && customIcons.vehicle && (
+                {currentReplayPosition && isValidLatLng(currentReplayPosition) && customIcons.vehicle && (
                   <Marker
                     position={currentReplayPosition}
                     icon={customIcons.vehicle}
@@ -3774,14 +3813,18 @@ export default function KeplerMap({
                   customIcons.deviation &&
                   deviationRoutes.map((route) => (
                     <div key={`magnifier-deviation-markers-${route.id}`}>
-                      <Marker
-                        position={route.path[0]}
-                        icon={customIcons.deviation}
-                      />
-                      <Marker
-                        position={route.path[route.path.length - 1]}
-                        icon={customIcons.deviation}
-                      />
+                      {isValidLatLng(route.path[0]) && (
+                        <Marker
+                          position={route.path[0]}
+                          icon={customIcons.deviation}
+                        />
+                      )}
+                      {isValidLatLng(route.path[route.path.length - 1]) && (
+                        <Marker
+                          position={route.path[route.path.length - 1]}
+                          icon={customIcons.deviation}
+                        />
+                      )}
                     </div>
                   ))}
               </MapContainer>
@@ -3802,7 +3845,9 @@ export default function KeplerMap({
 
               {/* Coordinates display */}
               <div className={styles.coordBadge}>
-                {magnifierCenter[0].toFixed(4)}, {magnifierCenter[1].toFixed(4)}
+                {magnifierCenter && isValidLatLng(magnifierCenter) 
+                  ? `${magnifierCenter[0].toFixed(4)}, ${magnifierCenter[1].toFixed(4)}`
+                  : "N/A"}
               </div>
             </div>
           </div>
