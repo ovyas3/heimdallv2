@@ -4,7 +4,7 @@
   --primary-light: #3d2066;
   --primary-lighter: #f3f0ff;
   --brand-blue: #3b82f6;
-  --brand-green: #10b981;
+  --brand-green: #22c55e;
   --brand-red: #ef4444;
   --brand-orange: #f97316;
   --text-primary: #1e293b;
@@ -1599,18 +1599,19 @@ body {
 
 .location-icon-wrapper {
   position: relative;
-  padding: 0.6rem;
-  border-radius: 0.75rem;
+  padding: 0.3rem;
+  border-radius: 1.6rem;
   box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .location-item.origin .location-icon-wrapper {
-  /* background-color: #dbeafe; */
   background-color: #d1fae5;
 }
 
 .location-item.destination .location-icon-wrapper {
-  /* background-color: #d1fae5;*/
   background-color: #ffedd5;
 }
 
@@ -1630,12 +1631,13 @@ body {
 }
 
 .location-icon {
-  height: 1.25rem;
-  width: 1.25rem;
+  height: 2.25rem;
+  width: 2.25rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 /* .location-icon.origin-icon {
@@ -1648,7 +1650,36 @@ body {
 
 .location-icon.origin-icon {
   background-color: var(--brand-green);
-  /* Match P1 Green */
+}
+
+.additional-locations-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.additional-inline {
+  transition: all 0.3s ease;
+  animation: fadeInDown 0.3s ease-out;
+}
+
+.additional-inline.location-item {
+  margin-bottom: 0; /* Handled by container gap */
+  min-height: 80px; /* Same size as primary cards */
+  display: flex;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Line 692 in triptracker.css */
@@ -1696,6 +1727,7 @@ body {
   min-width: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
+  padding-right: 28px; /* Space for expansion badge */
 }
 
 .location-type {
@@ -2112,8 +2144,8 @@ body {
 }
 
 .location-icon {
-  height: 1.25rem;
-  width: 1.25rem;
+  height: 2rem;
+  width: 2rem;
   color: var(--primary-color);
 }
 
@@ -3775,11 +3807,10 @@ timeline-icon path {
 } */
 .more-badge {
   /* position, top, and right are removed */
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 9999px;
-  border: none;
-  /* Removed the white border, as it's no longer an overlay */
+  border: 2px solid white;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3788,24 +3819,25 @@ timeline-icon path {
   line-height: 1;
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  /* Softened the shadow slightly */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* NEW: color variants to match your themes */
 .origin-badge {
-  background: var(--brand-blue);
-  /* same vibe as origin */
+  background: var(--brand-green);
 }
 
 .dest-badge {
-  background: var(--brand-green);
-  /* same vibe as destination */
+  background: var(--brand-orange);
 }
 
-/* optional: small hover pop */
+.more-badge.active {
+  background: #475569;
+  transform: rotate(0deg);
+}
+
 .more-badge:hover {
-  transform: scale(1.06);
+  filter: brightness(1.1);
 }
 
 /* Fullscreen Map overlay */
@@ -5172,9 +5204,6 @@ timeline-icon path {
 }
 
 @media (min-width: 1024px) {
-  .main-grid {
-    /* transition: grid-template-columns 0.35s cubic-bezier(0.4, 0, 0.2, 1); */
-  }
 
   .dashboard-container.collapsed-sidebar .main-grid {
     grid-template-columns: 3fr 8fr 52px !important;

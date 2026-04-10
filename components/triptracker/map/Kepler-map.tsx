@@ -1856,13 +1856,13 @@ export default function KeplerMap({
     {
       id: "osm-light",
       name: "Light",
-      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      url: "https://mt1.google.com/vt/lyrs=m&hl=en-IN&gl=IN&x={x}&y={y}&z={z}",
       color: "#ffffff",
     },
     {
       id: "satellite",
       name: "Satellite With Streets",
-      url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      url: "https://mt1.google.com/vt/lyrs=y&hl=en-IN&gl=IN&x={x}&y={y}&z={z}",
       color: "#4a5568",
     },
     {
@@ -2870,9 +2870,9 @@ export default function KeplerMap({
               style={{
                 fillColor: "#e2e8f0",
                 fillOpacity: selectedMapStyle === "none" ? 0.15 : 0.0,
-                color: "#475569",
-                weight: 0.8,
-                opacity: 0.6,
+                color: selectedMapStyle === "satellite" ? "#000000" : "#475569",
+                weight: selectedMapStyle === "satellite" ? 2.5 : 1.5,
+                opacity: selectedMapStyle === "satellite" ? 1.0 : 0.6,
               }}
             />
           )}

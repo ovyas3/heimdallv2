@@ -1707,10 +1707,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                           <div className="location-time">
                             <Clock className="time-icon" />
-                            <span>
-                              {isSupplierView ? "Arrived at Source: " : "Gate In: "}
-                              {pickGateInTime ? formatTimestamp(pickGateInTime) : "N/A"}
-                            </span>
+                            <span>{isSupplierView ? "Arrived at Source: " : "Gate In: "}{pickGateInTime ? formatTimestamp(pickGateInTime) : "N/A"}</span>
                           </div>
 
 
@@ -1718,10 +1715,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                           <div className="location-time">
                             <Clock className="time-icon" />
-                            <span>
-                              {isSupplierView ? "Dispatched from Source: " : "Gate Out: "}
-                              {pickGateOutTime ? formatTimestamp(pickGateOutTime) : "N/A"}
-                            </span>
+                            <span>{isSupplierView ? "Dispatched from Source: " : "Gate Out: "}{pickGateOutTime ? formatTimestamp(pickGateOutTime) : "N/A"}</span>
                           </div>
 
 
@@ -1730,22 +1724,132 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <span>{formatTimestamp(originLocation?.finished_at)}</span>
                           </div> */}
                         </div>
-                        {intermediates.length > 0 && !showAllStops && (
+                        {intermediates.length > 0 && (
                           <button
-                            className="more-badge origin-badge"
-                            onClick={() => setShowAllStops(true)}
-                            aria-label={`Show ${intermediates.length} more stops`}
-                            title={`Show ${intermediates.length} more stops`}
+                            className={`more-badge origin-badge ${showAllStops ? "active" : ""}`}
+                            onClick={() => setShowAllStops(!showAllStops)}
+                            aria-label={showAllStops ? "Hide stops" : `Show ${intermediates.length} more stops`}
+                            title={showAllStops ? "Hide stops" : `Show ${intermediates.length} more stops`}
                             style={{
                               position: "absolute",
-                              top: "12px",
-                              right: "12px",
+                              top: "14px",
+                              right: "14px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              minWidth: "24px",
+                              height: "24px",
+                              padding: "0 6px",
+                              borderRadius: "12px",
+                              cursor: "pointer",
+                              border: "none",
+                              zIndex: 10
                             }}
                           >
-                            {intermediates.length}+
+                            {showAllStops ? <MinusIcon size={14} /> : `${intermediates.length}+`}
                           </button>
                         )}
                       </div>
+
+                      {/* ADDITIONAL PICKUPS (Inline) */}
+                      {showAllStops && (
+                        <div className="additional-locations-container">
+                          {intermediates.map((s, index) => (
+                            <div
+                              key={s.id || `pickup-inline-${index}`}
+                              className="location-item origin additional-inline"
+                            >
+                              <div className="location-icon-wrapper">
+                                <div className="location-icon origin-icon">
+                                  <span style={{ fontSize: "11px", fontWeight: "800", color: "white" }}>P{index + 2}</span>
+                                </div>
+                              </div>
+                              <div className="location-details">
+                                <div className="location-type">Pickup</div>
+                                <div className="location-name-bold">
+                                  {[
+                                    s.reference,
+                                    toTitleCase(s.name)
+                                  ].filter(Boolean).join(" - ") || "N/A"}
+                                </div>
+                                <div className="location-address">{s.area}</div>
+                                <div className="location-time">
+                                  <Clock className="time-icon" size={14} />
+                                  <span>Gate In: {s.arrived_at ? formatTimestamp(s.arrived_at) : "N/A"}</span>
+                                </div>
+                                <div className="location-time">
+                                  <Clock className="time-icon" size={14} />
+                                  <span>Gate Out: {s.finished_at ? formatTimestamp(s.finished_at) : "N/A"}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* ADDITIONAL DESTINATIONS (Inline) */}
+                      {showAllDests && (
+                        <div className="additional-locations-container">
+                          {destinations.map((d, index) => (
+                            <div
+                              key={d.id || `dest-inline-${index}`}
+                              className="location-item destination additional-inline"
+                              style={{ position: "relative" }}
+                            >
+                              <div className="location-icon-wrapper">
+                                <div className="location-icon destination-icon">
+                                  <span style={{ fontSize: "11px", fontWeight: "800", color: "white" }}>D{index + 1}</span>
+                                </div>
+                              </div>
+                              <div className="location-details">
+                                <div className="location-type">
+                                  {isSupplierView ? "Destination city" : "Destination"}
+                                </div>
+                                <div className="location-name-bold">
+                                  {[
+                                    d.reference,
+                                    toTitleCase(d.name)
+                                  ].filter(Boolean).join(" - ") || "N/A"}
+                                </div>
+                                <div className="location-address">{d.area}</div>
+                                <div className="location-time">
+                                  <Clock className="time-icon" size={14} />
+                                  <span>{isSupplierView ? "Reached Destination: " : "Customer Location In: "}{d.arrived_at ? formatTimestamp(d.arrived_at) : "N/A"}</span>
+                                </div>
+                                <div className="location-time">
+                                  <Clock className="time-icon" size={14} />
+                                  <span>Customer Location Out: {d.finished_at ? formatTimestamp(d.finished_at) : "N/A"}</span>
+                                </div>
+                              </div>
+                              {index === 0 && (
+                                <button
+                                  className="more-badge dest-badge active"
+                                  onClick={() => setShowAllDests(false)}
+                                  aria-label="Hide destinations"
+                                  title="Hide destinations"
+                                  style={{
+                                    position: "absolute",
+                                    top: "14px",
+                                    right: "14px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    minWidth: "24px",
+                                    height: "24px",
+                                    padding: "0 6px",
+                                    borderRadius: "12px",
+                                    cursor: "pointer",
+                                    border: "none",
+                                    zIndex: 10
+                                  }}
+                                >
+                                  <MinusIcon size={14} />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       {/* FINAL DESTINATION (always visible at bottom) */}
 
@@ -1797,20 +1901,14 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                             <div className="location-time">
                               <Clock className="time-icon" />
-                              <span>
-                                {isSupplierView ? "Reached Destination: " : "Customer Location In: "}
-                                {dropGateInTime ? formatTimestamp(dropGateInTime) : "N/A"}
-                              </span>
+                              <span>{isSupplierView ? "Reached Destination: " : "Customer Location In: "}{dropGateInTime ? formatTimestamp(dropGateInTime) : "N/A"}</span>
                             </div>
 
                             {/* Gate Out Time */}
 
                             <div className="location-time">
                               <Clock className="time-icon" />
-                              <span>
-                                Customer Location Out:
-                                {dropGateOutTime ? formatTimestamp(dropGateOutTime) : "N/A"}
-                              </span>
+                              <span>Customer Location Out: {dropGateOutTime ? formatTimestamp(dropGateOutTime) : "N/A"}</span>
                             </div>
 
                           </div>
@@ -1818,19 +1916,25 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             <button
                               className="more-badge dest-badge"
                               onClick={() => setShowAllDests(true)}
-                              aria-label={`Show ${destinations.length
-                                }} more destination${destinations.length > 1 ? "s" : ""
-                                }`}
-                              title={`Show ${destinations.length
-                                } more destination${destinations.length > 1 ? "s" : ""
-                                }`}
+                              aria-label={`Show ${destinations.length} more destinations`}
+                              title={`Show ${destinations.length} more destinations`}
                               style={{
                                 position: "absolute",
-                                top: "12px",
-                                right: "12px",
+                                top: "14px",
+                                right: "14px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                minWidth: "24px",
+                                height: "24px",
+                                padding: "0 6px",
+                                borderRadius: "12px",
+                                cursor: "pointer",
+                                border: "none",
+                                zIndex: 10
                               }}
                             >
-                              {destinations.length}+
+                              {`${destinations.length}+`}
                             </button>
                           )}
                         </div>
@@ -3014,108 +3118,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             </div>
           </div>
 
-          {
-            (showAllStops || showAllDests) && (
-              <div
-                className="side-panel-overlay"
-                onClick={() => {
-                  setShowAllStops(false);
-                  setShowAllDests(false);
-                }}
-              >
-                <div className="side-panel" onClick={(e) => e.stopPropagation()}>
-                  <div className="side-panel-header">
-                    <div className="side-panel-title">
-                      <MapPin className="card-icon" />
-                      {showAllStops
-                        ? "Additional Pickups"
-                        : "Additional Destinations"}
-                    </div>
-                    <button
-                      className="side-panel-close"
-                      onClick={() => {
-                        setShowAllStops(false);
-                        setShowAllDests(false);
-                      }}
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                  <div className="side-panel-body">
-                    {showAllStops &&
-                      intermediates.map((s, index) => (
-                        <div
-                          key={s.id || `pickup-${index}`}
-                          className="location-item origin"
-                        >
-                          <div className="location-icon-wrapper1">
-                            <div className="location-icon origin-icon1">
-                              <span style={{ fontSize: "11px", fontWeight: "800", color: "white" }}>P{index + 2}</span>
-                            </div>
-                          </div>
-                          <div className="location-details">
-                            <div className="location-name">
-                              {[
-                                s.reference,
-                                toTitleCase(s.name),
-                                s.area
-                              ].filter(Boolean).join(" - ") || "N/A"}
-                            </div>
-                            {s.arrived_at && (
-                              <div className="location-time">
-                                <Clock className="time-icon" />
-                                <span>Gate In: {formatTimestamp(s.arrived_at)}</span>
-                              </div>
-                            )}
-                            {s.finished_at && (
-                              <div className="location-time">
-                                <Clock className="time-icon" />
-                                <span>Gate Out: {formatTimestamp(s.finished_at)}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-
-                    {showAllDests &&
-                      destinations.map((d, index) => (
-                        <div
-                          key={d.id || `destination-${index}`}
-                          className="location-item destination"
-                        >
-                          <div className="location-icon-wrapper1">
-                            <div className="location-icon destination-icon1">
-                              <span className="location-label">D{index + 1}</span>
-                            </div>
-                          </div>
-                          <div className="location-details">
-                            <div className="location-name">
-                              {[
-                                d.reference,
-                                toTitleCase(d.name),
-                                d.area
-                              ].filter(Boolean).join(" - ") || "N/A"}
-                            </div>
-                            {d.arrived_at && (
-                              <div className="location-time">
-                                <Clock className="time-icon" />
-                                <span>{isSupplierView ? "Reached Destination: " : "Customer Location In: "}{formatTimestamp(d.arrived_at)}</span>
-                              </div>
-                            )}
-                            {d.finished_at && (
-                              <div className="location-time">
-                                <Clock className="time-icon" />
-                                <span>Customer Location Out: {formatTimestamp(d.finished_at)}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            )
-          }
+          {/* Removed redundant side panel overlay as expansion is now inline */}
 
           {/* Floating Tooltip Portal */}
           {
