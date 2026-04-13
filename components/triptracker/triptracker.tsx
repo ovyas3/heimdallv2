@@ -1399,12 +1399,22 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             </span>
                           </div>
                           {!isSupplierView && (
-                            <div className="detail-item">
-                              <span className="detail-label">Transporter</span>
-                              <span className="detail-value">
-                                {apiData?.carrier?.parent_name || apiData?.carrier?.name || "N/A"}
-                              </span>
-                            </div>
+                            <>
+                              <div className="detail-item">
+                                <span className="detail-label">Transporter</span>
+                                <span className="detail-value">
+                                  {apiData?.carrier?.parent_name || apiData?.carrier?.name || "N/A"}
+                                </span>
+                              </div>
+                              {apiData?.carrier?.support_no && (
+                                <div className="detail-item">
+                                  <span className="detail-label">Transporter Support Number</span>
+                                  <span className="detail-value">
+                                    {apiData.carrier.support_no}
+                                  </span>
+                                </div>
+                              )}
+                            </>
                           )}
                           <div className="detail-item">
                             <span className="detail-label">Driver Name</span>
@@ -1565,6 +1575,14 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                     : (apiData?.carrier?.name || "N/A")}
                                 </span>
                               </div>
+                              {apiData?.carrier?.support_no && (
+                                <div className="detail-item">
+                                  <span className="detail-label">Transporter Support Number</span>
+                                  <span className="detail-value">
+                                    {apiData.carrier.support_no}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           )}
 
