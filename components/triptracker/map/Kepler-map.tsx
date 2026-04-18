@@ -199,6 +199,18 @@ interface PathPoint {
   created_at: string;
 }
 
+const formatHaltTime = (dateString?: string | null): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 const isValidLatLng = (latlng: any): boolean => {
   if (!latlng) return false;
   if (Array.isArray(latlng)) {
@@ -871,12 +883,8 @@ export default function KeplerMap({
         <hr class="${styles.divider}" />
         <div class="${styles.popupBody}">Duration: <strong>${durationHours > 0 ? durationHours + " hour(s), " : ""
         }${durationMins} minute(s)</strong></div>
-        <div class="${styles.popupBody}">Start: <strong>${new Date(
-          h.start_time
-        ).toLocaleString()}</strong></div>
-        <div class="${styles.popupBody}">End: <strong>${h.end_time ? new Date(
-          h.end_time
-        ).toLocaleString() : "-"}</strong></div>
+        <div class="${styles.popupBody}">Start: <strong>${formatHaltTime(h.start_time)}</strong></div>
+        <div class="${styles.popupBody}">End: <strong>${formatHaltTime(h.end_time)}</strong></div>
         <div class="${styles.popupBody}">
           <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 4px; background: #4285F4; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; margin-top: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3034,17 +3042,13 @@ export default function KeplerMap({
                       <div className={styles.popupBody}>
                         Start:{" "}
                         <strong>
-                          {new Date(
-                            haltPoints[currentReplayHaltIndex].start_time
-                          ).toLocaleString()}
+                          {formatHaltTime(haltPoints[currentReplayHaltIndex].start_time)}
                         </strong>
                       </div>
                       <div className={styles.popupBody}>
                         End:{" "}
                         <strong>
-                          {haltPoints[currentReplayHaltIndex].end_time ? new Date(
-                            haltPoints[currentReplayHaltIndex].end_time
-                          ).toLocaleString() : "Still in Halt"}
+                          {haltPoints[currentReplayHaltIndex].end_time ? formatHaltTime(haltPoints[currentReplayHaltIndex].end_time) : "Still in Halt"}
                         </strong>
                       </div>
                     </div>
@@ -3328,14 +3332,14 @@ export default function KeplerMap({
                         Start:
                         <strong>
                           {" "}
-                          {new Date(halt.start_time).toLocaleString()}
+                          {formatHaltTime(halt.start_time)}
                         </strong>
                       </div>
                       <div className={styles.popupBody}>
                         End:
                         <strong>
                           {" "}
-                          {halt.end_time ? new Date(halt.end_time).toLocaleString() : "-"}
+                          {halt.end_time ? formatHaltTime(halt.end_time) : "-"}
                         </strong>
                       </div>
                       <div className={styles.popupBody}>
