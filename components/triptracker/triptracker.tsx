@@ -2981,15 +2981,21 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               tollHistoryData.map((toll: any, index: number) => (
                                 <div key={index} className="toll-history-item">
                                   <div className="toll-date">
-                                    <div>
-                                      {new Date(
-                                        toll?.time_stamp
-                                      ).toLocaleDateString()}
+                                    <div style={{ fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                                      {new Intl.DateTimeFormat("en-GB", {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "numeric",
+                                        timeZone: "Asia/Kolkata",
+                                      }).format(new Date(toll?.time_stamp))}
                                     </div>
-                                    <div className="toll-time">
-                                      {new Date(
-                                        toll?.time_stamp
-                                      ).toLocaleTimeString()}
+                                    <div style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                      {new Intl.DateTimeFormat("en-GB", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false,
+                                        timeZone: "Asia/Kolkata",
+                                      }).format(new Date(toll?.time_stamp))}
                                     </div>
                                   </div>
                                   <div className="toll-icon-container">

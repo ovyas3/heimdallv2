@@ -3287,7 +3287,15 @@ export default function KeplerMap({
                       <div className={styles.popupBody}>{p.tollPlazaName}</div>
                       <div className={styles.popupBody}>{p.address}</div>
                       <div className={styles.popupMeta}>
-                        Time: {new Date(p.time_stamp).toLocaleString()}
+                        Time: {new Intl.DateTimeFormat("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                          timeZone: "Asia/Kolkata",
+                        }).format(new Date(p.time_stamp))}
                       </div>
                     </div>
                   </Popup>
