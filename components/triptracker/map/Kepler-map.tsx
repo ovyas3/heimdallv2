@@ -835,13 +835,13 @@ export default function KeplerMap({
 
   useEffect(() => {
     if (mapRef.current && currentReplayPosition && isValidLatLng(currentReplayPosition)) {
-      if (isReplaying) {
-        mapRef.current.setView(currentReplayPosition, mapRef.current.getZoom());
-      } else if (isPausedAtHalt) {
+      if (isPausedAtHalt) {
+        /*
         mapRef.current.panTo(currentReplayPosition, {
           duration: 0.5,
           easeLinearity: 0.25,
         });
+        */
       }
     }
   }, [isReplaying, isPausedAtHalt, mapRef, currentReplayPosition]);
@@ -912,13 +912,14 @@ export default function KeplerMap({
           .openOn(currentMap as any); // openOn attaches it to the map
         haltPopupRef.current = popup;
 
-        // Pan map slightly to show the popup
+        /*
         try {
           currentMap.panTo(currentReplayPosition, {
             animate: true,
             duration: 0.4,
           });
         } catch { }
+        */
 
         // set timer to close popup and resume replay
         haltPopupTimerRef.current = setTimeout(() => {
@@ -1014,12 +1015,14 @@ export default function KeplerMap({
           .openOn(currentMap as any);
         deviationPopupRef.current = popup;
 
+        /*
         try {
           currentMap.panTo(currentReplayPosition, {
             animate: true,
             duration: 0.4,
           });
         } catch { }
+        */
 
         deviationPopupTimerRef.current = setTimeout(() => {
           if (deviationPopupRef.current) {
@@ -2470,13 +2473,15 @@ export default function KeplerMap({
         setIsPausedAtDeviation(false);
         setReplayProgress(0);
 
+        /*
         if (mapRef.current && activeRoute.length > 0) {
           try {
-            mapRef.current.setView(activeRoute[0], 16, { animate: true });
+            mapRef.current.panTo(activeRoute[0], { animate: true });
           } catch (err) {
             console.error("Failed to set view:", err);
           }
         }
+        */
       }
 
       if (internalFencePathData.length > 0) {
