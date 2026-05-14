@@ -63,6 +63,9 @@ const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
 const Circle = dynamic(() => import("react-leaflet").then((mod) => mod.Circle), {
   ssr: false,
 });
+const Tooltip = dynamic(() => import("react-leaflet").then((mod) => mod.Tooltip), {
+  ssr: false,
+});
 // Add this line
 const GeoJSON = dynamic(
   () => import("react-leaflet").then((mod) => mod.GeoJSON),
@@ -162,6 +165,16 @@ interface KeplerMapProps {
     pick_finished_at?: string;
     waypoints?: any[];
     geo_fence?: any;
+    others?: {
+      bhumi?: {
+        closest_waypoints?: Array<{
+          name: string;
+          lat: number;
+          lng: number;
+          distKm: number;
+        }>;
+      };
+    };
   };
   isSupplier?: boolean;
   showInfoCards?: boolean;
@@ -3101,6 +3114,43 @@ export default function KeplerMap({
               </Popup>
             </Marker>
           ))}
+
+          {/* === Shipment: Waypoints (W1, W2, ...) === */}
+          {shipmentData?.others?.bhumi?.closest_waypoints?.filter((wp: any) => isValidLatLng([wp.lat, wp.lng])).map((wp: any, i: number) => {
+            const isW1 = i === 0;
+            const label = `W${i + 1}`;
+            const color = isW1 ? "#3b82f6" : "#9333ea"; // Blue for W1, Purple for W2 and beyond
+            return (
+              <Marker
+                key={`ship-waypoint-${i}`}
+                pane="shipmentMarkers"
+                position={[wp.lat, wp.lng]}
+                icon={makeChipIcon(color, label)}
+              >
+                <Tooltip direction="top" offset={[0, -20]} opacity={1}>
+                  <div style={{ fontWeight: "bold" }}>
+                    {wp.name} ({wp.distKm} km)
+                  </div>
+                </Tooltip>
+                <Popup>
+                  <div className={styles.popup}>
+                    <div className={styles.popupTitle} style={{ color }}>
+                      Waypoint {label}
+                    </div>
+                    <hr className={styles.divider}></hr>
+                    <div className={styles.popupBody}>
+                      {wp.name}
+                    </div>
+                    {wp.distKm !== undefined && (
+                      <div className={styles.popupBody}>
+                        Distance: {wp.distKm} km
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
 
           {/* === Delivery Polylines and Circular Fallback (0.5km from destination if no polyline) === */}
           {showGeofence &&
