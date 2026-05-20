@@ -91,8 +91,8 @@ body {
   background: var(--bg-white);
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow-md);
-  padding: 0.5rem 1rem;
-  margin-bottom: 0.5rem;
+  padding: 0.5rem 1rem 0.75rem;
+  margin-bottom: 0.75rem;
   transition: all 0.3s ease;
   flex-shrink: 0;
   z-index: 100;
@@ -557,6 +557,33 @@ body {
   cursor: pointer;
 }
 
+.print-action-button {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  border: 1px solid var(--border-color);
+  color: var(--primary-color);
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.print-action-button:hover {
+  background-color: var(--background-hover);
+  border-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.print-action-icon {
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+
 @media (max-width: 768px) {
   .header {
     padding: 0.5rem 0.5rem;
@@ -616,7 +643,8 @@ body {
 }
 
 @media (max-width: 1161px) {
-  .desktop-only-help {
+  .desktop-only-help,
+  .desktop-only-print {
     display: none !important;
   }
 
@@ -952,7 +980,7 @@ body {
 
 /* CSS-only solution - works with existing TSX structure */
 
-@media (max-width: 1023px) {
+@media screen and (max-width: 1023px) {
 
   .dashboard-container {
     height: auto;
@@ -1435,6 +1463,7 @@ body {
 @media (min-width: 1024px) {
   .main-grid {
     grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: 1fr;
     gap: 0.75rem;
   }
 }
@@ -1451,6 +1480,7 @@ body {
 @media (min-width: 1024px) {
   .sidebar-left {
     grid-column: span 3;
+    min-height: 0;
   }
 }
 
@@ -1482,6 +1512,7 @@ body {
   .sidebar-right {
     grid-column: span 3;
     max-height: 100%;
+    min-height: 0;
   }
 }
 
@@ -1666,8 +1697,10 @@ body {
 }
 
 .additional-inline.location-item {
-  margin-bottom: 0; /* Handled by container gap */
-  min-height: 80px; /* Same size as primary cards */
+  margin-bottom: 0;
+  /* Handled by container gap */
+  min-height: 80px;
+  /* Same size as primary cards */
   display: flex;
 }
 
@@ -1676,6 +1709,7 @@ body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1727,7 +1761,8 @@ body {
   min-width: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
-  padding-right: 28px; /* Space for expansion badge */
+  padding-right: 28px;
+  /* Space for expansion badge */
 }
 
 .location-type {
@@ -2445,7 +2480,7 @@ body {
   padding-bottom: 1rem;
 }
 
-@media (max-width: 1023px) {
+@media screen and (max-width: 1023px) {
   .timeline-content .scrollable-container {
     max-height: 400px !important;
     overflow-y: auto !important;
@@ -2540,7 +2575,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
-  justify-content: center;
+  justify-content: flex-start;
   white-space: nowrap;
   flex: 1 1 0;
   min-width: fit-content;
@@ -4292,7 +4327,7 @@ timeline-icon path {
   }
 }
 
-@media (max-width: 1023px) {
+@media screen and (max-width: 1023px) {
   .main-grid {
     display: flex !important;
     flex-direction: column !important;
@@ -5027,7 +5062,7 @@ timeline-icon path {
   padding: 0.75rem;
 }
 
-@media (max-width: 1023px) {
+@media screen and (max-width: 1023px) {
   .side-panel {
     top: 50% !important;
     left: 50% !important;
@@ -5320,7 +5355,7 @@ timeline-icon path {
 }
 
 /* ---- Mobile: hide the collapse/dock feature ---- */
-@media (max-width: 1023px) {
+@media screen and (max-width: 1023px) {
   .timeline-header .collapse-button {
     display: none;
   }
@@ -5398,4 +5433,952 @@ timeline-icon path {
   .metadata-details .detail-value {
     font-size: 0.8rem !important;
   }
+}
+
+
+/* ==========================================================================
+   PRINT OPTIMIZATION: Single beautiful landscape page
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 6mm 5mm;
+  }
+
+  /* ── 1. Global color/box-sizing reset for print ─────────────────────────── */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-sizing: border-box !important;
+  }
+
+  html,
+  body {
+    height: 198mm !important;
+    max-height: 198mm !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+  }
+
+  /* ── 2. Hide non-printable UI ───────────────────────────────────────────── */
+  .refresh-button,
+  .refresh-button-container,
+  .desktop-only-help,
+  .desktop-only-print,
+  .help-button,
+  .print-action-button,
+  .help-fab-button,
+  .collapse-button,
+  .map-buttons,
+  .map-filter-buttons,
+  .more-badge,
+  .expand-action-btn-circular,
+  .loading-overlay,
+  .vertical-tab-bar,
+  .leaflet-control-zoom,
+  .leaflet-control-attribution,
+  .tooltip-content,
+  .update-time,
+  .kpi-icon-badge {
+    display: none !important;
+  }
+
+  /* ── 3. Dashboard container — fixed to A4 landscape, clip overflow to force 1 page ── */
+  .dashboard-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 198mm !important;
+    max-height: 198mm !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* ── 4. Header ──────────────────────────────────────────────────────────── */
+  .header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 4px 8px 8px !important;
+    margin-bottom: 12px !important;
+    box-shadow: none !important;
+    border-bottom: 1.5px solid #20104d !important;
+    background: #ffffff !important;
+    height: auto !important;
+    flex-shrink: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .header-logo-container {
+    background: #20104d !important;
+    padding: 4px 12px !important;
+    height: 26px !important;
+    border-radius: 4px !important;
+  }
+
+  .header-logo-img {
+    max-width: 90px !important;
+  }
+
+  .logo-title {
+    font-size: 11px !important;
+    color: #20104d !important;
+    font-weight: 700 !important;
+  }
+
+  .logo-subtitle {
+    font-size: 7px !important;
+  }
+
+  .header-customer-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    margin-left: 0.75rem !important;
+    padding-left: 0.75rem !important;
+    border-left: 1.5px solid #cbd5e1 !important;
+  }
+
+  .customer-name {
+    font-size: 9px !important;
+    font-weight: bold !important;
+  }
+
+  .customer-role {
+    font-size: 7.5px !important;
+  }
+
+  .shipment-id {
+    font-size: 10px !important;
+    padding: 3px 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #f8fafc !important;
+    font-weight: bold !important;
+    border-radius: 4px !important;
+  }
+
+  .status-badge {
+    font-size: 9px !important;
+    padding: 3px 8px !important;
+    font-weight: bold !important;
+    border-radius: 4px !important;
+  }
+
+  .header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  /* ── 5. Main content + 3-column grid ───────────────────────────────────── */
+  .main-content {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex: 1 !important;
+  }
+
+  /* CRITICAL: Beautiful 2-column print layout.
+     Column 1 (270px) = sidebar-left (Vehicle + Locations, auto-height row 1) and sidebar-right (Timeline, row 2 takes remaining height).
+     Column 2 (1fr) = center-section (KPI strip + Map card) spanning both rows (remaining height dynamic). */
+  .main-grid {
+    display: grid !important;
+    grid-template-columns: 270px 1fr !important;
+    grid-template-rows: auto 1fr !important;
+    column-gap: 8px !important;
+    row-gap: 12px !important;
+    height: 100% !important;
+    flex: 1 !important;
+    overflow: hidden !important;
+    align-items: stretch !important;
+    flex-direction: unset !important;
+    padding: 0 0 12px 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Reset any screen-breakpoint order on grid children */
+  .sidebar-left {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    order: unset !important;
+  }
+
+  .sidebar-right {
+    height: 100% !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    order: unset !important;
+  }
+
+  .center-section {
+    height: 100% !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    order: unset !important;
+  }
+
+  /* Column 1, Row 1: Vehicle + Locations (dynamic height) */
+  .sidebar-left {
+    grid-column: 1 / 2 !important;
+    grid-row: 1 / 2 !important;
+  }
+
+  /* Column 1, Row 2: Timeline moves below Locations (fills remaining height) */
+  .sidebar-right {
+    grid-column: 1 / 2 !important;
+    grid-row: 2 / 3 !important;
+  }
+
+  /* Column 2, Spanning Rows 1 & 2: KPI Strip + Map (fills remaining width and full height) */
+  .center-section {
+    grid-column: 2 / 3 !important;
+    grid-row: 1 / 3 !important;
+    order: unset !important;
+  }
+
+  /* ── 6. Cards ───────────────────────────────────────────────────────────── */
+  .card {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: none !important;
+    padding: 6px 8px !important;
+    border-radius: 5px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 0 !important;
+    backdrop-filter: none !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .card-header {
+    padding: 0 0 4px 0 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    margin-bottom: 5px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: transparent !important;
+    height: auto !important;
+  }
+
+  .card-content {
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .card-title,
+  .card-title span,
+  .tab-button.active,
+  .tab-button.active span {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #20104d !important;
+  }
+
+  .card-icon,
+  .tab-icon {
+    width: 11px !important;
+    height: 11px !important;
+    margin-right: 3px !important;
+    color: #20104d !important;
+  }
+
+  /* Flatten tab navigation */
+  .tab-container {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .tab-button:not(.active) {
+    display: none !important;
+  }
+
+  .tab-button.active {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    font-weight: 700 !important;
+    color: #20104d !important;
+    cursor: default !important;
+    box-shadow: none !important;
+  }
+
+  /* ── 7. KPI strip ───────────────────────────────────────────────────────── */
+  .kpi-strip {
+    display: grid !important;
+    grid-template-columns: 1.4fr 1.8fr 1fr 1fr !important;
+    gap: 5px !important;
+    margin-bottom: 5mm !important;
+    flex-shrink: 0 !important;
+    order: unset !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .kpi-card {
+    padding: 10px 8px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 5px !important;
+    background: #f8fafc !important;
+    box-shadow: none !important;
+    min-width: 0 !important;
+    min-height: 80px !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    position: relative !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+    cursor: default !important;
+  }
+
+  /* Preserve accent backgrounds */
+  .kpi-card.early {
+    background: #f0fdf4 !important;
+    border-color: #bbf7d0 !important;
+  }
+
+  .kpi-card.distance {
+    background: #eff6ff !important;
+    border-color: #bfdbfe !important;
+    padding: 8px 6px !important;
+    align-items: stretch !important;
+  }
+
+  .kpi-card.stoppages {
+    background: #fff7ed !important;
+    border-color: #fed7aa !important;
+  }
+
+  .kpi-card.deviations {
+    background: #fff1f2 !important;
+    border-color: #fecdd3 !important;
+  }
+
+  .kpi-value {
+    font-size: 19px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  .kpi-card.early .kpi-value {
+    font-size: 13px !important;
+    color: #047857 !important;
+  }
+
+  .kpi-card.stoppages .kpi-value {
+    color: #ea580c !important;
+  }
+
+  .kpi-card.deviations .kpi-value {
+    color: #e11d48 !important;
+  }
+
+  .kpi-label {
+    font-size: 9.5px !important;
+    color: #64748b !important;
+    margin: 3px 0 0 0 !important;
+    line-height: 1.3 !important;
+  }
+
+  /* ── 8. Distance KPI internals ──────────────────────────────────────────── */
+  .kpi-distance-metrics {
+    width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+
+  .distance-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    width: 100% !important;
+    gap: 3px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .distance-item {
+    text-align: center !important;
+  }
+
+  .distance-value {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1d4ed8 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.2 !important;
+  }
+
+  .distance-value.traveled {
+    color: #16a34a !important;
+  }
+
+  .distance-value.remaining {
+    color: #64748b !important;
+  }
+
+  .distance-label {
+    font-size: 8px !important;
+    color: #64748b !important;
+    white-space: nowrap !important;
+    line-height: 1.1 !important;
+  }
+
+  .progress-bar {
+    height: 4px !important;
+    margin-top: 3px !important;
+    width: 100% !important;
+    background-color: #e5e7eb !important;
+    border-radius: 9999px !important;
+    overflow: hidden !important;
+  }
+
+  .progress-bar-fill {
+    height: 100% !important;
+    border-radius: 9999px !important;
+  }
+
+  /* ── 9. Map section ─────────────────────────────────────────────────────── */
+  /* KPI strip must not grow — map fills remaining space */
+  .center-section .kpi-strip {
+    flex-shrink: 0 !important;
+  }
+
+  .map-card {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    margin-top: 0 !important;
+  }
+
+  .map-card .card-header {
+    margin-bottom: 0 !important;
+    padding-bottom: 3px !important;
+  }
+
+  .map-card .card-content {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  /* Fill all remaining space in the card — no fixed height so no white gap below */
+  .map-host {
+    flex: 1 !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  .map-host .leaflet-container,
+  .map-host > div {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Display map at native zoom and scale, so what the user sees on the screen matches the print layout. */
+  .map-host .leaflet-map-pane {
+    transform: none !important;
+  }
+
+  /* ── 10. Left sidebar: Vehicle + Locations ──────────────────────────────── */
+  .detail-item {
+    padding: 3px 0 !important;
+    margin-bottom: 1px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: baseline !important;
+  }
+
+  .detail-label {
+    font-size: 8px !important;
+    color: #64748b !important;
+    flex-shrink: 0 !important;
+    margin-right: 4px !important;
+  }
+
+  .detail-value {
+    font-size: 8.5px !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    text-align: right !important;
+    word-break: break-word !important;
+  }
+
+  .location-item {
+    padding: 5px 6px !important;
+    margin-bottom: 3px !important;
+    border-radius: 4px !important;
+    /* Restore the flex row so icon stays left of text */
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 5px !important;
+  }
+
+  /* Preserve origin / destination accent colours in print */
+  .location-item.origin {
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+  }
+
+  .location-item.destination {
+    background: #fff7ed !important;
+    border: 1px solid #fed7aa !important;
+  }
+
+  /* Expand badge is hidden in print — reclaim its reserved space */
+  .location-details {
+    padding-right: 0 !important;
+  }
+
+  .location-icon-wrapper {
+    padding: 3px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+  }
+
+  /* P1 / D1 circle badge */
+  .location-icon {
+    width: 15px !important;
+    height: 15px !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
+  }
+
+  .location-icon span {
+    font-size: 6.5px !important;
+    font-weight: 800 !important;
+  }
+
+  .location-name-bold {
+    font-size: 9px !important;
+    color: #1e293b !important;
+    font-weight: 700 !important;
+  }
+
+  .location-area,
+  .location-city,
+  .location-pincode {
+    font-size: 7.5px !important;
+    color: #64748b !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
+  }
+
+  /* location-time: keep icon + text on one row — do NOT use inline-block */
+  .location-time {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 3px !important;
+    flex-wrap: nowrap !important;
+    margin-top: 2px !important;
+    line-height: 1.2 !important;
+  }
+
+  .location-time span {
+    font-size: 7.5px !important;
+    color: #64748b !important;
+    white-space: nowrap !important;
+  }
+
+  .time-icon {
+    width: 8px !important;
+    height: 8px !important;
+    flex-shrink: 0 !important;
+    color: #64748b !important;
+  }
+
+  /* ── 11. Right sidebar: Timeline ───────────────────────────────────────── */
+  /* Recalculate negative margins to match print card padding (6px top/bottom, 8px sides) */
+  .timeline-header {
+    margin: -6px -8px 0 -8px !important;
+    padding: 5px 8px !important;
+    border-top-left-radius: 5px !important;
+    border-top-right-radius: 5px !important;
+  }
+
+  .timeline-card {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+  }
+
+  .timeline-card .card-content {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .scrollable-container {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  .timeline-section {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+
+  .timeline-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    padding: 2px 0 !important;
+    margin: 0 !important;
+    border-top: 1px solid #e9ecef !important;
+    border-bottom: none !important;
+    position: relative !important;
+  }
+
+  /* First item: no top border */
+  .timeline-item:first-child {
+    border-top: none !important;
+    padding-top: 0 !important;
+  }
+
+  /* Show only first 6 timeline events to guarantee fit */
+  .timeline-item:nth-child(n+7) {
+    display: none !important;
+  }
+
+  /* Icon column */
+  .timeline-icon-container {
+    width: 16px !important;
+    height: 16px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+  }
+
+  /* Suppress the vertical dashed pseudo-line in print — it bleeds oddly */
+  .timeline-icon-container::before {
+    display: none !important;
+  }
+
+  /* The SVG map marker icon */
+  .timeline-icon-container img {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* Text column */
+  /* ── 12. Current Location header in Timeline sidebar ───────────────────── */
+  /* Compact this into one tight line — screen version is 14px multiline */
+  .current-location-header {
+    margin-bottom: 4px !important;
+    padding: 3px 5px !important;
+    background: #eff6ff !important;
+    border: 1px solid #bfdbfe !important;
+    border-radius: 3px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+
+  .location-text {
+    font-size: 7.5px !important;
+    line-height: 1.3 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 2px !important;
+    align-items: baseline !important;
+  }
+
+  .location-text .label {
+    font-size: 7px !important;
+    color: #1d4ed8 !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* The inline bold span for address text */
+  .location-text span[style] {
+    font-size: 7.5px !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    margin-left: 0 !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+  }
+
+  /* Hide "Last Updated" — wastes precious space */
+  .update-time {
+    display: none !important;
+  }
+
+  .timeline-time-row {
+    margin-bottom: 1px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  .timeline-time {
+    font-size: 7.5px !important;
+    font-weight: 700 !important;
+    color: #20104d !important;
+  }
+
+  .timeline-date {
+    font-size: 7px !important;
+    color: #64748b !important;
+  }
+
+
+  .timeline-details {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .timeline-event {
+    font-size: 7.5px !important;
+    color: #1e293b !important;
+    line-height: 1.3 !important;
+    margin-top: 1px !important;
+  }
+
+  /* Toll history rows */
+  .toll-history-item {
+    padding: 2px 0 !important;
+    margin-bottom: 2px !important;
+    border-bottom: 1px dashed #e2e8f0 !important;
+  }
+
+  .toll-history-item:nth-child(n+7) {
+    display: none !important;
+  }
+
+  .toll-date div {
+    font-size: 7.5px !important;
+  }
+
+  .toll-name {
+    font-size: 8px !important;
+  }
+
+  .toll-line {
+    display: none !important;
+  }
+
+  /* SIM history */
+  .sim-history-item:nth-child(n+7) {
+    display: none !important;
+  }
+
+  /* ── 12. Current Location header in Timeline sidebar ───────────────────── */
+  /* This has font-size: 14px in screen CSS — shrink for print */
+  .current-location-header {
+    margin-top: 6px !important;
+    margin-bottom: 5px !important;
+    padding: 4px 6px !important;
+    background: #f0f9ff !important;
+    border: 1px solid #bae6fd !important;
+    border-radius: 4px !important;
+  }
+
+  .location-text {
+    font-size: 8px !important;
+    line-height: 1.35 !important;
+  }
+
+  .location-text .label {
+    font-size: 7.5px !important;
+    color: #3b6ef5 !important;
+    font-weight: 700 !important;
+  }
+
+  /* The inline bold span for address text */
+  .location-text span[style] {
+    font-size: 8px !important;
+    font-weight: 600 !important;
+    margin-left: 3px !important;
+  }
+
+  .update-time {
+    display: none !important;
+  }
+
+  /* ── 13. Hide mobile-only card that duplicates current location ─────────── */
+  .mobile-only-card {
+    display: none !important;
+  }
+
+  /* ── 14. Timeline card fills its row; Locations card stays auto-height (no blank stretch) */
+  .sidebar-right .card:last-child {
+    flex: 1 !important;
+  }
+
+  /* Remove any bottom margin that creates gap below last card */
+  .sidebar-left .card,
+  .sidebar-right .card {
+    margin-bottom: 0 !important;
+  }
+
+  /* Ensure location section doesn't leave dead space */
+  .locations-section,
+  .metadata-section {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* ── 15. Current location banner (class variant) ─────────────────────────── */
+  .current-location-banner {
+    font-size: 8px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 5px !important;
+    padding: 4px 6px !important;
+    background: #f0f9ff !important;
+    border: 1px solid #bae6fd !important;
+    border-radius: 4px !important;
+  }
+
+  .current-location-label {
+    font-size: 7px !important;
+    color: #64748b !important;
+  }
+
+  .current-location-value {
+    font-size: 8px !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+  }
+}
+
+/* Coordinated print-preparation layout: matches print A4 landscape dimensions exactly */
+body.preparing-print .dashboard-container {
+  width: 287mm !important;
+  height: 198mm !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 9999990 !important;
+  background: #ffffff !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+body.preparing-print .main-grid {
+  display: grid !important;
+  grid-template-columns: 270px 1fr !important;
+  grid-template-rows: auto 1fr !important;
+  column-gap: 8px !important;
+  row-gap: 12px !important;
+  height: 100% !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+}
+
+body.preparing-print .sidebar-left {
+  grid-column: 1 / 2 !important;
+  grid-row: 1 / 2 !important;
+}
+
+body.preparing-print .sidebar-right {
+  grid-column: 1 / 2 !important;
+  grid-row: 2 / 3 !important;
+}
+
+body.preparing-print .center-section {
+  grid-column: 2 / 3 !important;
+  grid-row: 1 / 3 !important;
+  order: unset !important;
+  height: 100% !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+body.preparing-print .map-card {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  margin-top: 0 !important;
+}
+
+body.preparing-print .map-card .card-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+body.preparing-print .map-host {
+  flex: 1 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  margin-top: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
 }

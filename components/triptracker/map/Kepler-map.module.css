@@ -2,7 +2,7 @@
 .container {
   position: relative;
   width: 100%;
-  height: 55vh;
+  height: 100%;
 }
 
 .fullscreenContainer {
@@ -2281,5 +2281,16 @@
   .iconBtnPlain {
     min-height: 36px;
     min-width: 36px;
+  }
+}
+
+@media print {
+  .topRightControls,
+  .sideControls,
+  .statusOverlay,
+  .enhancedReplayPanel,
+  .replayProgressContainer,
+  .mapStyleSelector {
+    display: none !important;
   }
 }

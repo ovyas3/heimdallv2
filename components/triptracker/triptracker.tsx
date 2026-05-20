@@ -27,6 +27,7 @@ import {
   AppWindow,
   AlertOctagon,
   Layers,
+  Printer,
 } from "lucide-react";
 import { HelpModal } from "./help-modal";
 import {
@@ -489,13 +490,13 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         });
         const pickups = shipmentData.shipment.pickups || [];
         const firstPick = pickups[0];
-        setPickGateInTime(firstPick?.arrived_at || null);
-        setPickGateOutTime(firstPick?.finished_at || null);
+        setPickGateInTime(firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null);
+        setPickGateOutTime(firstPick?.finished_at || shipmentData.shipment.pick_finished_at || null);
 
         const deliveries = shipmentData.shipment.deliveries || [];
         const lastDrop = deliveries[deliveries.length - 1];
-        setDropGateInTime(lastDrop?.arrived_at || null);
-        setDropGateOutTime(lastDrop?.finished_at || null);
+        setDropGateInTime(lastDrop?.arrived_at || shipmentData.shipment.drop_arrived_at || null);
+        setDropGateOutTime(lastDrop?.finished_at || shipmentData.shipment.drop_finished_at || null);
         // Extract deviation count and total distance
         const deviations = shipmentData.shipment.deviation?.deviations || [];
         const deviationCountFromApi = deviations.length;
@@ -534,12 +535,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             time: formatTimestamp(d.finished_at),
           }))
         );
-        const lastDelStatus = shipmentData.shipment.latest_status;
-        const actualDelTime = lastDelStatus === "CPTD"
-          ? (lastDrop?.finished_at || shipmentData.shipment.drop_finished_at)
-          : (lastDelStatus === "ALD"
-            ? (lastDrop?.arrived_at || shipmentData.shipment.drop_arrived_at)
-            : lastDrop?.finished_at);
+        const actualDelTime = lastDrop?.arrived_at || shipmentData.shipment.drop_arrived_at || lastDrop?.finished_at || shipmentData.shipment.drop_finished_at;
 
         calculateEtaDelta(
           shipmentData.shipment.delivery_date,
@@ -585,6 +581,29 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     };
     fetchShipmentData();
   }, [refreshTrigger, uniqueCode, calculateEtaDelta, getShipmentStatus]);
+
+  // Set custom document title before printing so the saved PDF filename matches "trip_tracker - SIN"
+  useEffect(() => {
+    const handleBeforePrint = () => {
+      const sin = apiData?.others?.sap_shipment_no || apiData?.SIN || "N/A";
+      (window as any)._originalDocumentTitle = document.title;
+      document.title = `trip_tracker - ${sin}`;
+    };
+
+    const handleAfterPrint = () => {
+      if ((window as any)._originalDocumentTitle) {
+        document.title = (window as any)._originalDocumentTitle;
+      }
+    };
+
+    window.addEventListener("beforeprint", handleBeforePrint);
+    window.addEventListener("afterprint", handleAfterPrint);
+
+    return () => {
+      window.removeEventListener("beforeprint", handleBeforePrint);
+      window.removeEventListener("afterprint", handleAfterPrint);
+    };
+  }, [apiData]);
 
   // This useEffect handles the toll history data
   useEffect(() => {
@@ -976,7 +995,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
   // Now you can call this function with your API data
   const onTimePercentage = getOnTimePercentage(
     apiData,
-    finalDestination?.finished_at
+    finalDestination?.arrived_at || finalDestination?.finished_at
   );
   const isSimActive = apiData?.trip_tracker?.methods?.includes("SIM");
   const isGpsActive = apiData?.trip_tracker?.methods?.includes("GPS");
@@ -1124,6 +1143,15 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                   {shipmentStatus}
                   <span className="tooltip-content">Shipment Status</span>
                 </span>
+                <div className="desktop-only-print">
+                  <button
+                    className="print-action-button"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="print-action-icon" />
+                    Print
+                  </button>
+                </div>
                 <div className="desktop-only-help">
                   <HelpModal shipmentId="UHR0002-8" driverPhone="8660578908">
                     <button className="help-button">
@@ -1993,12 +2021,12 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                       </div>
                       <div className="kpi-label">
                         {apiData?.latest_status === "CPTD"
-                          ? (lastDelivery?.finished_at ? formatTimestamp(lastDelivery.finished_at) : (apiData?.drop_finished_at ? formatTimestamp(apiData.drop_finished_at) : "N/A"))
+                          ? (lastDelivery?.arrived_at ? formatTimestamp(lastDelivery.arrived_at) : (apiData?.drop_arrived_at ? formatTimestamp(apiData.drop_arrived_at) : (lastDelivery?.finished_at ? formatTimestamp(lastDelivery.finished_at) : (apiData?.drop_finished_at ? formatTimestamp(apiData.drop_finished_at) : "N/A"))))
                           : (apiData?.latest_status === "ALD"
                             ? (lastDelivery?.arrived_at ? `Arrived: ${formatTimestamp(lastDelivery.arrived_at)}` : "At Delivery")
                             : `ETA: ${formatTimestamp(apiData?.delivery_date)}`)}
                       </div>
-
+                      
                       {(apiData?.latest_status === "CPTD" || apiData?.latest_status === "ALD") ? (
                         <div className="tooltip-content tooltip-lg">
                           <div className="tooltip-title">ETA Delta</div>
@@ -2012,13 +2040,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
                           <div className="tooltip-row">
                             <span className="tooltip-key">
-                              {apiData?.latest_status === "ALD" ? "Arrival time:" : "Actual delivery:"}
+                              {(apiData?.latest_status === "ALD" || lastDelivery?.arrived_at || apiData?.drop_arrived_at) ? "Arrival time:" : "Actual delivery:"}
                             </span>
                             <span className="tooltip-val">
                               {formatEta(
-                                apiData?.latest_status === "CPTD"
-                                  ? (lastDelivery?.finished_at || apiData?.drop_finished_at || finalDestination?.finished_at)
-                                  : (lastDelivery?.arrived_at || apiData?.drop_arrived_at)
+                                lastDelivery?.arrived_at || apiData?.drop_arrived_at || lastDelivery?.finished_at || apiData?.drop_finished_at || finalDestination?.finished_at
                               )}
                             </span>
                           </div>

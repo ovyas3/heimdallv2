@@ -163,6 +163,8 @@ interface KeplerMapProps {
     };
     pick_arrived_at?: string;
     pick_finished_at?: string;
+    drop_arrived_at?: string;
+    drop_finished_at?: string;
     waypoints?: any[];
     geo_fence?: any;
     others?: {
@@ -280,6 +282,23 @@ function MapController({
       mapRef.current = map;
     }
   }, [map, mapRef]);
+
+  // Ensure map recalculates its dimensions whenever its container size changes
+  useEffect(() => {
+    if (!map) return;
+
+    const container = map.getContainer();
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize({ animate: false });
+    });
+
+    resizeObserver.observe(container);
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [map]);
 
   return null; // It doesn't render anything.
 }
@@ -434,6 +453,7 @@ export default function KeplerMap({
   const [panelPosition, setPanelPosition] = useState({ x: 0, y: 0 });
   const [panelDragOffset, setPanelDragOffset] = useState({ x: 0, y: 0 });
   const [is3DView, setIs3DView] = useState(false);
+  const [isPreparingPrint, setIsPreparingPrint] = useState(false);
 
   const polylineColors = [
     "#E67E22",
@@ -548,6 +568,119 @@ export default function KeplerMap({
       window.removeEventListener("resize", checkIsMobile);
     };
   }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Set up print triggers and print workflow to ensure map is fully rendered before printing
+  useEffect(() => {
+    let isWorkflowActive = false;
+
+    const getActivePath = () => {
+      return activeMode === "app"
+        ? appPath
+        : activeMode === "sim"
+          ? simPath
+          : activeMode === "gps"
+            ? gpsPath
+            : [];
+    };
+
+    const fitMapBounds = () => {
+      if (!mapRef.current) return;
+      const path = getActivePath();
+      if (path && path.length > 0) {
+        if (path.length === 1) {
+          mapRef.current.setView(path[0] as any, Math.max(mapRef.current.getZoom(), 16), { animate: false });
+        } else {
+          mapRef.current.fitBounds(path as any, { padding: [40, 40], animate: false });
+        }
+      }
+    };
+
+    const startPrintWorkflow = () => {
+      if (isWorkflowActive) return;
+      isWorkflowActive = true;
+      setIsPreparingPrint(true);
+
+      // 1. Resize map to exact print dimensions off-screen so tiles can load
+      document.body.classList.add("preparing-print");
+      
+      let printTriggered = false;
+
+      const triggerPrint = () => {
+        if (printTriggered) return;
+        printTriggered = true;
+        
+        // Trigger browser print
+        window.print();
+
+        // Clean up style classes and restore viewport size after print dialog is closed
+        setTimeout(() => {
+          document.body.classList.remove("preparing-print");
+          if (mapRef.current) {
+            mapRef.current.invalidateSize({ animate: false });
+            fitMapBounds(); // fit back to screen size!
+          }
+          setIsPreparingPrint(false);
+          isWorkflowActive = false;
+        }, 1000);
+      };
+
+      // Force immediate invalidate and fit bounds to print size
+      if (mapRef.current) {
+        mapRef.current.invalidateSize({ animate: false });
+        fitMapBounds();
+        
+        // Listen for tile completion
+        const onMapLoad = () => {
+          if (mapRef.current) {
+            mapRef.current.off("load", onMapLoad);
+          }
+          // Give 250ms for tiles to paint
+          setTimeout(triggerPrint, 250);
+        };
+        
+        mapRef.current.on("load", onMapLoad);
+      }
+
+      // Safe fallback timeout: wait up to 1800ms
+      setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.off("load", triggerPrint);
+        }
+        triggerPrint();
+      }, 1800);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        startPrintWorkflow();
+      }
+    };
+
+    const handleCustomPrintEvent = () => {
+      startPrintWorkflow();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("trigger-print", handleCustomPrintEvent);
+
+    // Keep beforeprint listener as absolute fallback in case print is triggered via browser menu
+    const beforePrintFallback = () => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize({ animate: false });
+        fitMapBounds();
+      }
+    };
+
+    window.addEventListener("beforeprint", beforePrintFallback);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("trigger-print", handleCustomPrintEvent);
+      window.removeEventListener("beforeprint", beforePrintFallback);
+    };
+  }, [activeMode, appPath, simPath, gpsPath]);
+
   // Close day run table when exiting fullscreen
   useEffect(() => {
     if (!isFullscreen && showDayRun) {
@@ -2882,6 +3015,8 @@ export default function KeplerMap({
           {(selectedMapStyle !== "none" || isSatelliteView) && (
             <TileLayer
               url={getCurrentMapUrl()}
+              keepBuffer={15}
+              updateWhenIdle={false}
               attribution={
                 selectedMapStyle === "satellite" || isSatelliteView
                   ? "© Esri"
@@ -3001,17 +3136,17 @@ export default function KeplerMap({
                     </div>
                   )}
 
-                  {shipmentData?.pick_arrived_at && i === 0 && (
+                  {(meta?.arrived_at || (i === 0 && shipmentData?.pick_arrived_at)) && (
                     <div className={styles.popupMeta}>
                       {isSupplier ? "Arrived at Source: " : "Gate In: "}
-                      {formatTimestamp(shipmentData.pick_arrived_at)}
+                      {formatTimestamp(meta?.arrived_at || shipmentData?.pick_arrived_at)}
                     </div>
                   )}
 
-                  {shipmentData?.pick_finished_at && i === 0 && (
+                  {(meta?.finished_at || (i === 0 && shipmentData?.pick_finished_at)) && (
                     <div className={styles.popupMeta}>
                       {isSupplier ? "Dispatched from Source: " : "Gate Out: "}
-                      {formatTimestamp(shipmentData.pick_finished_at)}
+                      {formatTimestamp(meta?.finished_at || shipmentData?.pick_finished_at)}
                     </div>
                   )}
                 </div>
@@ -3105,9 +3240,16 @@ export default function KeplerMap({
                       City: {meta.location.city}
                     </div>
                   )}
-                  {meta?.finished_at && (
-                    <div className={styles.popupBody}>
-                      Arrived at: {formatTimestamp(meta.finished_at)}
+                  {(meta?.arrived_at || (i === shipmentDeliveries.length - 1 && shipmentData?.drop_arrived_at)) && (
+                    <div className={styles.popupMeta}>
+                      {isSupplier ? "Reached Destination: " : "Customer Location In: "}
+                      {formatTimestamp(meta?.arrived_at || shipmentData?.drop_arrived_at)}
+                    </div>
+                  )}
+                  {(meta?.finished_at || (i === shipmentDeliveries.length - 1 && shipmentData?.drop_finished_at)) && (
+                    <div className={styles.popupMeta}>
+                      {isSupplier ? "Customer Location Out: " : "Customer Location Out: "}
+                      {formatTimestamp(meta?.finished_at || shipmentData?.drop_finished_at)}
                     </div>
                   )}
                 </div>
@@ -4714,6 +4856,41 @@ export default function KeplerMap({
           </div>
         )}
       </div>
+      {isPreparingPrint && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "rgba(255, 255, 255, 0.8)",
+          backdropFilter: "blur(4px)",
+          zIndex: 9999999,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "12px",
+          fontFamily: "sans-serif"
+        }}>
+          <div style={{
+            width: "24px",
+            height: "24px",
+            border: "3px solid #3b82f6",
+            borderTopColor: "transparent",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite"
+          }} />
+          <span style={{ fontSize: "14px", fontWeight: "600", color: "#1e293b" }}>
+            Preparing print layout...
+          </span>
+          <style>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
