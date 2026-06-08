@@ -2294,3 +2294,139 @@
     display: none !important;
   }
 }
+
+.toggleTrack {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+
+  background: grey;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.toggleTrackOn {
+  background: #4D79F6;
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+}
+
+.toggleTrackOn .toggleThumb {
+  transform: translateX(16px);
+}
+
+.toggleLabel {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggleLabelOn {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* Replay mode pill toggle */
+.pillContainer {
+  display: flex;
+  background-color: #f3f4f6;
+  border-radius: 9999px;
+  padding: 2px;
+  align-self: center;
+  border: 1px solid #e5e7eb;
+  width: fit-content;
+  height: 32px;
+  align-items: center;
+}
+
+.pillButton {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.pillButton:hover {
+  color: #111827;
+}
+
+.pillButtonActive {
+  background-color: white;
+  color: #111827;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Date Range Picker styling */
+.datePickerContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #3f3b3a;
+  padding: 4px 8px;
+  border-radius: 8px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, .2);
+  color: #fff;
+  font-size: 11px;
+}
+
+.datePickerHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.datePickerLabel {
+  font-weight: 500;
+}
+
+.datePickerInputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dateTimeInput {
+  background: #1f2937;
+  border: 1px solid #4b5563;
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.dateTimeInput:focus {
+  border-color: #2563eb;
+}
+
+.dateSeparator {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* 🌟 CHANGED: Added target styling to make the 'to' text match 'From:' exactly */
+.toLabel {
+  color: #fff !important;
+  /* Changes text from grey to matching crisp white */
+  font-weight: 600;
+  /* Matches the bold weight of 'From:' */
+}

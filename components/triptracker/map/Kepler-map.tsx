@@ -79,6 +79,8 @@ interface KeplerMapProps {
   showStoppages?: boolean;
   showHaltPoints?: boolean;
   isFullscreen?: boolean;
+  selectedHaltId?: string | null;
+  onHaltSelected?: (id: string | null) => void;
   setShowDeviations: (show: boolean) => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
@@ -342,6 +344,8 @@ export default function KeplerMap({
   isSupplier,
   showInfoCards: showInfoCardsProp,
   setShowInfoCards: setShowInfoCardsProp,
+  selectedHaltId,
+  onHaltSelected,
 }: KeplerMapProps) {
   const [isClient, setIsClient] = useState(false);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
@@ -352,6 +356,7 @@ export default function KeplerMap({
   const [customIcons, setCustomIcons] = useState<any>({});
   // Live App coords derived from pathData.app
   const [appCoords, setAppCoords] = useState<[number, number][]>([]);
+  const [fetchedShipment, setFetchedShipment] = useState<any>(null);
 
   // Saved (persisted) App coords
   const [storedAppCoords, setStoredAppCoords] = useState<[number, number][]>(
@@ -407,6 +412,9 @@ export default function KeplerMap({
   const mapRef = useRef<any>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const vehicleMarkerRef = useRef<L.Marker | null>(null);
+  const haltMarkerRefs = useRef<Record<string, L.Marker | null>>({});
+  // Always reflects the latest selectedHaltId even inside stale closures
+  const selectedHaltIdRef = useRef<string | null | undefined>(selectedHaltId);
   // Keep these for the new replay system
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayProgress, setReplayProgress] = useState(0); // 0 to 100
@@ -446,6 +454,7 @@ export default function KeplerMap({
     number | null
   >(null);
   const [replaySpeed, setReplaySpeed] = useState(1);
+  const [replayWithHalts, setReplayWithHalts] = useState(true);
 
   const [previousBounds, setPreviousBounds] =
     useState<LatLngBoundsExpression | null>(null); // ✅ Add this new state
@@ -838,7 +847,7 @@ export default function KeplerMap({
         );
       });
 
-      if (foundHaltIndex !== -1) {
+      if (replayWithHalts && foundHaltIndex !== -1) {
         // Stop at the halt (do not advance further)
         replayIndexRef.current = candidateIndex;
         setCurrentReplayPosition(nextPosition);
@@ -902,6 +911,7 @@ export default function KeplerMap({
     currentReplayDeviationIndex,
     deviationData,
     replaySpeed,
+    replayWithHalts,
   ]);
 
   // This new useEffect handles the pause duration and resume. It's cleaner and separates concerns.
@@ -991,6 +1001,75 @@ export default function KeplerMap({
       }
     }
   }, [isReplaying, isPausedAtHalt, mapRef, currentReplayPosition]);
+
+  // Keep selectedHaltIdRef in sync so stale closures can read the latest value
+  useEffect(() => {
+    selectedHaltIdRef.current = selectedHaltId;
+  }, [selectedHaltId]);
+
+  // Open halt popup when selectedHaltId changes (triggered from timeline H1/H2 click)
+  useEffect(() => {
+    if (!selectedHaltId || !mapRef.current || !haltPoints.length) return;
+
+    const halt = haltPoints.find((h) => h._id === selectedHaltId);
+    if (!halt) return;
+
+    const lat = halt.geo_point.coordinates[1];
+    const lng = halt.geo_point.coordinates[0];
+    if (!isValidLatLng([lat, lng])) return;
+
+    const map = mapRef.current;
+    const durationHours = Math.floor(halt.halt_duration / 60);
+    const durationMins = Math.floor(halt.halt_duration % 60);
+
+    const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    const popupHtml = `
+      <div class="${styles.popup}">
+        <div class="${styles.popupTitle} ${styles.titleRed}">Halt Info</div>
+        <hr class="${styles.divider}" />
+        <div class="${styles.popupBody}">Duration: <strong>${durationHours > 0 ? durationHours + " hour(s), " : ""}${durationMins} minute(s)</strong></div>
+        <div class="${styles.popupBody}">Start: <strong>${formatHaltTime(halt.start_time)}</strong></div>
+        <div class="${styles.popupBody}">End: <strong>${halt.end_time ? formatHaltTime(halt.end_time) : "-"}</strong></div>
+        <div class="${styles.popupBody}">${halt.address || ""}</div>
+        <a href="${googleMapsUrl}" target="_blank" rel="noopener noreferrer"
+          style="display:inline-flex;align-items:center;gap:4px;background:#4285F4;color:white;padding:6px 12px;border-radius:6px;text-decoration:none;font-size:12px;margin-top:8px;">
+          Open in Maps
+        </a>
+      </div>`;
+
+    // Capture the halt ID for this popup at creation time
+    const thisHaltId = halt._id;
+
+    // Pan map to halt location first
+    map.setView([lat, lng], Math.max(map.getZoom(), 14), { animate: true });
+
+    // Open L.popup directly after pan — no dependency on marker refs
+    const timer = setTimeout(() => {
+      try {
+        const popup = L.popup({ maxWidth: 300, autoPan: true })
+          .setLatLng([lat, lng])
+          .setContent(popupHtml);
+
+        // Only reset selectedHaltId if THIS popup's halt is still the active one.
+        // If the user already clicked a different halt, selectedHaltIdRef.current
+        // will have changed and we must NOT clear the new selection.
+        popup.on("remove", () => {
+          if (selectedHaltIdRef.current === thisHaltId) {
+            onHaltSelected?.(null);
+          }
+        });
+
+        popup.openOn(map);
+      } catch (e) {
+        console.error("Failed to open halt popup from timeline:", e);
+        if (selectedHaltIdRef.current === thisHaltId) {
+          onHaltSelected?.(null);
+        }
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [selectedHaltId, haltPoints, onHaltSelected]);
 
   // Robust popup using Leaflet L.popup so we don't depend on react-leaflet child timing
   useEffect(() => {
@@ -1346,6 +1425,7 @@ export default function KeplerMap({
 
           const payload: ShipmentResponse = await res.json();
           const shipment = payload.shipment;
+          setFetchedShipment(shipment);
           const totalDistanceKm = Math.round(
             ((shipment?.trip_tracker?.travelled_distance || 0) +
               (shipment?.trip_tracker?.remaining_distance || 0)) /
@@ -1511,6 +1591,7 @@ export default function KeplerMap({
       setDeliveryPolylines,
       setIsLoadingShipment,
       setProgressPercentage,
+      setFetchedShipment,
     ]
   ); // This dependency is correct
 
@@ -2895,6 +2976,52 @@ export default function KeplerMap({
 
             {/* Control Buttons */}
             <div className={styles.replayControls}>
+              {/* Replay Mode Select Pill */}
+              {/* <div className={styles.pillContainer} style={{ marginRight: "4px" }}>
+                <button
+                  type="button"
+                  className={`${styles.pillButton} ${replayWithHalts ? styles.pillButtonActive : ""}`}
+                  onClick={() => setReplayWithHalts(true)}
+                >
+                  With Halts
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.pillButton} ${!replayWithHalts ? styles.pillButtonActive : ""}`}
+                  onClick={() => {
+                    setReplayWithHalts(false);
+                    setIsPausedAtHalt(false);
+                  }}
+                >
+                  Without Halts
+                </button>
+              </div> */}
+              {/* Replay Mode Toggle */}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", marginRight: "4px" }}>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={replayWithHalts}
+                  aria-label="Halts"
+                  onClick={() => {
+                    setReplayWithHalts(!replayWithHalts);
+                    if (replayWithHalts) setIsPausedAtHalt(false);
+                  }}
+                  className={`${styles.toggleTrack} ${replayWithHalts ? styles.toggleTrackOn : ""}`}
+                >
+                  <div className={styles.toggleThumb} />
+                </button>
+                <span
+                  className={`${styles.toggleLabel} ${replayWithHalts ? styles.toggleLabelOn : ""}`}
+                  onClick={() => {
+                    setReplayWithHalts(!replayWithHalts);
+                    if (replayWithHalts) setIsPausedAtHalt(false);
+                  }}
+                >
+                  Halts
+                </span>
+              </div>
+
               {/* Skip to Start */}
               <button
                 onClick={skipToStart}
@@ -3499,7 +3626,7 @@ export default function KeplerMap({
                 </Marker>
               );
             })}
-          {shouldShowHaltMarkers && !isSupplier &&
+          {(shouldShowHaltMarkers || !!selectedHaltId) && !isSupplier &&
             haltPoints.map((halt, idx) => {
               const lat = halt.geo_point.coordinates[1];
               const lng = halt.geo_point.coordinates[0];
@@ -3513,6 +3640,9 @@ export default function KeplerMap({
                   key={`halt-${halt._id}-${idx}`}
                   position={[lat, lng]}
                   icon={customIcons?.deviation ?? undefined}
+                  ref={(markerInstance) => {
+                    haltMarkerRefs.current[halt._id] = markerInstance;
+                  }}
                 >
                   <Popup>
                     <div className={styles.popup}>

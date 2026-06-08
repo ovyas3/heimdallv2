@@ -69,6 +69,51 @@ const KeplerMap = dynamic(() => import("./map/Kepler-map"), {
 });
 
 export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
+  const [selectedHaltId, setSelectedHaltId] = useState<string | null>(null);
+
+  const handleHaltClick = (haltId: string) => {
+    if (!haltId) return;
+    setMapState((prev: any) => ({ ...prev, mode: "map", showHalts: true }));
+    setShowHaltPointsOnMap(true);
+    setShowStoppagesOnMap(true);
+    setSelectedHaltId(haltId);
+    if (typeof window !== "undefined" && window.innerWidth <= 640) {
+      setIsMapFull(true);
+    }
+  };
+
+  const renderEventComments = (comments: string, haltId?: string) => {
+    if (!comments) return "";
+    const regex = /(\b[hH]\d+\b)/g;
+    const parts = comments.split(regex);
+    return parts.map((part, i) => {
+      if (regex.test(part)) {
+        let resolvedHaltId = haltId;
+        if (!resolvedHaltId) {
+          const haltNum = parseInt(part.substring(1), 10);
+          if (!isNaN(haltNum) && haltData && haltData[haltNum - 1]) {
+            resolvedHaltId = haltData[haltNum - 1]._id;
+          }
+        }
+        const isSelected = resolvedHaltId && selectedHaltId === resolvedHaltId;
+        return (
+          <strong
+            key={i}
+            style={{
+              color: isSelected ? "red" : "black",
+              fontWeight: "bold",
+              cursor: resolvedHaltId ? "pointer" : "default",
+              textDecoration: resolvedHaltId ? "underline" : "none"
+            }}
+            onClick={() => resolvedHaltId && handleHaltClick(resolvedHaltId)}
+          >
+            {part}
+          </strong>
+        );
+      }
+      return part;
+    });
+  };
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
   >({
@@ -1348,6 +1393,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                     isSupplier={isSupplierView}
                     showInfoCards={showInfoCards}
                     setShowInfoCards={setShowInfoCards}
+		    selectedHaltId={selectedHaltId}
+                    onHaltSelected={setSelectedHaltId}
                   // apiData={apiData}
                   // tollHistoryData={tollHistoryData}
                   // haltData={haltData}
@@ -2492,6 +2539,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             isSupplier={isSupplierView}
                             showInfoCards={showInfoCards}
                             setShowInfoCards={setShowInfoCards}
+			    selectedHaltId={selectedHaltId}
+                            onHaltSelected={setSelectedHaltId}
                           // optional callbacks if you want to control toggles from dashboard:
                           // onToggleGPSRoute={() => {/* set some local state if needed */}}
                           // onToggleDeviations={() => setShowDeviationsOnMap((s) => !s)}
@@ -2988,7 +3037,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                                       </div>
                                     </div>
                                     <div className="timeline-event">
-                                      {event.comments}
+                                      {renderEventComments(event.comments, event.halt_id)}
                                     </div>
                                   </div>
                                 </div>
