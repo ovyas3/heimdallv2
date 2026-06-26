@@ -352,6 +352,7 @@ export default function KeplerMap({
   const [simPath, setSimPath] = useState<[number, number][]>([]);
   const [appPath, setAppPath] = useState<[number, number][]>([]);
   const [gpsPath, setGpsPath] = useState<[number, number][]>([]);
+  const [millRoutePaths, setMillRoutePaths] = useState<[number, number][][]>([]);
   // const [replaySpeed, setReplaySpeed] = useState(50);
   const [customIcons, setCustomIcons] = useState<any>({});
   // Live App coords derived from pathData.app
@@ -1634,6 +1635,101 @@ export default function KeplerMap({
       }
     }
   }, [shipmentData]);
+
+  useEffect(() => {
+    const activeShipment = fetchedShipment || shipmentData;
+    if (!activeShipment) return;
+
+    const pickups = activeShipment.pickups ?? [];
+    const deliveries = activeShipment.deliveries ?? [];
+
+    const millRouteUrls: string[] = [];
+    pickups.forEach((p: any) => {
+      if (p.location?.mill_route) {
+        millRouteUrls.push(p.location.mill_route);
+      }
+    });
+    deliveries.forEach((d: any) => {
+      if (d.location?.mill_route) {
+        millRouteUrls.push(d.location.mill_route);
+      }
+    });
+
+    if (millRouteUrls.length === 0) {
+      setMillRoutePaths([]);
+      return;
+    }
+
+    let isSubscribed = true;
+    const fetchAllRoutes = async () => {
+      try {
+        const fetchedRoutes: [number, number][][] = [];
+        await Promise.all(
+          millRouteUrls.map(async (url) => {
+            try {
+              const proxyUrl = `/api/proxy-fence?url=${encodeURIComponent(url)}`;
+              const response = await fetch(proxyUrl);
+              if (response.ok) {
+                const textData = await response.json();
+                
+                // Parse the data robustly
+                let coordinates: [number, number][] = [];
+
+                if (typeof textData === "string") {
+                  coordinates = decodePolyline(textData);
+                } else if (textData && typeof textData === "object") {
+                  // If it's a GeoJSON Feature
+                  let geom = textData;
+                  if (textData.type === "Feature" && textData.geometry) {
+                    geom = textData.geometry;
+                  }
+                  
+                  // If it is GeoJSON LineString
+                  if (geom.type === "LineString" && Array.isArray(geom.coordinates)) {
+                    coordinates = geom.coordinates
+                      .map((coord: any) => {
+                        if (Array.isArray(coord) && coord.length >= 2) {
+                          return [coord[1], coord[0]] as [number, number]; // [lng, lat] -> [lat, lng]
+                        }
+                        return null;
+                      })
+                      .filter(Boolean) as [number, number][];
+                  } else if (Array.isArray(textData)) {
+                    // Direct array of coordinates [[lng, lat], ...] or [[lat, lng], ...]
+                    coordinates = textData
+                      .map((coord: any) => {
+                        if (Array.isArray(coord) && coord.length >= 2) {
+                          return [coord[1], coord[0]] as [number, number];
+                        }
+                        return null;
+                      })
+                      .filter(Boolean) as [number, number][];
+                  }
+                }
+
+                if (coordinates && coordinates.length > 0) {
+                  fetchedRoutes.push(coordinates);
+                }
+              }
+            } catch (e) {
+              console.error("Failed to fetch mill route:", url, e);
+            }
+          })
+        );
+        if (isSubscribed) {
+          setMillRoutePaths(fetchedRoutes);
+        }
+      } catch (err) {
+        console.error("Error fetching mill routes:", err);
+      }
+    };
+
+    fetchAllRoutes();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [fetchedShipment, shipmentData, decodePolyline]);
 
   const deviationRoutes = useMemo(
     () => (deviationData.length > 0 ? deviationData : []),
@@ -3539,6 +3635,25 @@ export default function KeplerMap({
             </Polyline>
           )}
 
+          {/* === Mill Route Polylines === */}
+          {millRoutePaths.map((path, idx) => (
+            <Polyline
+              key={`mill-route-${idx}`}
+              positions={path}
+              pathOptions={{
+                color: "#8B5CF6",
+                weight: 4,
+                opacity: 0.9,
+              }}
+            >
+              <Popup>
+                <div>
+                  <h4>Mill Route</h4>
+                </div>
+              </Popup>
+            </Polyline>
+          ))}
+
           {/* === Fence Path Polyline (if available and enabled) === */}
           {(() => {
             const shouldShowFence =
@@ -3987,6 +4102,15 @@ export default function KeplerMap({
                     pathOptions={{ color: "#ec4899", weight: 4, opacity: 0.8 }}
                   />
                 )}
+
+                {/* Show mill route in magnifier */}
+                {millRoutePaths.map((path, idx) => (
+                  <Polyline
+                    key={`magnifier-mill-route-${idx}`}
+                    positions={path}
+                    pathOptions={{ color: "#8B5CF6", weight: 4, opacity: 0.9 }}
+                  />
+                ))}
 
                 {/* Show fence path in magnifier if visible */}
                 {(() => {
