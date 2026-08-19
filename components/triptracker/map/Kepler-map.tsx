@@ -3012,15 +3012,10 @@ export default function KeplerMap({
       } else {
         // ...otherwise, if it IS already active, just deactivate it.
         setIsNavigating(false);
-        if (previousBounds) {
-          mapRef.current.flyToBounds(previousBounds, {
-            animate: true,
-            duration: 1,
-          });
-        }
+        fitToIndia();
       }
     }
-  }, [currentLocation, isNavigating, previousBounds, mapRef, setPreviousBounds, setIsNavigating]);
+  }, [currentLocation, isNavigating, mapRef, setIsNavigating, fitToIndia]);
   const handleMagnifierPanelMouseDown = (e: React.MouseEvent) => {
     // This is the new function to prevent event propagation
     // It stops the mousedown event from bubbling up to the map container's onMouseDown handler.
@@ -3231,7 +3226,7 @@ export default function KeplerMap({
           style={{ height: "100%", width: "100%" }}
           zoomControl={false}
           attributionControl={false}
-          key={`${unique_code}-${isFullscreen}-${selectedMapStyle}`}
+          key={unique_code}
         >
           <MapController mapRef={mapRef} />
           <Pane name="shipmentMarkers" style={{ zIndex: 650 }} />
@@ -4628,28 +4623,32 @@ export default function KeplerMap({
               onClick={navigateToVehicle}
               className={`${styles.iconBtn} ${isNavigating ? styles.iconBtnActivePurple : ""
                 }`}
-              title="Go to Vehicle Location"
+              title={isNavigating ? "View India" : "Go to Vehicle"}
             >
-              <svg
-                className={styles.iconSm}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span className={styles.btnLabel}>Go to Vehicle</span>
+              {isNavigating ? (
+                <MapPin className={styles.iconSm} />
+              ) : (
+                <svg
+                  className={styles.iconSm}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              )}
+              <span className={styles.btnLabel}>{isNavigating ? "View India" : "Go to Vehicle"}</span>
             </button>
           </div>
 
@@ -4720,17 +4719,6 @@ export default function KeplerMap({
                 />
               </svg>
               <span className={styles.btnLabel}>Magnifier Settings</span>
-            </button>
-          </div>
-
-          <div className={styles.iconBtnWrapper}>
-            <button
-              onClick={fitToIndia}
-              className={styles.iconBtn}
-              title="Show Full Map"
-            >
-              <MapPin className={styles.iconSm} />
-              <span className={styles.btnLabel}>View India</span>
             </button>
           </div>
 
