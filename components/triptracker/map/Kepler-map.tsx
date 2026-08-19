@@ -104,6 +104,9 @@ interface KeplerMapProps {
   };
   tripTrackerMethods?: string[];
   shipmentData?: {
+    _id?: string;
+    created_at?: string;
+    shipper?: any;
     SIN?: string;
     latest_status?: string;
     delivery_date?: string;
@@ -3335,11 +3338,11 @@ export default function KeplerMap({
 
                   {(isSupplier && i === 0
                     ? meta?.location?.city
-                    : meta?.location?.name) && (
+                    : (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && Boolean(shipmentData?.pick_finished_at) ? "JSL - Jajpur" : meta?.location?.name)) && (
                       <div className={styles.popupBody}>
                         {(isSupplier && i === 0
                           ? meta?.location?.city
-                          : meta?.location?.name
+                          : (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && Boolean(shipmentData?.pick_finished_at) ? "JSL - Jajpur" : meta?.location?.name)
                         )?.trim()}
                       </div>
                     )}
@@ -3354,10 +3357,14 @@ export default function KeplerMap({
                     </div>
                   )}
 
-                  {(meta?.arrived_at || (i === 0 && shipmentData?.pick_arrived_at)) && (
+                  {(meta?.arrived_at || (i === 0 && (shipmentData?.pick_arrived_at || (String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && shipmentData?.created_at)))) && (
                     <div className={styles.popupMeta}>
                       {isSupplier ? "Arrived at Source: " : "Gate In: "}
-                      {formatTimestamp(meta?.arrived_at || shipmentData?.pick_arrived_at)}
+                      {formatTimestamp(
+                        (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09")
+                          ? (shipmentData?.created_at || meta?.arrived_at || shipmentData?.pick_arrived_at)
+                          : (meta?.arrived_at || shipmentData?.pick_arrived_at)
+                      )}
                     </div>
                   )}
 

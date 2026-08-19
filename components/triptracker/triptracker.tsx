@@ -529,14 +529,23 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             `Shipment API error! Status: ${shipmentResponse.status}`
           );
         const shipmentData = await shipmentResponse.json();
-        setApiData({
-          ...shipmentData.shipment,
-          gps: shipmentData.gps,
-        });
+        const isJslJajpur = String(shipmentData.shipment?.shipper?._id || shipmentData.shipment?.shipper) === "694b847f2a7c87efd3fe4f09";
         const pickups = shipmentData.shipment.pickups || [];
         const firstPick = pickups[0];
-        setPickGateInTime(firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null);
-        setPickGateOutTime(firstPick?.finished_at || shipmentData.shipment.pick_finished_at || null);
+        const pickGateIn = isJslJajpur
+          ? (shipmentData.shipment.created_at || firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null)
+          : (firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null);
+        const pickGateOut = firstPick?.finished_at || shipmentData.shipment.pick_finished_at || null;
+
+        setApiData({
+          ...shipmentData.shipment,
+          pick_arrived_at: pickGateIn,
+          pick_finished_at: pickGateOut,
+          gps: shipmentData.gps,
+        });
+
+        setPickGateInTime(pickGateIn);
+        setPickGateOutTime(pickGateOut);
 
         const deliveries = shipmentData.shipment.deliveries || [];
         const lastDrop = deliveries[deliveries.length - 1];
@@ -686,6 +695,15 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         const trailsData = await trailsResponse.json();
 
         setTimelineData(trailsData.trails);
+
+        const isJslJajpur = String(apiData?.shipper?._id || apiData?.shipper) === "694b847f2a7c87efd3fe4f09";
+        if (isJslJajpur && trailsData?.trails && Array.isArray(trailsData.trails)) {
+          const goTrail = trailsData.trails.find((t: any) => t.synopsis === "GO" && !t.is_deleted);
+          if (goTrail && goTrail.created_at) {
+            setPickGateOutTime(goTrail.created_at);
+            setApiData((prev: any) => (prev ? { ...prev, pick_finished_at: goTrail.created_at } : prev));
+          }
+        }
       } catch (err: any) {
         console.error("Failed to fetch trails data:", err);
       }
@@ -1778,12 +1796,16 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             {isSupplierView
                               ? toTitleCase(originLocation?.location?.city || "N/A")
                               : (
-                                <>
-                                  {originLocation?.location?.reference && (
-                                    <span>{originLocation.location.reference} - </span>
-                                  )}
-                                  {toTitleCase(originLocation?.location?.name || "N/A")}
-                                </>
+                                (String(apiData?.shipper?._id || apiData?.shipper) === "694b847f2a7c87efd3fe4f09" && Boolean(pickGateOutTime))
+                                  ? "JSL - Jajpur"
+                                  : (
+                                    <>
+                                      {originLocation?.location?.reference && (
+                                        <span>{originLocation.location.reference} - </span>
+                                      )}
+                                      {toTitleCase(originLocation?.location?.name || "N/A")}
+                                    </>
+                                  )
                               )}
                           </div>
                           {!isSupplierView && (
