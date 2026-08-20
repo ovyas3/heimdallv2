@@ -678,7 +678,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchTollHistory();
-  }, [refreshTrigger, uniqueCode, apiData]);
+  }, [refreshTrigger, uniqueCode, Boolean(apiData)]);
 
   // This useEffect handles the trails data
   useEffect(() => {
@@ -701,7 +701,10 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
           const goTrail = trailsData.trails.find((t: any) => t.synopsis === "GO" && !t.is_deleted);
           if (goTrail && goTrail.created_at) {
             setPickGateOutTime(goTrail.created_at);
-            setApiData((prev: any) => (prev ? { ...prev, pick_finished_at: goTrail.created_at } : prev));
+            setApiData((prev: any) => {
+              if (!prev || prev.pick_finished_at === goTrail.created_at) return prev;
+              return { ...prev, pick_finished_at: goTrail.created_at };
+            });
           }
         }
       } catch (err: any) {
@@ -709,7 +712,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchTrails();
-  }, [refreshTrigger, uniqueCode, apiData]);
+  }, [refreshTrigger, uniqueCode, Boolean(apiData), String(apiData?.shipper?._id || apiData?.shipper || "")]);
 
   // This useEffect handles the ePOD data
   useEffect(() => {
@@ -734,7 +737,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchEpods();
-  }, [refreshTrigger, uniqueCode, apiData, isSupplierView]);
+  }, [refreshTrigger, uniqueCode, Boolean(apiData), isSupplierView]);
 
   // This useEffect handles the halt data
   useEffect(() => {
@@ -755,7 +758,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchHaltData();
-  }, [refreshTrigger, uniqueCode, apiData]);
+  }, [refreshTrigger, uniqueCode, Boolean(apiData)]);
 
   // This useEffect handles the SIM History data
   useEffect(() => {
@@ -781,7 +784,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
       }
     };
     fetchSimHistory();
-  }, [refreshTrigger, uniqueCode, apiData]);
+  }, [refreshTrigger, uniqueCode, Boolean(apiData), apiData?.trip_tracker?.methods?.includes("SIM")]);
 
   // This useEffect manages a timeout to hide the PDF loader
   useEffect(() => {
