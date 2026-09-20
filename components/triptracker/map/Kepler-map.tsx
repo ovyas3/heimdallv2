@@ -262,6 +262,71 @@ const isValidLatLng = (latlng: any): boolean => {
   return false;
 };
 
+// ponytail: one guard on Leaflet's prototype instead of at every call site —
+// a single NaN center/zoom poisons the map pane transform, and the crash only
+// surfaces later when the next layer is added and calls getCenter().
+// Upgrade path: drop this if every caller validates its own coords.
+const isFiniteBounds = (b: any): boolean => {
+  try {
+    const lb = (b as any)?.getNorth ? b : L.latLngBounds(b as any);
+    return (
+      lb.isValid() &&
+      [lb.getNorth(), lb.getSouth(), lb.getEast(), lb.getWest()].every(Number.isFinite)
+    );
+  } catch {
+    return false;
+  }
+};
+
+// Flips to a console.warn naming the offending call, so an intermittent NaN is
+// still diagnosable instead of silently swallowed.
+const dropped = (name: string, arg: any) => {
+  console.warn(`[map] dropped ${name} with invalid argument`, arg);
+};
+
+if (typeof window !== "undefined" && !(L.Map.prototype as any).__latLngGuarded) {
+  (L.Map.prototype as any).__latLngGuarded = true;
+  const proto = L.Map.prototype as any;
+
+  // setView/flyTo take (center, zoom, options); panTo takes (center, options).
+  for (const name of ["setView", "flyTo"]) {
+    const orig = proto[name];
+    proto[name] = function (center: any, zoom: any, options: any) {
+      if (!isValidLatLng(center)) { dropped(name, center); return this; }
+      return orig.call(this, center, Number.isFinite(zoom) ? zoom : this.getZoom(), options);
+    };
+  }
+
+  const origPanTo = proto.panTo;
+  proto.panTo = function (center: any, options: any) {
+    if (!isValidLatLng(center)) { dropped("panTo", center); return this; }
+    return origPanTo.call(this, center, options);
+  };
+
+  // Popup/tooltip auto-pan reaches the map pane through panBy, bypassing the
+  // methods above: a popup opened at a NaN latlng produces a NaN offset here.
+  const origPanBy = proto.panBy;
+  proto.panBy = function (offset: any, options: any) {
+    const p = L.point(offset as any);
+    if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) { dropped("panBy", offset); return this; }
+    return origPanBy.call(this, offset, options);
+  };
+
+  for (const name of ["fitBounds", "flyToBounds"]) {
+    const orig = proto[name];
+    proto[name] = function (bounds: any, ...rest: any[]) {
+      if (!isFiniteBounds(bounds)) { dropped(name, bounds); return this; }
+      return orig.call(this, bounds, ...rest);
+    };
+  }
+
+  const origSetZoom = proto.setZoom;
+  proto.setZoom = function (zoom: any, ...rest: any[]) {
+    if (!Number.isFinite(zoom)) { dropped("setZoom", zoom); return this; }
+    return origSetZoom.call(this, zoom, ...rest);
+  };
+}
+
 // Define the overall shape of the path data object
 interface PathData {
   sim?: string | PathPoint[];
