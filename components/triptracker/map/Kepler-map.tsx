@@ -239,16 +239,24 @@ const isValidLatLng = (latlng: any): boolean => {
       latlng.length >= 2 &&
       typeof latlng[0] === "number" &&
       typeof latlng[1] === "number" &&
-      !isNaN(latlng[0]) &&
-      !isNaN(latlng[1])
+      Number.isFinite(latlng[0]) &&
+      Number.isFinite(latlng[1]) &&
+      latlng[0] >= -90 &&
+      latlng[0] <= 90 &&
+      latlng[1] >= -180 &&
+      latlng[1] <= 180
     );
   }
   if (typeof latlng === "object") {
     return (
       typeof latlng.lat === "number" &&
       typeof latlng.lng === "number" &&
-      !isNaN(latlng.lat) &&
-      !isNaN(latlng.lng)
+      Number.isFinite(latlng.lat) &&
+      Number.isFinite(latlng.lng) &&
+      latlng.lat >= -90 &&
+      latlng.lat <= 90 &&
+      latlng.lng >= -180 &&
+      latlng.lng <= 180
     );
   }
   return false;
@@ -313,7 +321,7 @@ function MapController({
 function MagnifierMapController({
   setMap,
 }: {
-  setMap: (map: LeafletMap) => void;
+  setMap: (map: LeafletMap | null) => void;
 }) {
   const map = useMap(); // Gets the map instance from the nearest <MapContainer>
 
@@ -321,6 +329,9 @@ function MagnifierMapController({
     if (map) {
       setMap(map); // Sets the magnifierMap state in the parent
     }
+    return () => {
+      setMap(null);
+    };
   }, [map, setMap]);
 
   return null; // Renders nothing
@@ -600,10 +611,17 @@ export default function KeplerMap({
 
     const fitMapBounds = () => {
       if (!mapRef.current) return;
-      const path = getActivePath();
+      const path = getActivePath().filter(isValidLatLng);
       if (path && path.length > 0) {
         if (path.length === 1) {
-          mapRef.current.setView(path[0] as any, Math.max(mapRef.current.getZoom(), 16), { animate: false });
+          const currentZoom =
+            typeof mapRef.current.getZoom === "function"
+              ? mapRef.current.getZoom()
+              : 12;
+          const targetZoom = !Number.isNaN(currentZoom)
+            ? Math.max(currentZoom, 16)
+            : 16;
+          mapRef.current.setView(path[0] as any, targetZoom, { animate: false });
         } else {
           mapRef.current.fitBounds(path as any, { padding: [40, 40], animate: false });
         }
@@ -717,7 +735,7 @@ export default function KeplerMap({
     const map = mapRef.current;
     if (!map || !activeMode) return;
 
-    const path =
+    const rawPath =
       activeMode === "app"
         ? appPath
         : activeMode === "sim"
@@ -726,10 +744,16 @@ export default function KeplerMap({
             ? gpsPath
             : [];
 
+    const path = rawPath.filter(isValidLatLng);
     if (!path?.length) return;
 
     if (path.length === 1) {
-      map.setView(path[0] as any, Math.max(map.getZoom(), 16));
+      const currentZoom =
+        typeof map.getZoom === "function" ? map.getZoom() : 12;
+      const targetZoom = !Number.isNaN(currentZoom)
+        ? Math.max(currentZoom, 16)
+        : 16;
+      map.setView(path[0] as any, targetZoom);
     } else {
       map.fitBounds(path as any, { padding: [40, 40] });
     }
@@ -2510,10 +2534,12 @@ export default function KeplerMap({
       setMagnifierPosition(position);
 
       const map = mapRef.current;
-      if (map && map.containerPointToLatLng) {
+      if (map && typeof map.containerPointToLatLng === "function") {
         try {
           const latLng = map.containerPointToLatLng([position.x, position.y]);
-          setMagnifierCenter([latLng.lat, latLng.lng]);
+          if (latLng && isValidLatLng([latLng.lat, latLng.lng])) {
+            setMagnifierCenter([latLng.lat, latLng.lng]);
+          }
         } catch {
           const bounds = map.getBounds();
           if (bounds) {
@@ -2525,7 +2551,9 @@ export default function KeplerMap({
             const west = bounds.getWest();
             const lat = north - (position.y / mapHeight) * (north - south);
             const lng = west + (position.x / mapWidth) * (east - west);
-            setMagnifierCenter([lat, lng]);
+            if (isValidLatLng([lat, lng])) {
+              setMagnifierCenter([lat, lng]);
+            }
           }
         }
       }
@@ -2543,13 +2571,18 @@ export default function KeplerMap({
   const updateMagnifierScreenPosition = useCallback(() => {
     if (!isMagnifierEnabled || !mapRef.current || !mapContainerRef.current)
       return;
+    if (!isValidLatLng(magnifierCenter)) return;
     const map = mapRef.current;
     try {
       const point = map.latLngToContainerPoint(magnifierCenter);
-      const rect = mapContainerRef.current.getBoundingClientRect();
-      const constrainedX = Math.max(0, Math.min(point.x, rect.width));
-      const constrainedY = Math.max(0, Math.min(point.y, rect.height));
-      setMagnifierPosition({ x: constrainedX, y: constrainedY });
+      if (point && !Number.isNaN(point.x) && !Number.isNaN(point.y)) {
+        const rect = mapContainerRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          const constrainedX = Math.max(0, Math.min(point.x, rect.width));
+          const constrainedY = Math.max(0, Math.min(point.y, rect.height));
+          setMagnifierPosition({ x: constrainedX, y: constrainedY });
+        }
+      }
     } catch { }
   }, [isMagnifierEnabled, magnifierCenter, setMagnifierPosition]);
 
@@ -2577,6 +2610,7 @@ export default function KeplerMap({
 
     // Get the bounding box of the map container
     const rect = mapContainerRef.current.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
     const mapInstance = mapRef.current;
 
     // Calculate the new screen position based on the slider values
@@ -2587,13 +2621,21 @@ export default function KeplerMap({
     setMagnifierPosition({ x: newPositionX, y: newPositionY });
 
     // Convert the new screen position to map coordinates (latitude/longitude)
-    const newMagnifierCenter = mapInstance.containerPointToLatLng([
-      newPositionX,
-      newPositionY,
-    ]);
+    if (mapInstance && typeof mapInstance.containerPointToLatLng === "function") {
+      try {
+        const newMagnifierCenter = mapInstance.containerPointToLatLng([
+          newPositionX,
+          newPositionY,
+        ]);
 
-    // Set the new map center state
-    setMagnifierCenter([newMagnifierCenter.lat, newMagnifierCenter.lng]);
+        if (
+          newMagnifierCenter &&
+          isValidLatLng([newMagnifierCenter.lat, newMagnifierCenter.lng])
+        ) {
+          setMagnifierCenter([newMagnifierCenter.lat, newMagnifierCenter.lng]);
+        }
+      } catch {}
+    }
   }, [
     isMagnifierEnabled,
     magnifierSettings.positionX,
@@ -2660,7 +2702,9 @@ export default function KeplerMap({
             position.x,
             position.y,
           ]);
-          setMagnifierCenter([latLng.lat, latLng.lng]);
+          if (latLng && isValidLatLng([latLng.lat, latLng.lng])) {
+            setMagnifierCenter([latLng.lat, latLng.lng]);
+          }
         } catch { }
       }
     }
@@ -2686,15 +2730,22 @@ export default function KeplerMap({
       // Use a short timeout. This is a common trick to ensure the map's container
       // has finished rendering in the DOM before we ask the map to measure it.
       const timer = setTimeout(() => {
-        // 1. Tell the map to measure its container size (fixes the blank map issue).
-        magnifierMap.invalidateSize();
+        try {
+          // 1. Tell the map to measure its container size (fixes the blank map issue).
+          magnifierMapInstance.invalidateSize();
 
-        // 2. Set the initial view of the magnifier map.
-        const mainMapZoom = mainMap.getZoom();
-        magnifierMap.setView(
-          magnifierCenter,
-          Math.min(mainMapZoom + magnifierSettings.zoom, 18)
-        );
+          // 2. Set the initial view of the magnifier map.
+          const mainMapZoom = typeof mainMap.getZoom === "function" ? mainMap.getZoom() : 10;
+          const targetZoom = !Number.isNaN(mainMapZoom)
+            ? Math.min(mainMapZoom + (magnifierSettings.zoom || 0), 18)
+            : 12;
+          if (isValidLatLng(magnifierCenter)) {
+            magnifierMapInstance.setView(
+              magnifierCenter,
+              targetZoom
+            );
+          }
+        } catch {}
       }, 50); // A 50ms delay is usually sufficient.
 
       // Cleanup function: if the component unmounts, clear the timeout.
@@ -2705,21 +2756,24 @@ export default function KeplerMap({
   }, [isMagnifierEnabled, magnifierMap, mapRef, magnifierCenter, magnifierSettings.zoom]);
 
   // Effect 2: Handles UPDATES when the magnifier is dragged or zoom setting changes.
-  // This hook remains the same as it was already correct.
   useEffect(() => {
-    // Corrected: Use the 'magnifierMap' state variable instead
     if (!isMagnifierEnabled || !magnifierMap || !mapRef.current) {
       return;
     }
 
-    // The 'magnifierMap' variable is already the map instance
     const mainMap = mapRef.current;
-
-    const mainMapZoom = mainMap.getZoom();
-    magnifierMap.setView(
-      magnifierCenter,
-      Math.min(mainMapZoom + magnifierSettings.zoom, 18)
-    );
+    try {
+      const mainMapZoom = typeof mainMap.getZoom === "function" ? mainMap.getZoom() : 10;
+      const targetZoom = !Number.isNaN(mainMapZoom)
+        ? Math.min(mainMapZoom + (magnifierSettings.zoom || 0), 18)
+        : 12;
+      if (isValidLatLng(magnifierCenter)) {
+        magnifierMap.setView(
+          magnifierCenter,
+          targetZoom
+        );
+      }
+    } catch {}
   }, [
     magnifierCenter,
     magnifierSettings.zoom,
@@ -3226,8 +3280,8 @@ export default function KeplerMap({
         {/* )} */}
         <MapContainer
           ref={mapRef}
-          center={center}
-          zoom={zoom}
+          center={isValidLatLng(center) ? center : [28.6139, 77.209]}
+          zoom={typeof zoom === "number" && !isNaN(zoom) ? zoom : 12}
           style={{ height: "100%", width: "100%" }}
           zoomControl={false}
           attributionControl={false}
@@ -4023,7 +4077,7 @@ export default function KeplerMap({
             ))}
         </MapContainer>
         {/* Enhanced Magnifier Tool with Custom Settings */}
-        {isMagnifierEnabled && (
+        {isMagnifierEnabled && isValidLatLng(magnifierCenter) && (
           <div
             // 1. The onMouseDown handler is placed directly on this outer div
             onMouseDown={handleMouseDown}
@@ -4042,8 +4096,8 @@ export default function KeplerMap({
               <MapContainer
                 // ref={setMagnifierMap}
 
-                center={magnifierCenter}
-                zoom={Math.min(zoom + magnifierSettings.zoom, 18)}
+                center={isValidLatLng(magnifierCenter) ? magnifierCenter : [28.6139, 77.209]}
+                zoom={!Number.isNaN(zoom) ? Math.min((zoom || 10) + (magnifierSettings?.zoom || 0), 18) : 12}
                 style={{ height: "100%", width: "100%" }}
                 zoomControl={false}
                 attributionControl={false}
