@@ -181,6 +181,7 @@ interface KeplerMapProps {
           distKm: number;
         }>;
       };
+      sap_shipment_no?: string;
     };
   };
   isSupplier?: boolean;
@@ -3459,11 +3460,11 @@ export default function KeplerMap({
 
                   {(isSupplier && i === 0
                     ? meta?.location?.city
-                    : (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && Boolean(hasGoEvent) ? "JSL - Jajpur" : meta?.location?.name)) && (
+                    : (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && Boolean(shipmentData?.others?.sap_shipment_no) ? "JSL - Jajpur" : meta?.location?.name)) && (
                       <div className={styles.popupBody}>
                         {(isSupplier && i === 0
                           ? meta?.location?.city
-                          : (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && Boolean(hasGoEvent) ? "JSL - Jajpur" : meta?.location?.name)
+                          : (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && Boolean(shipmentData?.others?.sap_shipment_no) ? "JSL - Jajpur" : meta?.location?.name)
                         )?.trim()}
                       </div>
                     )}

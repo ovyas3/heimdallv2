@@ -536,7 +536,9 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         const pickGateIn = isJslJajpur
           ? (shipmentData.shipment.created_at || firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null)
           : (firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null);
-        const pickGateOut = firstPick?.finished_at || shipmentData.shipment.pick_finished_at || null;
+        const pickGateOut = isJslJajpur
+          ? null
+          : (firstPick?.finished_at || shipmentData.shipment.pick_finished_at || null);
 
         setApiData({
           ...shipmentData.shipment,
@@ -1804,7 +1806,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             {isSupplierView
                               ? toTitleCase(originLocation?.location?.city || "N/A")
                               : (
-                                (String(apiData?.shipper?._id || apiData?.shipper) === "694b847f2a7c87efd3fe4f09" && hasGoEvent)
+                                (String(apiData?.shipper?._id || apiData?.shipper) === "694b847f2a7c87efd3fe4f09" && !!apiData?.others?.sap_shipment_no)
                                   ? "JSL - Jajpur"
                                   : (
                                     <>
