@@ -31,7 +31,7 @@ import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 import { useMap, useMapEvents } from "react-leaflet";
 import polyline from "@mapbox/polyline";
 import { DateTime } from "luxon";
-import { toTitleCase } from "@/utils/stringUtils";
+import { toTitleCase, isJslOutboundShipment } from "@/utils/stringUtils";
 
 // Dynamically import components
 const Pane = dynamic(() => import("react-leaflet").then((mod) => mod.Pane), {
@@ -3460,11 +3460,11 @@ export default function KeplerMap({
 
                   {(isSupplier && i === 0
                     ? meta?.location?.city
-                    : (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && Boolean(shipmentData?.others?.sap_shipment_no) ? "JSL - Jajpur" : meta?.location?.name)) && (
+                    : (i === 0 && isJslOutboundShipment(shipmentData?.shipper, shipmentData?.deliveries) && Boolean(shipmentData?.others?.sap_shipment_no) ? "JSL - Jajpur" : meta?.location?.name)) && (
                       <div className={styles.popupBody}>
                         {(isSupplier && i === 0
                           ? meta?.location?.city
-                          : (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && Boolean(shipmentData?.others?.sap_shipment_no) ? "JSL - Jajpur" : meta?.location?.name)
+                          : (i === 0 && isJslOutboundShipment(shipmentData?.shipper, shipmentData?.deliveries) && Boolean(shipmentData?.others?.sap_shipment_no) ? "JSL - Jajpur" : meta?.location?.name)
                         )?.trim()}
                       </div>
                     )}
@@ -3479,11 +3479,11 @@ export default function KeplerMap({
                     </div>
                   )}
 
-                  {(meta?.arrived_at || (i === 0 && (shipmentData?.pick_arrived_at || (String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09" && shipmentData?.created_at)))) && (
+                  {(meta?.arrived_at || (i === 0 && (shipmentData?.pick_arrived_at || (isJslOutboundShipment(shipmentData?.shipper, shipmentData?.deliveries) && shipmentData?.created_at)))) && (
                     <div className={styles.popupMeta}>
                       {isSupplier ? "Arrived at Source: " : "Gate In: "}
                       {formatTimestamp(
-                        (i === 0 && String(shipmentData?.shipper?._id || shipmentData?.shipper) === "694b847f2a7c87efd3fe4f09")
+                        (i === 0 && isJslOutboundShipment(shipmentData?.shipper, shipmentData?.deliveries))
                           ? (shipmentData?.created_at || meta?.arrived_at || shipmentData?.pick_arrived_at)
                           : (meta?.arrived_at || shipmentData?.pick_arrived_at)
                       )}

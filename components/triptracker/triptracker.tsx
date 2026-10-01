@@ -45,7 +45,7 @@ import "./triptracker.css";
 import dynamic from "next/dynamic";
 
 
-import { toTitleCase } from "@/utils/stringUtils";
+import { toTitleCase, isJslOutboundShipment } from "@/utils/stringUtils";
 
 // import type { ViewState } from "react-map-gl";
 // import type { MapRef } from "react-map-gl";
@@ -530,13 +530,14 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
             `Shipment API error! Status: ${shipmentResponse.status}`
           );
         const shipmentData = await shipmentResponse.json();
-        const isJslJajpur = String(shipmentData.shipment?.shipper?._id || shipmentData.shipment?.shipper) === "694b847f2a7c87efd3fe4f09";
         const pickups = shipmentData.shipment.pickups || [];
+        const deliveries = shipmentData.shipment.deliveries || [];
+        const isJslOutbound = isJslOutboundShipment(shipmentData.shipment?.shipper, deliveries);
         const firstPick = pickups[0];
-        const pickGateIn = isJslJajpur
+        const pickGateIn = isJslOutbound
           ? (shipmentData.shipment.created_at || firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null)
           : (firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null);
-        const pickGateOut = isJslJajpur
+        const pickGateOut = isJslOutbound
           ? null
           : (firstPick?.finished_at || shipmentData.shipment.pick_finished_at || null);
 
@@ -550,7 +551,6 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         setPickGateInTime(pickGateIn);
         setPickGateOutTime(pickGateOut);
 
-        const deliveries = shipmentData.shipment.deliveries || [];
         const lastDrop = deliveries[deliveries.length - 1];
         setDropGateInTime(lastDrop?.arrived_at || shipmentData.shipment.drop_arrived_at || null);
         setDropGateOutTime(lastDrop?.finished_at || shipmentData.shipment.drop_finished_at || null);
@@ -699,11 +699,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
 
         setTimelineData(trailsData.trails);
 
-        const isJslJajpur = String(apiData?.shipper?._id || apiData?.shipper) === "694b847f2a7c87efd3fe4f09";
+        const isJslOutbound = isJslOutboundShipment(apiData?.shipper, apiData?.deliveries);
         if (trailsData?.trails && Array.isArray(trailsData.trails)) {
           const goTrail = trailsData.trails.find((t: any) => t.synopsis === "GO" && !t.is_deleted);
           setHasGoEvent(Boolean(goTrail));
-          if (isJslJajpur && goTrail && goTrail.created_at) {
+          if (isJslOutbound && goTrail && goTrail.created_at) {
             setPickGateOutTime(goTrail.created_at);
             setApiData((prev: any) => {
               if (!prev || prev.pick_finished_at === goTrail.created_at) return prev;
@@ -1806,7 +1806,7 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                             {isSupplierView
                               ? toTitleCase(originLocation?.location?.city || "N/A")
                               : (
-                                (String(apiData?.shipper?._id || apiData?.shipper) === "694b847f2a7c87efd3fe4f09" && !!apiData?.others?.sap_shipment_no)
+                              (isJslOutboundShipment(apiData?.shipper, apiData?.deliveries) && !!apiData?.others?.sap_shipment_no)
                                   ? "JSL - Jajpur"
                                   : (
                                     <>
