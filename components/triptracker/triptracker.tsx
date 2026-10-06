@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Fragment, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import {
   Truck,
@@ -375,6 +375,23 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
     // Default to full format
     return `${formattedDate}, ${formattedTime}`;
   };
+
+  // --- ETA history (eta-calculations -> shipment_updates.ETA, via raccoon) ---
+  // Newest first; the last entry is INITIAL (original delivery_date).
+  const etaHistory: { checked_at: string; updated_eta: string; status: string }[] = apiData?.eta_history || [];
+  const initialEta = etaHistory.find((e) => e.status === "INITIAL")?.updated_eta || apiData?.delivery_date;
+  const currentEta = etaHistory[0]?.updated_eta || initialEta;
+  // "+9h 34m", "+1d 2h", "+45m"; "" when on time / early.
+  const formatEtaShift = (eta?: string, base?: string) => {
+    if (!eta || !base) return "";
+    const mins = Math.round((new Date(eta).getTime() - new Date(base).getTime()) / 60000);
+    if (mins <= 0) return "";
+    const d = Math.floor(mins / 1440);
+    const h = Math.floor((mins % 1440) / 60);
+    const m = mins % 60;
+    return ["+", d ? `${d}d` : "", h ? `${d ? " " : ""}${h}h` : "", !d && m ? `${h ? " " : ""}${m}m` : ""].join("");
+  };
+  const currentDelay = formatEtaShift(currentEta, initialEta);
 
   // --- Derived helpers (no duplicates) -------------------------
 
@@ -2103,8 +2120,22 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                           ? (lastDelivery?.arrived_at ? formatTimestamp(lastDelivery.arrived_at) : (apiData?.drop_arrived_at ? formatTimestamp(apiData.drop_arrived_at) : (lastDelivery?.finished_at ? formatTimestamp(lastDelivery.finished_at) : (apiData?.drop_finished_at ? formatTimestamp(apiData.drop_finished_at) : "N/A"))))
                           : (apiData?.latest_status === "ALD"
                             ? (lastDelivery?.arrived_at ? `Arrived: ${formatTimestamp(lastDelivery.arrived_at)}` : "At Delivery")
-                            : `ETA: ${formatTimestamp(apiData?.delivery_date)}`)}
+                            : etaHistory.length
+                              ? (
+                                <span className="eta-compare">
+                                  <span className="eta-compare-key">Initial ETA</span>
+                                  <span className="eta-compare-val">{formatTimestamp(initialEta)}</span>
+                                  <span className="eta-compare-key">Current ETA</span>
+                                  <span className="eta-compare-val">{formatTimestamp(currentEta)}</span>
+                                </span>
+                              )
+                              : `ETA: ${formatTimestamp(apiData?.delivery_date)}`)}
                       </div>
+                      {apiData?.latest_status !== "CPTD" && apiData?.latest_status !== "ALD" && etaHistory.length > 0 && (
+                        <span className={`eta-pill ${currentDelay ? "late" : "on-time"}`}>
+                          {currentDelay ? `${currentDelay} Delay` : "On time"}
+                        </span>
+                      )}
                       
                       {(apiData?.latest_status === "CPTD" || apiData?.latest_status === "ALD") ? (
                         <div className="tooltip-content tooltip-lg">
@@ -2135,6 +2166,29 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
                               {etaDelta.days > 0 && `${etaDelta.days}d `}
                               {etaDelta.hours}h {etaDelta.minutes}m
                             </span>
+                          </div>
+                        </div>
+                      ) : etaHistory.length > 0 ? (
+                        <div className="tooltip-content tooltip-lg eta-history">
+                          <div className="tooltip-title">ETA History</div>
+                          <div className="eta-history-grid">
+                            <span className="eta-history-head">Checked</span>
+                            <span className="eta-history-head">ETA</span>
+                            <span className="eta-history-head right">Delay</span>
+                            {etaHistory.map((e, i) => {
+                              const isInitial = e.status === "INITIAL";
+                              const delay = isInitial ? "" : formatEtaShift(e.updated_eta, initialEta);
+                              const rowClass = `eta-history-cell${isInitial ? " initial" : ""}`;
+                              return (
+                                <Fragment key={`${e.checked_at}-${e.status}-${i}`}>
+                                  <span className={rowClass}>{isInitial ? "Initial" : formatTimestamp(e.checked_at)}</span>
+                                  <span className={rowClass}>{formatTimestamp(e.updated_eta)}</span>
+                                  <span className={`${rowClass} right ${isInitial ? "" : delay ? "late" : "on-time"}`}>
+                                    {isInitial ? "—" : delay || "On time"}
+                                  </span>
+                                </Fragment>
+                              );
+                            })}
                           </div>
                         </div>
                       ) : (

@@ -6382,3 +6382,88 @@ body.preparing-print .map-host {
   overflow: hidden !important;
   position: relative !important;
 }
+/* --- ETA history (In Transit card) ----------------------------------- */
+.eta-compare {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  column-gap: 8px;
+  row-gap: 2px;
+  margin-top: 2px;
+  text-align: left;
+}
+.eta-compare-key {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.eta-compare-val {
+  color: var(--text-primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.eta-pill {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.eta-pill.late {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+.eta-pill.on-time {
+  color: #047857;
+  background: #d1fae5;
+}
+
+.tooltip-lg.eta-history {
+  min-width: 330px;
+  max-width: 380px;
+}
+.eta-history-grid {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  text-align: left; /* card text is centered */
+  max-height: 260px;
+  overflow-y: auto;
+  font-size: 0.8rem;
+}
+.eta-history-head {
+  position: sticky;
+  top: 0;
+  background: var(--text-primary); /* same as .tooltip-content */
+  padding-bottom: 6px;
+  color: #9ca3af;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.eta-history-cell {
+  padding: 5px 0;
+  color: #f3f4f6;
+  white-space: nowrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.eta-history-cell.initial {
+  color: #9ca3af;
+  border-top: 1px dashed rgba(255, 255, 255, 0.25);
+}
+.eta-history-head,
+.eta-history-cell {
+  padding-right: 14px; /* padding, not column-gap, so row borders run unbroken */
+}
+.eta-history-head.right,
+.eta-history-cell.right {
+  text-align: right;
+  padding-right: 0;
+}
+.eta-history-cell.late {
+  color: #f87171;
+  font-weight: 600;
+}
+.eta-history-cell.on-time {
+  color: #34d399;
+}
