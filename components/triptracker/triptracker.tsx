@@ -552,11 +552,11 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         const isJslOutbound = isJslOutboundShipment(shipmentData.shipment?.shipper, deliveries);
         const firstPick = pickups[0];
         const pickGateIn = isJslOutbound
-          ? (shipmentData.shipment.created_at || firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null)
-          : (firstPick?.arrived_at || shipmentData.shipment.pick_arrived_at || null);
+          ? (shipmentData.shipment.created_at || shipmentData.shipment.pick_arrived_at || firstPick?.arrived_at || null)
+          : (shipmentData.shipment.pick_arrived_at || firstPick?.arrived_at || null);
         const pickGateOut = isJslOutbound
           ? null
-          : (firstPick?.finished_at || shipmentData.shipment.pick_finished_at || null);
+          : (shipmentData.shipment.pick_finished_at || firstPick?.finished_at || null);
 
         setApiData({
           ...shipmentData.shipment,
@@ -569,8 +569,8 @@ export function TripTrackingDashboard({ uniqueCode }: { uniqueCode?: string }) {
         setPickGateOutTime(pickGateOut);
 
         const lastDrop = deliveries[deliveries.length - 1];
-        setDropGateInTime(lastDrop?.arrived_at || shipmentData.shipment.drop_arrived_at || null);
-        setDropGateOutTime(lastDrop?.finished_at || shipmentData.shipment.drop_finished_at || null);
+        setDropGateInTime(shipmentData.shipment.drop_arrived_at || lastDrop?.arrived_at || null);
+        setDropGateOutTime(shipmentData.shipment.drop_finished_at || lastDrop?.finished_at || null);
         // Extract deviation count and total distance
         const deviations = shipmentData.shipment.deviation?.deviations || [];
         const deviationCountFromApi = deviations.length;
